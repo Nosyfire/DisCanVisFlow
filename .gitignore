@@ -1,0 +1,38 @@
+# Nextflow work directories (all profiles)
+work/
+work_*/
+
+# Pipeline outputs — large, machine-generated
+results/
+
+# Reference data cache — downloaded at runtime, can be 20-100 GB
+references/
+
+# External programs (AIUPred clones, UCSC tools) — set up per machine via
+# bin/setup_external_programs.sh or the SETUP_DEPS Nextflow process
+External_Programs
+External_Programs/
+
+# Claude Code local settings
+.claude/
+
+# Legacy data: small curated files (ELM, DIBS, MFIB, PhasePro, drivers) are in git.
+# PTM data (PTMdb + PhosphoSitePlus) is licensed — place manually in legacy_data/ptm/
+legacy_data/ptm/
+
+# Nextflow hidden files
+.nextflow/
+.nextflow.log*
+
+# Python
+*.pyc
+__pycache__/
+.pytest_cache/
+*.egg-info/
+
+# Editors / OS
+.DS_Store
+*.swp
+*.swo
+.idea/
+.vscode/

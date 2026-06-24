@@ -1,0 +1,29 @@
+# Conda env for DeepCoil coiled-coil prediction (Module 5i).
+#
+# Used by create_coiledcoils_worker.py. Set in the pipeline as:
+#     params.deepcoil_python = "<conda base>/envs/discanvis_deepcoil/bin/python"
+#
+# IMPORTANT — multi-step install required (plain `conda env create` fails):
+#
+#   deepcoil 2.0.2 requires allennlp==0.9.0 → spacy<2.2 + jsonnet (both need C build).
+#   spacy 2.1.x and jsonnet cannot be pip-built on modern setuptools.
+#   tensorflow 2.9.0 (pulled by deepcoil) is incompatible with protobuf ≥ 4.x.
+#
+#   Working install sequence (handled automatically by setup_external_programs.sh):
+#
+#     conda env remove -n discanvis_deepcoil -y
+#     conda create -n discanvis_deepcoil python=3.7 -c conda-forge -c defaults -y
+#     conda install -n discanvis_deepcoil -c conda-forge 'spacy=2.1.8' 'jsonnet' -y
+#     /opt/anaconda3/envs/discanvis_deepcoil/bin/pip install allennlp==0.9.0 deepcoil
+#     /opt/anaconda3/envs/discanvis_deepcoil/bin/pip install "protobuf==3.20.3"
+#
+#   On first use, DeepCoil downloads SeqVec weights (~330 MB) to ~/.keras/datasets/
+#   and caches them for all subsequent calls.
+#
+name: discanvis_deepcoil
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.7
+  - pip

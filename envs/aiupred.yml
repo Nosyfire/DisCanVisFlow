@@ -1,0 +1,26 @@
+# Conda env for IUPred3 / ANCHOR2 / AIUPred (disorder + AIUPred-Binding) predictors.
+#
+# Used by create_disorder_worker.py for direct library imports (and as the
+# subprocess fallback target). Set in the pipeline as:
+#     params.aiupred_python = "<conda base>/envs/discanvis_aiupred/bin/python"
+#
+# AIUPred (github.com/doszilab/AIUPred) requires torch>=2.0, numpy>=1.21,
+# scipy>=1.7.  IUPred3 (iupred3.elte.hu, licence-gated) also imports here.
+#
+# CUDA build: installs GPU-accelerated PyTorch (CUDA 12.4).
+# With GPU, AIUPred runs at ~100 proteins/second vs ~3.5/sec on CPU (28× faster).
+# If no GPU is available, PyTorch falls back to CPU automatically.
+# pytorch-cuda=12.4 is compatible with NVIDIA drivers ≥ 550.54.14 (CUDA 13.x).
+name: discanvis_aiupred
+channels:
+  - pytorch
+  - nvidia
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pytorch::pytorch
+  - pytorch::pytorch-cuda=12.4
+  - scipy
+  - numpy
+  - pandas
+  - pip

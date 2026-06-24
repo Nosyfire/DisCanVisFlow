@@ -1,0 +1,10 @@
+# Python dependencies for DisCanVis pipeline workers (bin/)
+# Install with:  pip install -r requirements.txt
+
+biopython>=1.81      # BioPython: BLAST XML parsing in create_blast_table_worker.py
+pandas>=1.5          # DataFrame operations in all workers
+numpy>=1.24          # np.select / np.where in create_id_map_worker.py
+tqdm>=4.64           # Progress bars (optional; used by legacy code, not by new workers)
+
+# Development / testing
+pytest>=7.0

@@ -1,0 +1,538 @@
+<?xml version="1.0"?>
+<!DOCTYPE BlastOutput PUBLIC "-//NCBI//NCBI BlastOutput/EN" "http://www.ncbi.nlm.nih.gov/dtd/NCBI_BlastOutput.dtd">
+<BlastOutput>
+  <BlastOutput_program>blastp</BlastOutput_program>
+  <BlastOutput_version>BLASTP 2.13.0+</BlastOutput_version>
+  <BlastOutput_reference>Stephen F. Altschul, Thomas L. Madden, Alejandro A. Sch&amp;auml;ffer, Jinghui Zhang, Zheng Zhang, Webb Miller, and David J. Lipman (1997), &quot;Gapped BLAST and PSI-BLAST: a new generation of protein database search programs&quot;, Nucleic Acids Res. 25:3389-3402.</BlastOutput_reference>
+  <BlastOutput_db>/dlab/home/norbi/PycharmProjects/DisCanVis_Data_Process/Processed_Data/gencode_process/blast/uniprot</BlastOutput_db>
+  <BlastOutput_query-ID>Query_1</BlastOutput_query-ID>
+  <BlastOutput_query-def>ENSP00000493376.2|ENST00000641515.2|ENSG00000186092.7|OTTHUMG00000001094.4|OTTHUMT00000003223.4|OR4F5-201|OR4F5|326</BlastOutput_query-def>
+  <BlastOutput_query-len>326</BlastOutput_query-len>
+  <BlastOutput_param>
+    <Parameters>
+      <Parameters_matrix>BLOSUM62</Parameters_matrix>
+      <Parameters_expect>10</Parameters_expect>
+      <Parameters_gap-open>11</Parameters_gap-open>
+      <Parameters_gap-extend>1</Parameters_gap-extend>
+      <Parameters_filter>F</Parameters_filter>
+    </Parameters>
+  </BlastOutput_param>
+<BlastOutput_iterations>
+<Iteration>
+  <Iteration_iter-num>1</Iteration_iter-num>
+  <Iteration_query-ID>Query_1</Iteration_query-ID>
+  <Iteration_query-def>ENSP00000493376.2|ENST00000641515.2|ENSG00000186092.7|OTTHUMG00000001094.4|OTTHUMT00000003223.4|OR4F5-201|OR4F5|326</Iteration_query-def>
+  <Iteration_query-len>326</Iteration_query-len>
+<Iteration_hits>
+<Hit>
+  <Hit_num>1</Hit_num>
+  <Hit_id>gnl|BL_ORD_ID|6161</Hit_id>
+  <Hit_def>sp|Q8NH21|OR4F5_HUMAN Olfactory receptor 4F5 OS=Homo sapiens OX=9606 GN=OR4F5 PE=3 SV=1</Hit_def>
+  <Hit_accession>6161</Hit_accession>
+  <Hit_len>305</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>619.387</Hsp_bit-score>
+      <Hsp_score>1596</Hsp_score>
+      <Hsp_evalue>0</Hsp_evalue>
+      <Hsp_query-from>22</Hsp_query-from>
+      <Hsp_query-to>326</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>305</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>305</Hsp_identity>
+      <Hsp_positive>305</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>305</Hsp_align-len>
+      <Hsp_qseq>MVTEFIFLGLSDSQELQTFLFMLFFVFYGGIVFGNLLIVITVVSDSHLHSPMYFLLANLSLIDLSLSSVTAPKMITDFFSQRKVISFKGCLVQIFLLHFFGGSEMVILIAMGFDRYIAICKPLHYTTIMCGNACVGIMAVTWGIGFLHSVSQLAFAVHLLFCGPNEVDSFYCDLPRVIKLACTDTYRLDIMVIANSGVLTVCSFVLLIISYTIILMTIQHRPLDKSSKALSTLTAHITVVLLFFGPCVFIYAWPFPIKSLDKFLAVFYSVITPLLNPIIYTLRNKDMKTAIRQLRKWDAHSSVKF</Hsp_qseq>
+      <Hsp_hseq>MVTEFIFLGLSDSQELQTFLFMLFFVFYGGIVFGNLLIVITVVSDSHLHSPMYFLLANLSLIDLSLSSVTAPKMITDFFSQRKVISFKGCLVQIFLLHFFGGSEMVILIAMGFDRYIAICKPLHYTTIMCGNACVGIMAVTWGIGFLHSVSQLAFAVHLLFCGPNEVDSFYCDLPRVIKLACTDTYRLDIMVIANSGVLTVCSFVLLIISYTIILMTIQHRPLDKSSKALSTLTAHITVVLLFFGPCVFIYAWPFPIKSLDKFLAVFYSVITPLLNPIIYTLRNKDMKTAIRQLRKWDAHSSVKF</Hsp_hseq>
+      <Hsp_midline>MVTEFIFLGLSDSQELQTFLFMLFFVFYGGIVFGNLLIVITVVSDSHLHSPMYFLLANLSLIDLSLSSVTAPKMITDFFSQRKVISFKGCLVQIFLLHFFGGSEMVILIAMGFDRYIAICKPLHYTTIMCGNACVGIMAVTWGIGFLHSVSQLAFAVHLLFCGPNEVDSFYCDLPRVIKLACTDTYRLDIMVIANSGVLTVCSFVLLIISYTIILMTIQHRPLDKSSKALSTLTAHITVVLLFFGPCVFIYAWPFPIKSLDKFLAVFYSVITPLLNPIIYTLRNKDMKTAIRQLRKWDAHSSVKF</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>2</Hit_num>
+  <Hit_id>gnl|BL_ORD_ID|6469</Hit_id>
+  <Hit_def>sp|Q8NGA8|O4F17_HUMAN Olfactory receptor 4F17 OS=Homo sapiens OX=9606 GN=OR4F17 PE=2 SV=1</Hit_def>
+  <Hit_accession>6469</Hit_accession>
+  <Hit_len>305</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>611.683</Hsp_bit-score>
+      <Hsp_score>1576</Hsp_score>
+      <Hsp_evalue>0</Hsp_evalue>
+      <Hsp_query-from>22</Hsp_query-from>
+      <Hsp_query-to>326</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>305</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>302</Hsp_identity>
+      <Hsp_positive>302</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>305</Hsp_align-len>
+      <Hsp_qseq>MVTEFIFLGLSDSQELQTFLFMLFFVFYGGIVFGNLLIVITVVSDSHLHSPMYFLLANLSLIDLSLSSVTAPKMITDFFSQRKVISFKGCLVQIFLLHFFGGSEMVILIAMGFDRYIAICKPLHYTTIMCGNACVGIMAVTWGIGFLHSVSQLAFAVHLLFCGPNEVDSFYCDLPRVIKLACTDTYRLDIMVIANSGVLTVCSFVLLIISYTIILMTIQHRPLDKSSKALSTLTAHITVVLLFFGPCVFIYAWPFPIKSLDKFLAVFYSVITPLLNPIIYTLRNKDMKTAIRQLRKWDAHSSVKF</Hsp_qseq>
+      <Hsp_hseq>MVTEFIFLGLSDSQGLQTFLFMLFFVFYGGIVFGNLLIVITVVSDSHLHSPMYFLLANLSLIDLSLSSVTAPKMITDFFSQRKVISFKGCLVQIFLLHFFGGSEMVILIAMGFDRYIAICKPLHYTTIMCGNACVGIMAVAWGIGFLHSVSQLAFAVHLPFCGPNEVDSFYCDLPRVIKLACTDTYRLDIMVIANSGVLTVCSFVLLIISYTIILMTIQHRPLDKSSKALSTLTAHITVVLLFFGPCVFIYAWPFPIKSLDKFLAVFYSVITPLLNPIIYTLRNKDMKTAIRQLRKWDAHSSVKF</Hsp_hseq>
+      <Hsp_midline>MVTEFIFLGLSDSQ LQTFLFMLFFVFYGGIVFGNLLIVITVVSDSHLHSPMYFLLANLSLIDLSLSSVTAPKMITDFFSQRKVISFKGCLVQIFLLHFFGGSEMVILIAMGFDRYIAICKPLHYTTIMCGNACVGIMAV WGIGFLHSVSQLAFAVHL FCGPNEVDSFYCDLPRVIKLACTDTYRLDIMVIANSGVLTVCSFVLLIISYTIILMTIQHRPLDKSSKALSTLTAHITVVLLFFGPCVFIYAWPFPIKSLDKFLAVFYSVITPLLNPIIYTLRNKDMKTAIRQLRKWDAHSSVKF</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>3</Hit_num>
+  <Hit_id>gnl|BL_ORD_ID|13481</Hit_id>
+  <Hit_def>sp|Q96R69|OR4F4_HUMAN Olfactory receptor 4F4 OS=Homo sapiens OX=9606 GN=OR4F4 PE=2 SV=2</Hit_def>
+  <Hit_accession>13481</Hit_accession>
+  <Hit_len>305</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>608.986</Hsp_bit-score>
+      <Hsp_score>1569</Hsp_score>
+      <Hsp_evalue>0</Hsp_evalue>
+      <Hsp_query-from>22</Hsp_query-from>
+      <Hsp_query-to>326</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>305</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>301</Hsp_identity>
+      <Hsp_positive>302</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>305</Hsp_align-len>
+      <Hsp_qseq>MVTEFIFLGLSDSQELQTFLFMLFFVFYGGIVFGNLLIVITVVSDSHLHSPMYFLLANLSLIDLSLSSVTAPKMITDFFSQRKVISFKGCLVQIFLLHFFGGSEMVILIAMGFDRYIAICKPLHYTTIMCGNACVGIMAVTWGIGFLHSVSQLAFAVHLLFCGPNEVDSFYCDLPRVIKLACTDTYRLDIMVIANSGVLTVCSFVLLIISYTIILMTIQHRPLDKSSKALSTLTAHITVVLLFFGPCVFIYAWPFPIKSLDKFLAVFYSVITPLLNPIIYTLRNKDMKTAIRQLRKWDAHSSVKF</Hsp_qseq>
+      <Hsp_hseq>MVTEFIFLGLSDSQELQTFLFMLFFVFYGGIVFGNLLIVITVVSDSHLHSPMYFLLANLSLIDLSLSSVTAPKMITDFFSQRKVISFKGCLVQIFLLHFFGGSEMVILIAMGFDRYIAICKPLHYTTIMCGNACVGIMAVAWGIGFLHSVSQLAFAVHLPFCGPNEVDSFYCDLPRVIKLACTDTYRLDIMVIANSGVLTVCSFVLLIISYTIILMTIQHCPLDKSSKALSTLTAHITVVLLFFGPCVFIYAWPFPIKSLDKFLAVFYSVITPLLNPIIYTLRNKDMKTAIRRLRKWDAHSSVKF</Hsp_hseq>
+      <Hsp_midline>MVTEFIFLGLSDSQELQTFLFMLFFVFYGGIVFGNLLIVITVVSDSHLHSPMYFLLANLSLIDLSLSSVTAPKMITDFFSQRKVISFKGCLVQIFLLHFFGGSEMVILIAMGFDRYIAICKPLHYTTIMCGNACVGIMAV WGIGFLHSVSQLAFAVHL FCGPNEVDSFYCDLPRVIKLACTDTYRLDIMVIANSGVLTVCSFVLLIISYTIILMTIQH PLDKSSKALSTLTAHITVVLLFFGPCVFIYAWPFPIKSLDKFLAVFYSVITPLLNPIIYTLRNKDMKTAIR+LRKWDAHSSVKF</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+</Iteration_hits>
+  <Iteration_stat>
+    <Statistics>
+      <Statistics_db-num>20586</Statistics_db-num>
+      <Statistics_db-len>11399837</Statistics_db-len>
+      <Statistics_hsp-len>100</Statistics_hsp-len>
+      <Statistics_eff-space>2111119562</Statistics_eff-space>
+      <Statistics_kappa>0.041</Statistics_kappa>
+      <Statistics_lambda>0.267</Statistics_lambda>
+      <Statistics_entropy>0.14</Statistics_entropy>
+    </Statistics>
+  </Iteration_stat>
+</Iteration>
+<Iteration>
+  <Iteration_iter-num>2</Iteration_iter-num>
+  <Iteration_query-ID>Query_2</Iteration_query-ID>
+  <Iteration_query-def>ENSP00000409316.1|ENST00000426406.4|ENSG00000284733.2|OTTHUMG00000002860.3|OTTHUMT00000007999.3|OR4F29-201|OR4F29|312</Iteration_query-def>
+  <Iteration_query-len>312</Iteration_query-len>
+<Iteration_hits>
+<Hit>
+  <Hit_num>1</Hit_num>
+  <Hit_id>gnl|BL_ORD_ID|17153</Hit_id>
+  <Hit_def>sp|Q6IEY1|OR4F3_HUMAN Olfactory receptor 4F3/4F16/4F29 OS=Homo sapiens OX=9606 GN=OR4F29 PE=1 SV=1</Hit_def>
+  <Hit_accession>17153</Hit_accession>
+  <Hit_len>312</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>633.254</Hsp_bit-score>
+      <Hsp_score>1632</Hsp_score>
+      <Hsp_evalue>0</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>312</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>312</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>312</Hsp_identity>
+      <Hsp_positive>312</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>312</Hsp_align-len>
+      <Hsp_qseq>MDGENHSVVSEFLFLGLTHSWEIQLLLLVFSSVLYVASITGNILIVFSVTTDPHLHSPMYFLLASLSFIDLGACSVTSPKMIYDLFRKRKVISFGGCIAQIFFIHVVGGVEMVLLIAMAFDRYVALCKPLHYLTIMSPRMCLSFLAVAWTLGVSHSLFQLAFLVNLAFCGPNVLDSFYCDLPRLLRLACTDTYRLQFMVTVNSGFICVGTFFILLISYVFILFTVWKHSSGGSSKALSTLSAHSTVVLLFFGPPMFVYTRPHPNSQMDKFLAIFDAVLTPFLNPVVYTFRNKEMKAAIKRVCKQLVIYKRIS</Hsp_qseq>
+      <Hsp_hseq>MDGENHSVVSEFLFLGLTHSWEIQLLLLVFSSVLYVASITGNILIVFSVTTDPHLHSPMYFLLASLSFIDLGACSVTSPKMIYDLFRKRKVISFGGCIAQIFFIHVVGGVEMVLLIAMAFDRYVALCKPLHYLTIMSPRMCLSFLAVAWTLGVSHSLFQLAFLVNLAFCGPNVLDSFYCDLPRLLRLACTDTYRLQFMVTVNSGFICVGTFFILLISYVFILFTVWKHSSGGSSKALSTLSAHSTVVLLFFGPPMFVYTRPHPNSQMDKFLAIFDAVLTPFLNPVVYTFRNKEMKAAIKRVCKQLVIYKRIS</Hsp_hseq>
+      <Hsp_midline>MDGENHSVVSEFLFLGLTHSWEIQLLLLVFSSVLYVASITGNILIVFSVTTDPHLHSPMYFLLASLSFIDLGACSVTSPKMIYDLFRKRKVISFGGCIAQIFFIHVVGGVEMVLLIAMAFDRYVALCKPLHYLTIMSPRMCLSFLAVAWTLGVSHSLFQLAFLVNLAFCGPNVLDSFYCDLPRLLRLACTDTYRLQFMVTVNSGFICVGTFFILLISYVFILFTVWKHSSGGSSKALSTLSAHSTVVLLFFGPPMFVYTRPHPNSQMDKFLAIFDAVLTPFLNPVVYTFRNKEMKAAIKRVCKQLVIYKRIS</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>2</Hit_num>
+  <Hit_id>gnl|BL_ORD_ID|15616</Hit_id>
+  <Hit_def>sp|O95013|O4F21_HUMAN Olfactory receptor 4F21 OS=Homo sapiens OX=9606 GN=OR4F21 PE=3 SV=2</Hit_def>
+  <Hit_accession>15616</Hit_accession>
+  <Hit_len>312</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>630.172</Hsp_bit-score>
+      <Hsp_score>1624</Hsp_score>
+      <Hsp_evalue>0</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>312</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>312</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>309</Hsp_identity>
+      <Hsp_positive>311</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>312</Hsp_align-len>
+      <Hsp_qseq>MDGENHSVVSEFLFLGLTHSWEIQLLLLVFSSVLYVASITGNILIVFSVTTDPHLHSPMYFLLASLSFIDLGACSVTSPKMIYDLFRKRKVISFGGCIAQIFFIHVVGGVEMVLLIAMAFDRYVALCKPLHYLTIMSPRMCLSFLAVAWTLGVSHSLFQLAFLVNLAFCGPNVLDSFYCDLPRLLRLACTDTYRLQFMVTVNSGFICVGTFFILLISYVFILFTVWKHSSGGSSKALSTLSAHSTVVLLFFGPPMFVYTRPHPNSQMDKFLAIFDAVLTPFLNPVVYTFRNKEMKAAIKRVCKQLVIYKRIS</Hsp_qseq>
+      <Hsp_hseq>MDGENHSVVSEFLFLGLTHSWEIQLLLLVFSSVLYVASITGNIFIVFSVTTDPHLHSPMYFLLASLSFIDLGACSVTSPKMIYDLFRKRKVISFGGCIAQIFFIHVIGGVEMVLLIAMAFDRYVALCKPLHYLTIMSPRMCLSFLAVAWTLGVSHSLFQLAFLVNLAFCGPNVLDSFYCDLPRLLRLACTDTYRLQFMVTVNSGFICVGTFFILLISYVFILFTVWKHSSGGSSKALSTLSAHSTVVLLFFGPPMFVYTRPHPNSQMDKFLAIFDAVLTPFLNPVVYTFRNKEMKAAIKRVCKQLVIYKKIS</Hsp_hseq>
+      <Hsp_midline>MDGENHSVVSEFLFLGLTHSWEIQLLLLVFSSVLYVASITGNI IVFSVTTDPHLHSPMYFLLASLSFIDLGACSVTSPKMIYDLFRKRKVISFGGCIAQIFFIHV+GGVEMVLLIAMAFDRYVALCKPLHYLTIMSPRMCLSFLAVAWTLGVSHSLFQLAFLVNLAFCGPNVLDSFYCDLPRLLRLACTDTYRLQFMVTVNSGFICVGTFFILLISYVFILFTVWKHSSGGSSKALSTLSAHSTVVLLFFGPPMFVYTRPHPNSQMDKFLAIFDAVLTPFLNPVVYTFRNKEMKAAIKRVCKQLVIYK+IS</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+</Iteration_hits>
+  <Iteration_stat>
+    <Statistics>
+      <Statistics_db-num>20586</Statistics_db-num>
+      <Statistics_db-len>11399837</Statistics_db-len>
+      <Statistics_hsp-len>99</Statistics_hsp-len>
+      <Statistics_eff-space>1994068299</Statistics_eff-space>
+      <Statistics_kappa>0.041</Statistics_kappa>
+      <Statistics_lambda>0.267</Statistics_lambda>
+      <Statistics_entropy>0.14</Statistics_entropy>
+    </Statistics>
+  </Iteration_stat>
+</Iteration>
+<Iteration>
+  <Iteration_iter-num>3</Iteration_iter-num>
+  <Iteration_query-ID>Query_3</Iteration_query-ID>
+  <Iteration_query-def>ENSP00000329982.2|ENST00000332831.5|ENSG00000284662.2|OTTHUMG00000002581.3|OTTHUMT00000007334.3|OR4F16-201|OR4F16|312</Iteration_query-def>
+  <Iteration_query-len>312</Iteration_query-len>
+<Iteration_hits>
+<Hit>
+  <Hit_num>1</Hit_num>
+  <Hit_id>gnl|BL_ORD_ID|17153</Hit_id>
+  <Hit_def>sp|Q6IEY1|OR4F3_HUMAN Olfactory receptor 4F3/4F16/4F29 OS=Homo sapiens OX=9606 GN=OR4F29 PE=1 SV=1</Hit_def>
+  <Hit_accession>17153</Hit_accession>
+  <Hit_len>312</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>633.254</Hsp_bit-score>
+      <Hsp_score>1632</Hsp_score>
+      <Hsp_evalue>0</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>312</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>312</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>312</Hsp_identity>
+      <Hsp_positive>312</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>312</Hsp_align-len>
+      <Hsp_qseq>MDGENHSVVSEFLFLGLTHSWEIQLLLLVFSSVLYVASITGNILIVFSVTTDPHLHSPMYFLLASLSFIDLGACSVTSPKMIYDLFRKRKVISFGGCIAQIFFIHVVGGVEMVLLIAMAFDRYVALCKPLHYLTIMSPRMCLSFLAVAWTLGVSHSLFQLAFLVNLAFCGPNVLDSFYCDLPRLLRLACTDTYRLQFMVTVNSGFICVGTFFILLISYVFILFTVWKHSSGGSSKALSTLSAHSTVVLLFFGPPMFVYTRPHPNSQMDKFLAIFDAVLTPFLNPVVYTFRNKEMKAAIKRVCKQLVIYKRIS</Hsp_qseq>
+      <Hsp_hseq>MDGENHSVVSEFLFLGLTHSWEIQLLLLVFSSVLYVASITGNILIVFSVTTDPHLHSPMYFLLASLSFIDLGACSVTSPKMIYDLFRKRKVISFGGCIAQIFFIHVVGGVEMVLLIAMAFDRYVALCKPLHYLTIMSPRMCLSFLAVAWTLGVSHSLFQLAFLVNLAFCGPNVLDSFYCDLPRLLRLACTDTYRLQFMVTVNSGFICVGTFFILLISYVFILFTVWKHSSGGSSKALSTLSAHSTVVLLFFGPPMFVYTRPHPNSQMDKFLAIFDAVLTPFLNPVVYTFRNKEMKAAIKRVCKQLVIYKRIS</Hsp_hseq>
+      <Hsp_midline>MDGENHSVVSEFLFLGLTHSWEIQLLLLVFSSVLYVASITGNILIVFSVTTDPHLHSPMYFLLASLSFIDLGACSVTSPKMIYDLFRKRKVISFGGCIAQIFFIHVVGGVEMVLLIAMAFDRYVALCKPLHYLTIMSPRMCLSFLAVAWTLGVSHSLFQLAFLVNLAFCGPNVLDSFYCDLPRLLRLACTDTYRLQFMVTVNSGFICVGTFFILLISYVFILFTVWKHSSGGSSKALSTLSAHSTVVLLFFGPPMFVYTRPHPNSQMDKFLAIFDAVLTPFLNPVVYTFRNKEMKAAIKRVCKQLVIYKRIS</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>2</Hit_num>
+  <Hit_id>gnl|BL_ORD_ID|15616</Hit_id>
+  <Hit_def>sp|O95013|O4F21_HUMAN Olfactory receptor 4F21 OS=Homo sapiens OX=9606 GN=OR4F21 PE=3 SV=2</Hit_def>
+  <Hit_accession>15616</Hit_accession>
+  <Hit_len>312</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>630.172</Hsp_bit-score>
+      <Hsp_score>1624</Hsp_score>
+      <Hsp_evalue>0</Hsp_evalue>
+      <Hsp_query-from>1</Hsp_query-from>
+      <Hsp_query-to>312</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>312</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>309</Hsp_identity>
+      <Hsp_positive>311</Hsp_positive>
+      <Hsp_gaps>0</Hsp_gaps>
+      <Hsp_align-len>312</Hsp_align-len>
+      <Hsp_qseq>MDGENHSVVSEFLFLGLTHSWEIQLLLLVFSSVLYVASITGNILIVFSVTTDPHLHSPMYFLLASLSFIDLGACSVTSPKMIYDLFRKRKVISFGGCIAQIFFIHVVGGVEMVLLIAMAFDRYVALCKPLHYLTIMSPRMCLSFLAVAWTLGVSHSLFQLAFLVNLAFCGPNVLDSFYCDLPRLLRLACTDTYRLQFMVTVNSGFICVGTFFILLISYVFILFTVWKHSSGGSSKALSTLSAHSTVVLLFFGPPMFVYTRPHPNSQMDKFLAIFDAVLTPFLNPVVYTFRNKEMKAAIKRVCKQLVIYKRIS</Hsp_qseq>
+      <Hsp_hseq>MDGENHSVVSEFLFLGLTHSWEIQLLLLVFSSVLYVASITGNIFIVFSVTTDPHLHSPMYFLLASLSFIDLGACSVTSPKMIYDLFRKRKVISFGGCIAQIFFIHVIGGVEMVLLIAMAFDRYVALCKPLHYLTIMSPRMCLSFLAVAWTLGVSHSLFQLAFLVNLAFCGPNVLDSFYCDLPRLLRLACTDTYRLQFMVTVNSGFICVGTFFILLISYVFILFTVWKHSSGGSSKALSTLSAHSTVVLLFFGPPMFVYTRPHPNSQMDKFLAIFDAVLTPFLNPVVYTFRNKEMKAAIKRVCKQLVIYKKIS</Hsp_hseq>
+      <Hsp_midline>MDGENHSVVSEFLFLGLTHSWEIQLLLLVFSSVLYVASITGNI IVFSVTTDPHLHSPMYFLLASLSFIDLGACSVTSPKMIYDLFRKRKVISFGGCIAQIFFIHV+GGVEMVLLIAMAFDRYVALCKPLHYLTIMSPRMCLSFLAVAWTLGVSHSLFQLAFLVNLAFCGPNVLDSFYCDLPRLLRLACTDTYRLQFMVTVNSGFICVGTFFILLISYVFILFTVWKHSSGGSSKALSTLSAHSTVVLLFFGPPMFVYTRPHPNSQMDKFLAIFDAVLTPFLNPVVYTFRNKEMKAAIKRVCKQLVIYK+IS</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+</Iteration_hits>
+  <Iteration_stat>
+    <Statistics>
+      <Statistics_db-num>20586</Statistics_db-num>
+      <Statistics_db-len>11399837</Statistics_db-len>
+      <Statistics_hsp-len>99</Statistics_hsp-len>
+      <Statistics_eff-space>1994068299</Statistics_eff-space>
+      <Statistics_kappa>0.041</Statistics_kappa>
+      <Statistics_lambda>0.267</Statistics_lambda>
+      <Statistics_entropy>0.14</Statistics_entropy>
+    </Statistics>
+  </Iteration_stat>
+</Iteration>
+<Iteration>
+  <Iteration_iter-num>4</Iteration_iter-num>
+  <Iteration_query-ID>Query_4</Iteration_query-ID>
+  <Iteration_query-def>ENSP00000478421.2|ENST00000616016.5|ENSG00000187634.13|OTTHUMG00000040719.11|OTTHUMT00000316521.3|SAMD11-209|SAMD11|844</Iteration_query-def>
+  <Iteration_query-len>844</Iteration_query-len>
+<Iteration_hits>
+<Hit>
+  <Hit_num>1</Hit_num>
+  <Hit_id>gnl|BL_ORD_ID|15781</Hit_id>
+  <Hit_def>sp|Q96NU1|SAM11_HUMAN Sterile alpha motif domain-containing protein 11 OS=Homo sapiens OX=9606 GN=SAMD11 PE=1 SV=3</Hit_def>
+  <Hit_accession>15781</Hit_accession>
+  <Hit_len>681</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>1307.35</Hsp_bit-score>
+      <Hsp_score>3382</Hsp_score>
+      <Hsp_evalue>0</Hsp_evalue>
+      <Hsp_query-from>180</Hsp_query-from>
+      <Hsp_query-to>844</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>681</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>665</Hsp_identity>
+      <Hsp_positive>665</Hsp_positive>
+      <Hsp_gaps>16</Hsp_gaps>
+      <Hsp_align-len>681</Hsp_align-len>
+      <Hsp_qseq>MSKGILQVHPPICDCPGCRISSPVNRGRLADKRTVALPAARNLKKERTPSFSASDGDSDGSGPTCGRRPGLKQEDGPHIRIMKRRVHTHWDVNISFREASCSQDGNLPTLISSVHRSRHLVMPEHQSRCEFQRGSLEIGLRPAGDLLGKRLGRSPRISSDCFSEKRARSESPQEALLLPRELGPSMAPEDHYRRLVSALSEASTFEDPQRLYHLGLPSH----------------DLLRVRQEVAAAALRGPSGLEAHLPSSTAGQRRKQGLAQHREGAAPAAAPSFSERELPQPPPLLSPQNAPHVALGPHLRPPFLGVPSALCQTPGYGFLPPAQAEMFAWQQELLRKQNLARLELPADLLRQKELESARPQLLAPETALRPNDGAEELQRRGALLVLNHGAAPLLALPPQGPPGSGPPTPSRDSARRAPRKGGPGPASARPSESKEMTGARLWAQDGSEDEPPKDSDGEDPETAAVGCRGPTPGQAPAGGAGAEGKGLFPGSTLPLGFPYAVSPYFHTGAVGGLSMDGEEAPAPEDVTKWTVDDVCSFVGGLSGCGEYTRVFREQGIDGETLPLLTEEHLLTNMGLKLGPALKIRAQVARRLGRVFYVASFPVALPLQPPTLRAPERELGTGEQPLSPTTATSPYGGGHALAGQTSPKQENGTLALLPGAPDPSQPLC</Hsp_qseq>
+      <Hsp_hseq>MSKGILQVHPPICDCPGCRISSPVNRGRLADKRTVALPAARNLKKERTPSFSASDGDSDGSGPTCGRRPGLKQEDGPHIRIMKRRVHTHWDVNISFREASCSQDGNLPTLISSVHRSRHLVMPEHQSRCEFQRGSLEIGLRPAGDLLGKRLGRSPRISSDCFSEKRARSESPQEALLLPRELGPSMAPEDHYRRLVSALSEASTFEDPQRLYHLGLPSHGEDPPWHDPPHHLPSHDLLRVRQEVAAAALRGPSGLEAHLPSSTAGQRRKQGLAQHREGAAPAAAPSFSERELPQPPPLLSPQNAPHVALGPHLRPPFLGVPSALCQTPGYGFLPPAQAEMFAWQQELLRKQNLARLELPADLLRQKELESARPQLLAPETALRPNDGAEELQRRGALLVLNHGAAPLLALPPQGPPGSGPPTPSRDSARRAPRKGGPGPASARPSESKEMTGARLWAQDGSEDEPPKDSDGEDPETAAVGCRGPTPGQAPAGGAGAEGKGLFPGSTLPLGFPYAVSPYFHTGAVGGLSMDGEEAPAPEDVTKWTVDDVCSFVGGLSGCGEYTRVFREQGIDGETLPLLTEEHLLTNMGLKLGPALKIRAQVARRLGRVFYVASFPVALPLQPPTLRAPERELGTGEQPLSPTTATSPYGGGHALAGQTSPKQENGTLALLPGAPDPSQPLC</Hsp_hseq>
+      <Hsp_midline>MSKGILQVHPPICDCPGCRISSPVNRGRLADKRTVALPAARNLKKERTPSFSASDGDSDGSGPTCGRRPGLKQEDGPHIRIMKRRVHTHWDVNISFREASCSQDGNLPTLISSVHRSRHLVMPEHQSRCEFQRGSLEIGLRPAGDLLGKRLGRSPRISSDCFSEKRARSESPQEALLLPRELGPSMAPEDHYRRLVSALSEASTFEDPQRLYHLGLPSH                DLLRVRQEVAAAALRGPSGLEAHLPSSTAGQRRKQGLAQHREGAAPAAAPSFSERELPQPPPLLSPQNAPHVALGPHLRPPFLGVPSALCQTPGYGFLPPAQAEMFAWQQELLRKQNLARLELPADLLRQKELESARPQLLAPETALRPNDGAEELQRRGALLVLNHGAAPLLALPPQGPPGSGPPTPSRDSARRAPRKGGPGPASARPSESKEMTGARLWAQDGSEDEPPKDSDGEDPETAAVGCRGPTPGQAPAGGAGAEGKGLFPGSTLPLGFPYAVSPYFHTGAVGGLSMDGEEAPAPEDVTKWTVDDVCSFVGGLSGCGEYTRVFREQGIDGETLPLLTEEHLLTNMGLKLGPALKIRAQVARRLGRVFYVASFPVALPLQPPTLRAPERELGTGEQPLSPTTATSPYGGGHALAGQTSPKQENGTLALLPGAPDPSQPLC</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>2</Hit_num>
+  <Hit_id>gnl|BL_ORD_ID|14938</Hit_id>
+  <Hit_def>sp|Q13342|SP140_HUMAN Nuclear body protein SP140 OS=Homo sapiens OX=9606 GN=SP140 PE=1 SV=2</Hit_def>
+  <Hit_accession>14938</Hit_accession>
+  <Hit_len>867</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>52.373</Hsp_bit-score>
+      <Hsp_score>124</Hsp_score>
+      <Hsp_evalue>9.85106e-07</Hsp_evalue>
+      <Hsp_query-from>109</Hsp_query-from>
+      <Hsp_query-to>185</Hsp_query-to>
+      <Hsp_hit-from>583</Hsp_hit-from>
+      <Hsp_hit-to>660</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>28</Hsp_identity>
+      <Hsp_positive>42</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>78</Hsp_align-len>
+      <Hsp_qseq>LDNGEPCIEVECGANRALLYVRKLCQGSKGPSIR-HRGEWLTPNEFQFVSGRETAKDWKRSIRHKGKSLKTLMSKGIL</Hsp_qseq>
+      <Hsp_hseq>VDFKAPLLPVTCGGVKGILHKKKLQQGILVKCIQTEDGKWFTPTEFEIKGGHARSKNWRLSVRCGGWPLRWLMENGFL</Hsp_hseq>
+      <Hsp_midline>+D   P + V CG  + +L+ +KL QG     I+   G+W TP EF+   G   +K+W+ S+R  G  L+ LM  G L</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>3</Hit_num>
+  <Hit_id>gnl|BL_ORD_ID|12780</Hit_id>
+  <Hit_def>sp|Q9H930|SP14L_HUMAN Nuclear body protein SP140-like protein OS=Homo sapiens OX=9606 GN=SP140L PE=1 SV=3</Hit_def>
+  <Hit_accession>12780</Hit_accession>
+  <Hit_len>580</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>49.6766</Hsp_bit-score>
+      <Hsp_score>117</Hsp_score>
+      <Hsp_evalue>5.58118e-06</Hsp_evalue>
+      <Hsp_query-from>81</Hsp_query-from>
+      <Hsp_query-to>185</Hsp_query-to>
+      <Hsp_hit-from>268</Hsp_hit-from>
+      <Hsp_hit-to>373</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>32</Hsp_identity>
+      <Hsp_positive>52</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>106</Hsp_align-len>
+      <Hsp_qseq>PHLHLPRDPLALERFSATAAAAPDFQPLLDNGEPCIEVECGANRALLYVRKLCQGSKGPSIR-HRGEWLTPNEFQFVSGRETAKDWKRSIRHKGKSLKTLMSKGIL</Hsp_qseq>
+      <Hsp_hseq>PGTHFTQSDRAPQKRVRSRASRKHKDETVDFQAPLLPVTCGGVKGILHKEKLEQGTLAKCIQTEDGKWFTPMEFEIKGGYARSKNWRLSVRCGGWPLRRLMEEGSL</Hsp_hseq>
+      <Hsp_midline>P  H  +   A ++   + A+       +D   P + V CG  + +L+  KL QG+    I+   G+W TP EF+   G   +K+W+ S+R  G  L+ LM +G L</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>4</Hit_num>
+  <Hit_id>gnl|BL_ORD_ID|3475</Hit_id>
+  <Hit_def>sp|Q92729|PTPRU_HUMAN Receptor-type tyrosine-protein phosphatase U OS=Homo sapiens OX=9606 GN=PTPRU PE=1 SV=2</Hit_def>
+  <Hit_accession>3475</Hit_accession>
+  <Hit_len>1446</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>31.5722</Hsp_bit-score>
+      <Hsp_score>70</Hsp_score>
+      <Hsp_evalue>2.19017</Hsp_evalue>
+      <Hsp_query-from>9</Hsp_query-from>
+      <Hsp_query-to>83</Hsp_query-to>
+      <Hsp_hit-from>641</Hsp_hit-from>
+      <Hsp_hit-to>712</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>26</Hsp_identity>
+      <Hsp_positive>31</Hsp_positive>
+      <Hsp_gaps>5</Hsp_gaps>
+      <Hsp_align-len>76</Hsp_align-len>
+      <Hsp_qseq>PGREDLALALATFHPTLAALPLPPLPGYLAPLPAAAALPPAASLPA-SAAGYEALLAPPLRPPRAYLSLHEAAPHL</Hsp_qseq>
+      <Hsp_hseq>PGGQDCFPVPLTFEAALAR----GLVHYFGAELAASSLPEAMPFTVGDNQTYRGFWNPPLEPRKAYLIYFQAASHL</Hsp_hseq>
+      <Hsp_midline>PG +D      TF   LA      L  Y     AA++LP A          Y     PPL P +AYL   +AA HL</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+</Iteration_hits>
+  <Iteration_stat>
+    <Statistics>
+      <Statistics_db-num>20586</Statistics_db-num>
+      <Statistics_db-len>11399837</Statistics_db-len>
+      <Statistics_hsp-len>108</Statistics_hsp-len>
+      <Statistics_eff-space>6753940064</Statistics_eff-space>
+      <Statistics_kappa>0.041</Statistics_kappa>
+      <Statistics_lambda>0.267</Statistics_lambda>
+      <Statistics_entropy>0.14</Statistics_entropy>
+    </Statistics>
+  </Iteration_stat>
+</Iteration>
+<Iteration>
+  <Iteration_iter-num>5</Iteration_iter-num>
+  <Iteration_query-ID>Query_5</Iteration_query-ID>
+  <Iteration_query-def>ENSP00000480678.2|ENST00000618323.5|ENSG00000187634.13|OTTHUMG00000040719.11|-|SAMD11-213|SAMD11|845</Iteration_query-def>
+  <Iteration_query-len>845</Iteration_query-len>
+<Iteration_hits>
+<Hit>
+  <Hit_num>1</Hit_num>
+  <Hit_id>gnl|BL_ORD_ID|15781</Hit_id>
+  <Hit_def>sp|Q96NU1|SAM11_HUMAN Sterile alpha motif domain-containing protein 11 OS=Homo sapiens OX=9606 GN=SAMD11 PE=1 SV=3</Hit_def>
+  <Hit_accession>15781</Hit_accession>
+  <Hit_len>681</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>1302.73</Hsp_bit-score>
+      <Hsp_score>3370</Hsp_score>
+      <Hsp_evalue>0</Hsp_evalue>
+      <Hsp_query-from>180</Hsp_query-from>
+      <Hsp_query-to>845</Hsp_query-to>
+      <Hsp_hit-from>1</Hsp_hit-from>
+      <Hsp_hit-to>681</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>665</Hsp_identity>
+      <Hsp_positive>665</Hsp_positive>
+      <Hsp_gaps>17</Hsp_gaps>
+      <Hsp_align-len>682</Hsp_align-len>
+      <Hsp_qseq>MSKGILQVHPPICDCPGCRISSPVNRGRLADKRTVALPAARNLKKERTPSFSASDGDSDGSGPTCGRRPGLKQEDGPHIRIMKRRVHTHWDVNISFREASCSQDGNLPTLISSVHRSRHLVMPEHQSRCEFQRGSLEIGLRPAGDLLGKRLGRSPRISSDCFSEKRARSESPQAEALLLPRELGPSMAPEDHYRRLVSALSEASTFEDPQRLYHLGLPSH----------------DLLRVRQEVAAAALRGPSGLEAHLPSSTAGQRRKQGLAQHREGAAPAAAPSFSERELPQPPPLLSPQNAPHVALGPHLRPPFLGVPSALCQTPGYGFLPPAQAEMFAWQQELLRKQNLARLELPADLLRQKELESARPQLLAPETALRPNDGAEELQRRGALLVLNHGAAPLLALPPQGPPGSGPPTPSRDSARRAPRKGGPGPASARPSESKEMTGARLWAQDGSEDEPPKDSDGEDPETAAVGCRGPTPGQAPAGGAGAEGKGLFPGSTLPLGFPYAVSPYFHTGAVGGLSMDGEEAPAPEDVTKWTVDDVCSFVGGLSGCGEYTRVFREQGIDGETLPLLTEEHLLTNMGLKLGPALKIRAQVARRLGRVFYVASFPVALPLQPPTLRAPERELGTGEQPLSPTTATSPYGGGHALAGQTSPKQENGTLALLPGAPDPSQPLC</Hsp_qseq>
+      <Hsp_hseq>MSKGILQVHPPICDCPGCRISSPVNRGRLADKRTVALPAARNLKKERTPSFSASDGDSDGSGPTCGRRPGLKQEDGPHIRIMKRRVHTHWDVNISFREASCSQDGNLPTLISSVHRSRHLVMPEHQSRCEFQRGSLEIGLRPAGDLLGKRLGRSPRISSDCFSEKRARSESPQ-EALLLPRELGPSMAPEDHYRRLVSALSEASTFEDPQRLYHLGLPSHGEDPPWHDPPHHLPSHDLLRVRQEVAAAALRGPSGLEAHLPSSTAGQRRKQGLAQHREGAAPAAAPSFSERELPQPPPLLSPQNAPHVALGPHLRPPFLGVPSALCQTPGYGFLPPAQAEMFAWQQELLRKQNLARLELPADLLRQKELESARPQLLAPETALRPNDGAEELQRRGALLVLNHGAAPLLALPPQGPPGSGPPTPSRDSARRAPRKGGPGPASARPSESKEMTGARLWAQDGSEDEPPKDSDGEDPETAAVGCRGPTPGQAPAGGAGAEGKGLFPGSTLPLGFPYAVSPYFHTGAVGGLSMDGEEAPAPEDVTKWTVDDVCSFVGGLSGCGEYTRVFREQGIDGETLPLLTEEHLLTNMGLKLGPALKIRAQVARRLGRVFYVASFPVALPLQPPTLRAPERELGTGEQPLSPTTATSPYGGGHALAGQTSPKQENGTLALLPGAPDPSQPLC</Hsp_hseq>
+      <Hsp_midline>MSKGILQVHPPICDCPGCRISSPVNRGRLADKRTVALPAARNLKKERTPSFSASDGDSDGSGPTCGRRPGLKQEDGPHIRIMKRRVHTHWDVNISFREASCSQDGNLPTLISSVHRSRHLVMPEHQSRCEFQRGSLEIGLRPAGDLLGKRLGRSPRISSDCFSEKRARSESPQ EALLLPRELGPSMAPEDHYRRLVSALSEASTFEDPQRLYHLGLPSH                DLLRVRQEVAAAALRGPSGLEAHLPSSTAGQRRKQGLAQHREGAAPAAAPSFSERELPQPPPLLSPQNAPHVALGPHLRPPFLGVPSALCQTPGYGFLPPAQAEMFAWQQELLRKQNLARLELPADLLRQKELESARPQLLAPETALRPNDGAEELQRRGALLVLNHGAAPLLALPPQGPPGSGPPTPSRDSARRAPRKGGPGPASARPSESKEMTGARLWAQDGSEDEPPKDSDGEDPETAAVGCRGPTPGQAPAGGAGAEGKGLFPGSTLPLGFPYAVSPYFHTGAVGGLSMDGEEAPAPEDVTKWTVDDVCSFVGGLSGCGEYTRVFREQGIDGETLPLLTEEHLLTNMGLKLGPALKIRAQVARRLGRVFYVASFPVALPLQPPTLRAPERELGTGEQPLSPTTATSPYGGGHALAGQTSPKQENGTLALLPGAPDPSQPLC</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>2</Hit_num>
+  <Hit_id>gnl|BL_ORD_ID|14938</Hit_id>
+  <Hit_def>sp|Q13342|SP140_HUMAN Nuclear body protein SP140 OS=Homo sapiens OX=9606 GN=SP140 PE=1 SV=2</Hit_def>
+  <Hit_accession>14938</Hit_accession>
+  <Hit_len>867</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>52.373</Hsp_bit-score>
+      <Hsp_score>124</Hsp_score>
+      <Hsp_evalue>9.61735e-07</Hsp_evalue>
+      <Hsp_query-from>109</Hsp_query-from>
+      <Hsp_query-to>185</Hsp_query-to>
+      <Hsp_hit-from>583</Hsp_hit-from>
+      <Hsp_hit-to>660</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>28</Hsp_identity>
+      <Hsp_positive>42</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>78</Hsp_align-len>
+      <Hsp_qseq>LDNGEPCIEVECGANRALLYVRKLCQGSKGPSIR-HRGEWLTPNEFQFVSGRETAKDWKRSIRHKGKSLKTLMSKGIL</Hsp_qseq>
+      <Hsp_hseq>VDFKAPLLPVTCGGVKGILHKKKLQQGILVKCIQTEDGKWFTPTEFEIKGGHARSKNWRLSVRCGGWPLRWLMENGFL</Hsp_hseq>
+      <Hsp_midline>+D   P + V CG  + +L+ +KL QG     I+   G+W TP EF+   G   +K+W+ S+R  G  L+ LM  G L</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>3</Hit_num>
+  <Hit_id>gnl|BL_ORD_ID|12780</Hit_id>
+  <Hit_def>sp|Q9H930|SP14L_HUMAN Nuclear body protein SP140-like protein OS=Homo sapiens OX=9606 GN=SP140L PE=1 SV=3</Hit_def>
+  <Hit_accession>12780</Hit_accession>
+  <Hit_len>580</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>49.6766</Hsp_bit-score>
+      <Hsp_score>117</Hsp_score>
+      <Hsp_evalue>5.7354e-06</Hsp_evalue>
+      <Hsp_query-from>81</Hsp_query-from>
+      <Hsp_query-to>185</Hsp_query-to>
+      <Hsp_hit-from>268</Hsp_hit-from>
+      <Hsp_hit-to>373</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>32</Hsp_identity>
+      <Hsp_positive>52</Hsp_positive>
+      <Hsp_gaps>1</Hsp_gaps>
+      <Hsp_align-len>106</Hsp_align-len>
+      <Hsp_qseq>PHLHLPRDPLALERFSATAAAAPDFQPLLDNGEPCIEVECGANRALLYVRKLCQGSKGPSIR-HRGEWLTPNEFQFVSGRETAKDWKRSIRHKGKSLKTLMSKGIL</Hsp_qseq>
+      <Hsp_hseq>PGTHFTQSDRAPQKRVRSRASRKHKDETVDFQAPLLPVTCGGVKGILHKEKLEQGTLAKCIQTEDGKWFTPMEFEIKGGYARSKNWRLSVRCGGWPLRRLMEEGSL</Hsp_hseq>
+      <Hsp_midline>P  H  +   A ++   + A+       +D   P + V CG  + +L+  KL QG+    I+   G+W TP EF+   G   +K+W+ S+R  G  L+ LM +G L</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+<Hit>
+  <Hit_num>4</Hit_num>
+  <Hit_id>gnl|BL_ORD_ID|3475</Hit_id>
+  <Hit_def>sp|Q92729|PTPRU_HUMAN Receptor-type tyrosine-protein phosphatase U OS=Homo sapiens OX=9606 GN=PTPRU PE=1 SV=2</Hit_def>
+  <Hit_accession>3475</Hit_accession>
+  <Hit_len>1446</Hit_len>
+  <Hit_hsps>
+    <Hsp>
+      <Hsp_num>1</Hsp_num>
+      <Hsp_bit-score>31.9574</Hsp_bit-score>
+      <Hsp_score>71</Hsp_score>
+      <Hsp_evalue>2.08451</Hsp_evalue>
+      <Hsp_query-from>9</Hsp_query-from>
+      <Hsp_query-to>83</Hsp_query-to>
+      <Hsp_hit-from>641</Hsp_hit-from>
+      <Hsp_hit-to>712</Hsp_hit-to>
+      <Hsp_query-frame>0</Hsp_query-frame>
+      <Hsp_hit-frame>0</Hsp_hit-frame>
+      <Hsp_identity>26</Hsp_identity>
+      <Hsp_positive>31</Hsp_positive>
+      <Hsp_gaps>5</Hsp_gaps>
+      <Hsp_align-len>76</Hsp_align-len>
+      <Hsp_qseq>PGREDLALALATFHPTLAALPLPPLPGYLAPLPAAAALPPAASLPA-SAAGYEALLAPPLRPPRAYLSLHEAAPHL</Hsp_qseq>
+      <Hsp_hseq>PGGQDCFPVPLTFEAALAR----GLVHYFGAELAASSLPEAMPFTVGDNQTYRGFWNPPLEPRKAYLIYFQAASHL</Hsp_hseq>
+      <Hsp_midline>PG +D      TF   LA      L  Y     AA++LP A          Y     PPL P +AYL   +AA HL</Hsp_midline>
+    </Hsp>
+  </Hit_hsps>
+</Hit>
+</Iteration_hits>
+  <Iteration_stat>
+    <Statistics>
+      <Statistics_db-num>20586</Statistics_db-num>
+      <Statistics_db-len>11399837</Statistics_db-len>
+      <Statistics_hsp-len>108</Statistics_hsp-len>
+      <Statistics_eff-space>6763116613</Statistics_eff-space>
+      <Statistics_kappa>0.041</Statistics_kappa>
+      <Statistics_lambda>0.267</Statistics_lambda>
+      <Statistics_entropy>0.14</Statistics_entropy>
+    </Statistics>
+  </Iteration_stat>
+</Iteration>
+</BlastOutput_iterations>
+</BlastOutput>
+

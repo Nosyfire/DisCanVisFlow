@@ -1,0 +1,7 @@
+# FILE SYSTEM SECURITY & BOUNDARY RULES
+- YOU ARE STRICTLY FORBIDDEN from deleting, modifying, overwriting, or moving any files or directories outside of the current workspace root folder.
+- NEVER execute or suggest shell commands (like `rm`, `del`, `rmdir`, `mv`) on absolute paths that point outside the current project directory.
+- NEVER use relative paths that traverse up out of the workspace (e.g., `../`, `../../`) to interact with, modify, or delete files.
+- If a user explicitly requests an operation that affects a file or folder outside the current root, you MUST refuse the request immediately and state that it violates your security boundaries.
+- Before executing any file deletion or modification, verify implicitly that the target path is confined entirely within the current working directory.
+- Treat the current workspace root as a jailed environment. You have zero access or permissions outside of it.

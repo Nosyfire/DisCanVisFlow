@@ -1,0 +1,40 @@
+# Single-protein or small subset — mutations + disorder + SLiMs
+# Run: nextflow run main.nf --project projects/single_protein.yaml --target_gene RAF1 -profile discanvis_data,conda -resume
+# Override target_gene on the command line, or set it here.
+
+name: single_protein
+description: "Single gene or small subset: mutations + disorder + SLiM annotations"
+version: "2026-q4"
+
+# ── Gene scope ────────────────────────────────────────────────────────────────
+target_genes: "RAF1"        # override: --target_gene "TP53,BRCA1" or a gene name
+mapping_mode: all_isoform_mapping
+
+# ── Tracks ────────────────────────────────────────────────────────────────────
+tracks:
+  mutations: true
+  clinvar_disease: true
+  disorder: true
+  slim_annotations: true
+  pdb: true
+  go_terms: false
+  polymorphism: false
+  pathogenicity: true
+  alphamissense: true
+  mavedb: false
+  proteingym: false
+  cancer_drivers: true
+  disease: true
+  depmap: false
+  conservation: false
+  coiled_coils: false
+  ppi: false
+  scansite: false
+  pem: false
+  finches: false
+
+mutation_source: ClinVar
+scatter_chunks: 1
+blat_chunks: 1
+outdir: "results/single_protein"
+per_gene_md_threshold: 50

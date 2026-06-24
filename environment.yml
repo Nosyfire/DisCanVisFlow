@@ -1,0 +1,65 @@
+# DisCanVis Pipeline — Conda environment
+#
+# Includes all bioinformatics tools and Python packages required by the
+# pipeline.  Sources:
+#   Dockerfile  → system tools (BLAST+, BLAT, UCSC utilities)
+#   bin/*.py    → Python packages (biopython, pandas, numpy, tqdm)
+#
+# Create:
+#   conda env create -f environment.yml
+#   conda activate discanvis
+#
+# Or let Nextflow manage it:
+#   nextflow run main.nf -profile raf1,conda
+#
+# Channels: conda-forge (highest priority) → bioconda → defaults
+
+name: discanvis
+
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+
+dependencies:
+
+  # ── Java runtime (required by Nextflow) ──────────────────────────────────
+  - openjdk>=17
+
+  # ── Python runtime ────────────────────────────────────────────────────────
+  - python=3.11
+
+  # ── Python packages (bin/*.py workers) ───────────────────────────────────
+  - pandas>=1.5
+  - biopython>=1.81
+  - numpy>=1.24
+  - requests>=2.28
+  - tqdm>=4.64
+  - pytest>=7.0           # for `pytest tests/`
+  - obonet>=1.0           # MONDO OBO parsing (ClinVar disease build)
+
+  # ── BLAST+ (makeblastdb, blastp, tblastn) ────────────────────────────────
+  # bioconda provides BLAST+ 2.13.0
+  - bioconda::blast=2.13.0
+
+  # ── BLAT — cDNA-to-genome alignment ──────────────────────────────────────
+  - bioconda::blat
+
+  # ── UCSC genome utilities ─────────────────────────────────────────────────
+  # twoBitToFa      : extract sequences from .2bit genome files (GENOME_MAP)
+  # pslCDnaFilter   : filter PSL alignments (BLAT_ALIGN)
+  # bigWigToBedGraph: convert bigWig conservation tracks (Module 7)
+  # overlapSelect   : overlap-based PSL filtering
+  # bigBedToBed     : extract dbSnp155Common.bb polymorphisms (Module 5g) —
+  #                   removes the need for params.ucsc_bin on a clean machine
+  - bioconda::ucsc-twobittofa
+  - bioconda::ucsc-pslcdnafilter
+  - bioconda::ucsc-bigwigtobedgraph
+  - bioconda::ucsc-overlapselect
+  - bioconda::ucsc-bigbedtobed
+  # Also requires nextflow itself:
+  - bioconda::nextflow
+
+  # ── Networking utilities (FTP downloads in FETCH_* processes) ────────────
+  - curl
+  - wget

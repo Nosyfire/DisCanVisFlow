@@ -1,0 +1,734 @@
+Gene	Tier	Role in Cancer	Tumour Types(Somatic)	Tumour Types(Germline)
+AR	1	oncogene	prostate	
+FH	1	TSG		leiomyomatosis, renal
+ALK	1	oncogene, fusion	ALCL, NSCLC, neuroblastoma, inflammatory myofibroblastic tumour, Spitzoid tumour	neuroblastoma
+APC	1	TSG	colorectal, pancreatic, desmoid, hepatoblastoma, glioma, other CNS	colorectal, pancreatic, desmoid, hepatoblastoma, glioma, other CNS
+ATM	1	TSG	T-PLL	leukaemia, lymphoma, medulloblastoma, glioma
+ATR	1	TSG	endometrial, gastric, epithelial ovarian, myeloma	oropharyngeal
+B2M	1	TSG	DLBCL, melanoma, colorectal adenocarcinoma	
+BAX	1	TSG	colorectal cancer	
+BCR	1	fusion	CML, ALL, AML	
+BLM	1	TSG		leukaemia, lymphoma, skin squamous cell, other tumour types
+BTK	1	oncogene, TSG	CLL, mantle cell lymphoma, WM	
+CBL	1	oncogene, TSG, fusion	AML, JMML, MDS	
+CIC	1	oncogene, TSG, fusion	oligodendroglioma, soft tissue sarcoma	
+DCC	2		CRC, melanoma, SCC	
+DEK	1	oncogene, fusion	AML	
+EED	2	TSG	malignant peripheral nerve sheath tumours, MDS and related, lung adenocarcinoma	
+ELL	1	TSG, fusion	AL	
+ELN	2	fusion	B-ALL	
+ERG	1	oncogene, fusion	Ewing sarcoma, prostate, AML	
+EZR	1	fusion	NSCLC	
+FAS	1	TSG	TGCT, nasal NK/T lymphoma, skin squamous cell carcinoma-burn scar related	
+FES	1	oncogene, TSG	HNSCC, ovarian carcinoma	
+FEV	1	oncogene, fusion	Ewing sarcoma	
+FUS	1	TSG, fusion	liposarcoma, AML, Ewing sarcoma, angiomatoid fibrous histiocytoma, fibromyxoid sarcoma	
+HLF	1	oncogene, fusion	ALL	
+ID3	2	TSG	Burkitt lymphoma	
+IGH	1	fusion	MM, Burkitt lymphoma, NHL, CLL, B-ALL, MALT, MLCLS	
+IGK	1	fusion	Burkitt lymphoma, B-NHL	
+IGL	1	fusion	Burkitt lymphoma	
+IL2	1	fusion	intestinal T-cell lymphoma	
+ISX	2		melanoma	
+ITK	1	fusion	peripheral T-cell lymphoma	
+JUN	1	oncogene	sarcoma	
+KDR	1	oncogene	NSCLC, angiosarcoma	melanoma
+KIT	1	oncogene	GIST, AML, TGCT, mastocytosis, mucosal melanoma	GIST, epithelioma
+LCK	1	oncogene, fusion	T-ALL	
+LPP	1	oncogene, fusion	lipoma, leukaemia	
+LYN	2	oncogene, fusion	DLBCL, B-ALL, MPN	
+MAF	1	oncogene, fusion	MM	
+MAX	1	TSG	pheochromocytoma, endometrioid carcinoma, colon carcinoma	pheochromocytoma
+MET	1	oncogene	papillary renal, head-neck squamous cell	papillary renal
+MN1	1	oncogene, fusion	AML, MDS	
+MPL	1	oncogene	MPN	MPN
+MSN	1	fusion	ALCL	
+MYB	1	oncogene, fusion	adenoid cystic carcinoma	
+MYC	1	oncogene, fusion	Burkitt lymphoma, amplified in other cancers, B-CLL	
+NBN	1	TSG		NHL, glioma, medulloblastoma, rhabdomyosarcoma
+NF1	1	TSG, fusion	neurofibroma, glioma	neurofibroma, glioma
+NF2	1	TSG	meningioma, acoustic neuroma, renal	meningioma, acoustic neuroma
+NIN	1	fusion	MPN	
+OMD	2	fusion	aneurysmal bone cyst	
+PML	1	TSG, fusion	APL, ALL	
+QKI	1	oncogene, TSG	angiocentric glioma, colorectal cancer	
+RB1	1	TSG	retinoblastoma, sarcoma, breast, small cell lung carcinoma	retinoblastoma, sarcoma, breast, small cell lung carcinoma
+REL	1	oncogene	Hodgkin lymphoma	
+RET	1	oncogene, fusion	medullary thyroid, papillary thyroid, pheochromocytoma, NSCLC, Spitzoid tumour	medullary thyroid,  papillary thyroid, pheochromocytoma
+SET	1	oncogene, fusion	T-ALL	
+SKI	2	oncogene	melanoma	
+SMO	1	oncogene	skin basal cell	
+SRC	1	oncogene	colorectal cancer, endometrial carcinoma	
+SYK	1	oncogene, fusion	MDS, peripheral T-cell lymphoma	
+TEC	2	oncogene, fusion	myxoid chondrosarcoma	
+TFG	1	fusion	papillary thyroid, ALCL, NSCLC, extraskeletal myxoid chondrosarcoma	
+TNC	2	oncogene	SCC, melanoma	
+TPR	1	fusion	papillary thyroid, NSCLC	
+TRA	1	fusion	T-ALL	
+TRB	1	fusion	T-ALL	
+TRD	1	fusion	T-cell leukaemia	
+VHL	1	TSG	renal, haemangioma, pheochromocytoma	renal, haemangioma, pheochromocytoma
+WAS	1	oncogene		lymphoma
+WRN	1	TSG		osteosarcoma, meningioma, other tumour types
+WT1	1	oncogene, TSG, fusion	Wilms tumour, desmoplastic small round cell tumour	Wilms tumour
+XPA	1	TSG		skin basal cell, skin squamous cell, melanoma
+XPC	1	TSG		skin basal cell, skin squamous cell, melanoma
+A1CF	2	oncogene	melanoma	
+ABI1	1	TSG, fusion	AML	
+ABL1	1	oncogene, fusion	CML, ALL, T-ALL	
+ABL2	1	oncogene, fusion	AML	
+AFDN	1	oncogene, fusion	AL	
+AFF1	1	fusion	AL	
+AFF3	1	oncogene, fusion	ALL, T-ALL	
+AFF4	1	oncogene, fusion	ALL	
+AKT1	1	oncogene	breast, colorectal, ovarian, NSCLC	
+AKT2	1	oncogene	ovarian, pancreatic	
+AKT3	2	oncogene	GBM	
+ANK1	2		CCRCC	
+ARAF	2	oncogene	cholangiocarcinoma, lung adenocarcinoma, Langerhans cell histiocytosis	
+ARNT	1	oncogene, TSG, fusion	AML	
+ATF1	1	oncogene, fusion	malignant melanoma of soft parts, angiomatoid fibrous histiocytoma	
+ATIC	1	fusion	ALCL	
+ATRX	1	TSG	pancreatic neuroendocrine tumours, paediatric GBM	
+BAP1	1	TSG	uveal melanoma, breast, NSCLC, RCC	mesothelioma, skin and uveal melanoma, kidney cancer
+BCL2	1	oncogene, fusion	NHL, CLL	
+BCL3	1	oncogene, fusion	CLL	
+BCL6	1	oncogene, fusion	NHL, CLL	
+BCL9	1	oncogene, fusion	B-ALL	
+BCOR	1	TSG, fusion	retinoblastoma, AML, APL (translocation)	
+BMP5	2		melanoma	
+BRAF	1	oncogene, fusion	melanoma, colorectal, papillary thyroid, borderline ovarian, NSCLC, cholangiocarcinoma, pilocytic astrocytoma, Spitzoid tumour, pancreas acinar carcinoma, melanocytic nevus, prostate, gastric	
+BRD3	1	oncogene, fusion	lethal midline carcinoma of young people	
+BRD4	1	oncogene, fusion	lethal midline carcinoma of young people	
+BTG1	1	TSG, fusion	B-CLL	
+BTG2	2	TSG	DLBCL	
+CALR	1	oncogene	MPN, MDS	
+CARS	1	TSG, fusion	ALCL	
+CBFB	1	TSG, fusion	AML	
+CBLB	1	TSG	AML	
+CBLC	1	oncogene, TSG	AML	
+CCNC	2	TSG	T-ALL	
+CCR4	2	oncogene	adult T-cell leukaemia/lymphoma	
+CCR7	2	oncogene	adult T-cell leukaemia/lymphoma	
+CD28	2	oncogene	T-cell lymphoma	
+CD74	1	oncogene, fusion	NSCLC	
+CDH1	1	TSG	lobular breast, gastric	gastric
+CDK4	1	oncogene		melanoma
+CDK6	1	oncogene, fusion	ALL	
+CDX2	1	TSG, fusion	AML	
+CHD2	2	TSG	melanoma, large intestine, CLL, monoclonal B lymphocytosis	
+CHD4	1	oncogene	uterine serous carcinoma	
+CLP1	2	fusion	AML	
+CLTC	1	TSG, fusion	ALCL, renal	
+CNBP	1	TSG, fusion	aneurysmal bone cyst	
+CTCF	1	TSG	endometrial, breast, head and neck cancer	
+CUL3	2	TSG	lung cancer	
+CUX1	1	oncogene, TSG	endometrial, melanoma, colorectal, AML, MDS, other tumour types	
+CYLD	1	TSG	cylindroma	cylindroma
+DAXX	1	oncogene, TSG	pancreatic neuroendocrine tumour, paediatric glioblastoma	
+DDB2	1	oncogene, TSG		skin basal cell, skin squamous cell, melanoma
+DDR2	1	oncogene	squamous cell carcinoma, NSCLC	
+DDX5	1	oncogene, fusion	prostate	
+DDX6	1	oncogene, fusion	B-NHL	
+DNM2	1	TSG	T-ALL	
+EBF1	1	TSG, fusion	lipoma	
+EGFR	1	oncogene	glioma, NSCLC	NSCLC
+ELF3	2	TSG	pancreatic cancer	
+ELF4	1	oncogene, TSG, fusion	AML	
+ELK4	1	oncogene, fusion	prostate	
+EML4	1	fusion	NSCLC	
+ERC1	1	fusion	papillary thyroid, Spitzoid tumour	
+ESR1	1	oncogene, TSG, fusion	breast	
+ETV1	1	oncogene, fusion	Ewing sarcoma, prostate	
+ETV4	1	oncogene, fusion	Ewing sarcoma, prostate carcinoma	
+ETV5	1	oncogene, fusion	prostate	
+ETV6	1	TSG, fusion	congenital fibrosarcoma, multiple different leukaemia and lymphoma tumour types including ALL, secretory breast, MDS	
+EXT1	1	TSG, fusion		exostoses, osteosarcoma
+EXT2	1	TSG		exostoses, osteosarcoma
+EZH2	1	oncogene, TSG	DLBCL	
+FAT1	1	TSG	oral squamous cell, chemorefractory CLL, head and neck, pancreatic acinar cell carcinoma	pancreatic
+FAT3	2		SCC, colon adenocarcinoma, gastric adenocarcinoma	
+FAT4	1	TSG	lymphoma, pancreatic, head and neck, melanoma, hepatocellular carcinoma	
+FEN1	2	TSG		breast cancer
+FHIT	1	TSG, fusion	pleomorphic salivary gland adenoma	
+FLCN	1	TSG		renal, fibrofolliculomas, trichodiscomas
+FLI1	1	oncogene, fusion	Ewing sarcoma	
+FLNA	2		phyllodes tumour of the breast	
+FLT3	1	oncogene	AML, ALL	
+FLT4	1	oncogene	soft tissue sarcoma	
+GAS7	1	fusion	AML*	
+GLI1	2	oncogene, fusion	CRC, oesophagus cancer	
+GMPS	2	fusion	AML	
+GNAQ	1	oncogene	uveal melanoma, primary central nervous system melanocytic neoplasms	
+GNAS	1	oncogene	pituitary adenoma, pancreatic intraductal papillary mucinous neoplasm, fibrous dysplasia	
+GOPC	1	fusion	glioblastoma, cholangiocarcinoma, borderline ovarian	
+GPC3	1	oncogene, TSG		Wilms tumour
+GPC5	2	TSG	lung adenocarcinoma	
+GPHN	1	fusion	AL	
+GRM3	2	oncogene	melanoma, oral SCC	
+HEY1	1	oncogene, fusion	mesenchymal chondrosarcoma	
+HIP1	1	oncogene, fusion	CMML, NSCLC	
+HRAS	1	oncogene	infrequent sarcomas, rare other tumour types	rhabdomyosarcoma, ganglioneuroblastoma, bladder
+IDH1	1	oncogene	glioblastoma	
+IDH2	1	oncogene	glioblastoma	
+IL7R	1	oncogene	ALL, ETP ALL	
+IRF4	1	oncogene, TSG, fusion	MM	
+IRS4	1	oncogene, TSG	glioma, rhabdomyosarcoma, melanoma, breast cancer, T-ALL	
+JAK1	1	oncogene, TSG	ALL	
+JAK2	1	oncogene, fusion	ALL, AML, MPN,  CML	
+JAK3	1	oncogene	acute megakaryocytic leukaemia, ETP ALL	
+KAT7	2	oncogene	CCRCC	
+KDSR	1	fusion	B-NHL	
+KLF4	1	oncogene, TSG	meningioma	
+KLF6	1	TSG	prostate, glioma	
+KLK2	1	fusion	prostate	
+KNL1	1	TSG, fusion	AML	
+KRAS	1	oncogene	pancreatic, colorectal, lung, thyroid, AML, other tumour types	
+KTN1	1	fusion	papillary thyroid	
+LCP1	2	fusion	NHL	
+LEF1	1	oncogene, TSG	B-ALL, T-ALL, eyelid sebaceous carcinoma, AML, lymphomas	
+LIFR	1	fusion	salivary adenoma	
+LMNA	1	fusion	Spitzoid tumour	
+LMO1	1	oncogene, fusion	T-ALL, neuroblastoma	neuroblastoma
+LMO2	1	oncogene, fusion	T-ALL	
+LYL1	1	oncogene, fusion	T-ALL	
+MAFB	1	oncogene, fusion	MM	
+MDM2	1	oncogene	sarcoma, glioma, colorectal, other tumour types	
+MDM4	1	oncogene	glioblastoma, bladder, retinoblastoma	
+MDS2	2	fusion	MDS	
+MEN1	1	TSG	parathyroid tumours, pancreatic neuroendocrine tumour	parathyroid adenoma, pituitary adenoma, pancreatic islet cell, carcinoid
+MGMT	2	TSG	glioma	
+MITF	1	oncogene	melanoma	
+MLF1	1	TSG, fusion	AML	
+MLH1	1	TSG	colorectal, endometrial, ovarian, CNS tumours	colorectal, endometrial, ovarian, CNS
+MNX1	2	fusion	AML	
+MSH2	1	TSG	colorectal, endometrial, ovarian	colorectal, endometrial, ovarian
+MSH6	1	TSG	colorectal	colorectal, endometrial, ovarian
+MSI2	1	oncogene, fusion	CML	
+MTOR	1	oncogene	endometrial carcinoma, head and neck, clear cell renal cell carcinoma, anaplastic thyroid cancer, urothelial cell carcinoma, central nervous system tumours, testicular germ cell tumours and other tumour types	
+MUC1	1	fusion	B-NHL	
+MUC4	2	oncogene	HNSCC	
+MYCL	1	oncogene	small cell lung carcinoma	
+MYCN	1	oncogene	neuroblastoma, Wilms tumour	
+MYH9	1	TSG, fusion	ALCL	
+NAB2	1	TSG, fusion	solitary fibrous tumour, meningeal haemangiopericytoma	
+NACA	2	fusion	NHL	
+NBEA	2		large intestine carcinoma, multiple myeloma	
+NFIB	1	fusion	adenoid cystic carcinoma, lipoma	
+NONO	1	fusion	papillary renal	
+NPM1	1	oncogene, fusion	NHL, APL, AML	
+NRAS	1	oncogene	melanoma, MM, AML, thyroid	
+NRG1	1	TSG, fusion	NSCLC	
+NSD1	1	fusion	AML	
+NSD2	1	oncogene, fusion	MM	
+NSD3	1	oncogene, fusion	AML	
+PAX3	1	oncogene, fusion	alveolar rhabdomyosarcoma	
+PAX5	1	oncogene, TSG, fusion	NHL, ALL, B-ALL	
+PAX7	1	fusion	alveolar rhabdomyosarcoma	
+PAX8	1	fusion	follicular thyroid	
+PBX1	1	oncogene, fusion	pre B-ALL, myoepithelioma	
+PCM1	1	fusion	papillary thyroid, CML, MPN	
+PER1	1	TSG, fusion	AML, CMML	
+PHF6	1	TSG	ETP ALL	
+PIM1	1	oncogene, fusion	NHL	
+PMS1	2			colorectal, endometrial, ovarian
+PMS2	1	TSG		colorectal, endometrial, ovarian, medulloblastoma, glioma
+POLE	1	TSG	colorectal carcinoma, endometrioid carcinoma, stomach carcinoma, skin cancer	colorectal cancer susceptibility
+POLG	2	TSG	CRC	
+POLQ	1	oncogene, TSG	oral SCC	breast cancer
+POT1	1	TSG	CLL	
+PRCC	1	fusion	papillary renal	
+PRF1	1	TSG		various leukaemia, lymphoma
+PTEN	1	TSG	glioma, prostate, endometrial	harmartoma, glioma, prostate, endometrial
+PTK6	1	oncogene, TSG	renal, gastric, head and neck, ovarian, others	
+RAC1	1	oncogene	melanoma, carcinoma	
+RAF1	1	oncogene, fusion	pilocytic astrocytoma, prostate	
+RARA	1	oncogene, fusion	APL	
+RGS7	2		melanoma	
+RHOA	1	oncogene, TSG	diffuse gastric, T cell lymphomas, paediatric Burkitt lymphoma	
+RHOH	1	TSG, fusion	NHL	
+RMI2	1	TSG, fusion	PMBL, Hodgkin lymphoma	
+ROS1	1	oncogene, fusion	glioblastoma, NSCLC, Spitzoid tumour, cholangiocarcinoma, borderline ovarian	
+RPL5	1	TSG	T-ALL	
+RPN1	1	fusion	AML	
+SBDS	1	TSG		AML, MDS
+SDC4	1	fusion	NSCLC	
+SDHA	1	TSG	GIST, paraganglioma	paraganglioma
+SDHB	1	TSG		paraganglioma, pheochromocytoma
+SDHC	1	TSG		paraganglioma, pheochromocytoma
+SDHD	1	TSG		paraganglioma, pheochromocytoma
+SFPQ	1	TSG, fusion	papillary renal	
+SGK1	2	oncogene	Nodular lymphocyte predominant Hodgkin lymphoma	
+SIX1	1	oncogene	Wilms tumour	
+SIX2	2	oncogene	Wilms tumour	
+SND1	1	oncogene, fusion	pancreas acinar carcinoma	
+SOX2	1	oncogene	NSCLC, oesophageal squamous carcinoma	
+SPEN	1	TSG	SMZL, adenoid cystic carcinoma, DLBCL	
+SPOP	1	TSG	prostate, endometrial	prostate cancer
+SS18	1	fusion	synovial sarcoma	
+SSX1	1	oncogene, fusion	synovial sarcoma	
+SSX2	1	oncogene, fusion	synovial sarcoma	
+SSX4	1	oncogene, fusion	synovial sarcoma	
+STIL	1	oncogene, fusion	T-ALL	
+STRN	1	fusion	anaplastic thyroid, papillary thyroid, lung	
+SUFU	1	TSG	medulloblastoma	medulloblastoma
+TAL1	1	oncogene, fusion	lymphoblastic leukaemia/biphasic	
+TAL2	1	oncogene, fusion	T-ALL	
+TBX3	1	oncogene, TSG	breast, large intestine, skin	
+TCF3	1	oncogene, TSG, fusion	pre B-ALL	
+TERT	1	oncogene, TSG	melanoma, glioblastoma, hepatocellular carcinoma, bladder, skin basal cell, skin squamous cell, mesothelioma, medulloblastoma, other tumour types	melanoma
+TET1	1	oncogene, TSG, fusion	AML	
+TET2	1	TSG	MDS	
+TFE3	1	oncogene, fusion	papillary renal, alveolar soft part sarcoma, renal	
+TFEB	1	oncogene, fusion	renal cell carcinoma (childhood epithelioid)	
+TFPT	2	fusion	pre-B ALL	
+TFRC	2	fusion	NHL	
+TLX1	1	oncogene, fusion	T-ALL	
+TLX3	1	oncogene, fusion	T-ALL	
+TOP1	1	fusion	AML*	
+TP53	1	oncogene, TSG, fusion	breast, colorectal, lung, sarcoma, adrenocortical, glioma, Spitzoid tumour, multiple other tumour types	breast, sarcoma, adrenocortical carcinoma, glioma, multiple other tumour types
+TP63	1	oncogene, TSG	HNSCC, DLBCL	NSCLC
+TPM3	1	TSG, fusion	papillary thyroid, ALCL, NSCLC, Spitzoid tumour	
+TPM4	1	fusion	ALCL	
+TSC1	1	TSG	renal cell carcinoma, bladder carcinoma	hamartoma, renal cell carcinoma, tuberous sclerosis tuber
+TSC2	1	TSG	pulmonary lymphangioleiomyomatosis (LAM), renal angiomyolipoma, HNSCC	hamartoma, renal cell carcinoma, tuberous sclerosis tuber
+TSHR	1	oncogene	toxic thyroid adenoma	thyroid adenoma
+UBR5	1	oncogene	mantle cell lymphoma, gastric, colorectal	
+USP6	1	oncogene, fusion	aneurysmal bone cyst	
+USP8	1	oncogene	corticotroph adenoma	
+VAV1	2	fusion	T-cell lymphoma	
+WDCP	1	fusion	colorectal	
+WIF1	1	TSG, fusion	pleomorphic salivary gland adenoma	
+WNK2	2	TSG	gastric cancer	
+XPO1	1	oncogene	CLL	
+ZEB1	2	oncogene	CCRCC, melanoma	
+ACKR3	1	oncogene, fusion	lipoma	
+ACSL3	1	fusion	prostate	
+ACSL6	2	fusion	AML, AEL	
+ACVR1	1	oncogene	DIPG	
+AKAP9	2	fusion	papillary thyroid	
+ALDH2	2	fusion	leiomyoma	
+AMER1	1	TSG	Wilms tumour	
+ARID2	1	TSG	hepatocellular carcinoma	
+ASXL1	1	TSG	MDS, CMML	
+ASXL2	2	TSG	melanoma, CCRCC, AML	
+AXIN1	1	TSG	colorectal, endometrial, prostate, hepatocellular carcinoma, hepatoblastoma, sporadic medulloblastoma	
+AXIN2	1	TSG	colorectal carcinoma, stomach carcinoma, hepatocellular carcinoma	colorectal carcinoma
+BARD1	1	TSG	breast cancer	ovarian cancer, breast cancer, endometrioid cancer
+BAZ1A	2	TSG	uterine carcinosarcoma, colon cancer	
+BCL10	1	TSG, fusion	MALT	
+BCL7A	1	fusion	BNHL	
+BCL9L	1	oncogene, TSG	colorectal cancer, endometrial carcinoma, gastric cancer	
+BIRC3	1	oncogene, TSG, fusion	CLL, MALT, MCL, MM	
+BIRC6	2	oncogene, fusion	melanoma, gastric adenocarcinoma, lung adenocarcinoma	
+BRCA1	1	TSG	ovarian	breast, ovarian
+BRCA2	1	TSG	breast, ovarian, pancreatic	breast, ovarian, pancreatic, leukaemia  (FANCB, FANCD1)
+BRIP1	1	TSG		AML, leukaemia, breast
+BUB1B	1	TSG		rhabdomyosarcoma
+CANT1	1	fusion	prostate	
+CASP3	2	TSG	ovarian cancer	
+CASP8	1	TSG	hepatocellular, oral squamous cell, breast	
+CASP9	2	TSG	glioma	
+CCDC6	1	TSG, fusion	papillary thyroid, CML, NSCLC	
+CCND1	1	oncogene, fusion	CLL, B-ALL, breast	
+CCND2	1	oncogene, fusion	NHL,CLL	
+CCND3	1	oncogene, fusion	MM	
+CCNE1	1	oncogene	serous ovarian	
+CD209	2		prostate carcinoma	
+CD274	1	TSG, fusion	PMBL, Hodgkin lymphoma	
+CD79A	1	oncogene	DLBCL, WM	
+CD79B	1	oncogene	DLBCL, WM	
+CDC73	1	TSG	parathyroid adenoma	parathyroid adenoma, multiple ossifying jaw fibroma
+CDH10	2	TSG	melanoma	pancreatic ductal adenocarcinoma
+CDH11	1	TSG, fusion	aneurysmal bone cyst	
+CDH17	2	oncogene	melanoma	
+CDK12	1	TSG	serous ovarian	
+CEBPA	1	TSG	AML, MDS	
+CEP89	2	fusion	Spitzoid tumour	
+CHEK2	1	TSG		breast
+CHIC2	2	fusion	AML	
+CIITA	1	TSG, fusion	PMBL, Hodgkin lymphoma	
+CLIP1	1	fusion	Spitzoid tumour	
+CNBD1	2		gastric cancer, colon cancer	
+CNOT3	1	TSG	T-ALL	
+CNTRL	1	fusion	MPN, NHL	
+COX6C	2	fusion	uterine leiomyoma	
+CPEB3	2	TSG	lung cancer	
+CREB1	1	oncogene, fusion	clear cell sarcoma, angiomatoid fibrous histiocytoma	
+CRLF2	1	oncogene, fusion	B-ALL, Downs associated ALL	
+CRTC1	1	oncogene, fusion	salivary gland mucoepidermoid	
+CRTC3	1	fusion	salivary gland mucoepidermoid	
+CSF1R	2	oncogene	MDS, CML, AML, hemangioblastoma, CCRCC	
+CSF3R	1	oncogene	aCML, CNL,  leukaemia lymphoma and MDS associated with severe congenital neutropenia, CMML, de novo AML, MDS	
+CSMD3	2	TSG	ovarian cancer, oral SCC, lung cancer	
+CXCR4	1	oncogene	WM	
+DCTN1	1	fusion	inflammatory myofibroblastic tumour, Spitzoid tumour	
+DDIT3	1	oncogene, fusion	liposarcoma	
+DDX10	1	TSG, fusion	AML*	
+DDX3X	1	TSG	CLL, medulloblastoma	
+DGCR8	2	oncogene	Wilms tumour	
+ECT2L	2		ETP ALL	
+EIF3E	1	TSG, fusion	colorectal	
+EP300	1	TSG, fusion	colorectal, breast, pancreatic, AML, ALL, DLBCL	
+EPAS1	1	oncogene, TSG	paraganglioma, pheochromocytoma, central nervous system hemangioblastomas	
+EPHA3	2		lung cancer, CRC, melanoma	
+EPHA7	2		CRC, melanoma	
+EPS15	1	TSG, fusion	ALL	
+ERBB2	1	oncogene, fusion	breast, ovarian, other tumour types, NSCLC, gastric	
+ERBB3	1	oncogene	colon, gastric, head and neck, bladder, skin	
+ERBB4	1	oncogene, TSG	melanoma, gastric, NSCLC	
+ERCC2	1	TSG		skin basal cell, skin squamous cell, melanoma
+ERCC3	1	TSG		skin basal cell, skin squamous cell, melanoma
+ERCC4	1	TSG		skin basal cell, skin squamous cell, melanoma
+ERCC5	1	TSG		skin basal cell, skin squamous cell, melanoma
+ETNK1	1	TSG	aCML, CMML, SM-AHD, HES	
+EWSR1	1	oncogene, fusion	Ewing sarcoma, desmoplastic small round cell tumour , ALL, clear cell sarcoma, sarcoma, myoepithelioma, mesothelioma	
+FANCA	1	TSG		AML, leukaemia
+FANCC	1	TSG		AML, leukaemia
+FANCE	1	TSG		AML, leukaemia
+FANCF	1	TSG		AML, leukaemia
+FANCG	1	TSG		AML, leukaemia
+FBLN2	2	TSG	breast cancer, colorectal adenocarcinoma	
+FBXW7	1	TSG	colorectal, endometrial, T-ALL	
+FCRL4	1	oncogene, fusion	B-NHL	
+FGFR1	1	oncogene, fusion	MPN, NHL, salivary adenoma	
+FGFR2	1	oncogene, fusion	gastric, NSCLC, endometrial	
+FGFR3	1	oncogene, fusion	bladder, MM, T-cell lymphoma	
+FGFR4	1	oncogene	rhabdomyosarcoma	
+FKBP9	2		glioma	
+FNBP1	2	fusion	AML	
+FOXA1	1	oncogene	breast, prostate	
+FOXL2	1	oncogene, TSG	granulosa-cell tumour of the ovary	
+FOXO1	1	oncogene, TSG, fusion	alveolar rhabdomyosarcoma	
+FOXO3	1	oncogene, TSG, fusion	AL	
+FOXO4	1	oncogene, TSG, fusion	AL, soft tissue sarcoma	
+FOXP1	1	oncogene, fusion	ALL	
+FOXR1	2	oncogene, fusion	neuroblastoma	
+FSTL3	1	oncogene, fusion	B-CLL	
+FUBP1	1	oncogene	oligodendroglioma	
+GATA1	1	oncogene, TSG	megakaryoblastic leukaemia of Downs syndrome	
+GATA2	1	oncogene	AML (CML blast transformation)	
+GATA3	1	oncogene, TSG	breast	
+GNA11	1	oncogene	uveal melanoma, primary central nervous system melanocytic neoplasms	
+H3F3A	1	oncogene	glioma	
+H3F3B	1	oncogene	chondroblastoma	
+HIF1A	1	oncogene	endometrioid carcinoma, glioblastoma, colorectal, renal, lung, pancreatic	
+HLA-A	1	fusion	Spitzoid tumour	
+HMGA1	1	oncogene, fusion	microfollicular thyroid adenoma, various benign mesenchymal tumours	
+HMGA2	1	oncogene, fusion	lipoma, leiomyoma, pleomorphic salivary gland adenoma	
+HNF1A	1	TSG	hepatic adenoma, hepatocellular	hepatic adenoma, hepatocellular carcinoma
+HOOK3	1	fusion	papillary thyroid	
+HOXA9	1	oncogene, TSG, fusion	AML*	
+IKBKB	1	oncogene	SMZL	
+IKZF1	1	TSG, fusion	ALL, DLBCL	
+IKZF3	1	oncogene, TSG, fusion	B-ALL, CLL, breast cancer, colorectal cancer	
+IL21R	1	fusion	NHL	
+IL6ST	1	oncogene	hepatocellular carcinoma	
+ITGAV	2		large intestine carcinoma	
+JAZF1	2	fusion	endometrial stromal tumour	
+KAT6A	1	oncogene, fusion	AML	
+KAT6B	1	TSG, fusion	AML, leiomyoma	
+KCNJ5	1	oncogene	adrenal adenoma	
+KDM5A	1	oncogene, fusion	AML	
+KDM5C	1	TSG	clear cell renal carcinoma	
+KDM6A	1	oncogene, TSG	renal cell carcinoma, bladder carcinoma, oesophageal SCC, MM, medulloblastoma, T-ALL, other tumour types	
+KEAP1	1	TSG	NSCLC, breast carcinoma	
+KIF5B	1	fusion	NSCLC, Spitzoid tumour	
+KMT2A	1	oncogene, fusion	AML, ALL	
+KMT2C	1	TSG	medulloblastoma	
+KMT2D	1	oncogene, TSG	medulloblastoma, renal	
+LASP1	1	fusion	AML	
+LATS1	1	TSG	skin basal cell carcinoma	
+LATS2	1	TSG	malignant mesothelioma	
+LRIG3	1	TSG, fusion	NSCLC	
+LRP1B	1	TSG	CLL, ovarian cancer, oesophageal squamous cell carcinoma, urothelial cancer	
+LZTR1	1	TSG	glioblastoma	glioblastoma, schwannoma
+MACC1	2	oncogene	liver, CRC	
+MALT1	1	oncogene, fusion	MALT	
+MAML2	1	oncogene, fusion	salivary gland mucoepidermoid	
+MAPK1	1	oncogene	CLL, ovarian mixed germ cell tumour, cervical carcinoma	
+MECOM	1	oncogene, fusion	AML, CML, MDS	
+MED12	1	TSG	uterine leiomyoma, fibroadenoma, phyllodes tumour	
+MLLT1	1	fusion	AL	
+MLLT3	1	fusion	ALL	
+MLLT6	1	fusion	AL	
+MRTFA	1	oncogene, TSG, fusion	acute megakaryocytic leukaemia	
+MTCP1	1	oncogene, fusion	T cell prolymphocytic leukaemia	
+MUC16	2	oncogene	HNSCC, melanoma	
+MUTYH	1	TSG		colorectal
+MYD88	1	oncogene	ABC-DLBCL	
+MYH11	1	fusion	AML	
+MYO5A	1	fusion	Spitzoid tumour	
+MYOD1	1	oncogene	embryonal rhabdomyosarcoma	
+N4BP2	2	TSG	lung cancer	
+NCOA1	1	fusion	alveolar rhabdomyosarcoma	
+NCOA2	1	oncogene, fusion	AML, chondrosarcoma, rhabdomyosarcoma	
+NCOA4	1	TSG, fusion	papillary thyroid	
+NCOR1	1	TSG	breast	
+NCOR2	1	TSG	prostate	
+NDRG1	1	TSG, fusion	prostate	
+NFKB2	1	oncogene, TSG, fusion	B-NHL	
+NR4A3	1	oncogene, fusion	extraskeletal myxoid chondrosarcoma	
+NT5C2	1	oncogene	relapse ALL	
+NTHL1	2	TSG		CRC
+NTRK1	1	oncogene, TSG, fusion	papillary thyroid, Spitzoid tumour	
+NTRK3	1	oncogene, fusion	congenital fibrosarcoma, secretory breast	
+NUMA1	1	fusion	APL	
+NUP98	1	oncogene, fusion	AML	
+NUTM1	1	oncogene, fusion	lethal midline carcinoma	
+OLIG2	1	oncogene, fusion	T-ALL	
+P2RY8	1	oncogene, fusion	B-ALL, Down syndrome associated ALL	
+PALB2	1	TSG		Wilms tumour, medulloblastoma, AML ,breast
+PATZ1	1	TSG, fusion	Ewing sarcoma	
+PBRM1	1	TSG	clear cell renal carcinoma, breast	
+PCBP1	2		CRC	
+PDGFB	1	oncogene, fusion	DFSP	
+PLAG1	1	oncogene, fusion	salivary adenoma, lipoblastoma	
+PLCG1	1	oncogene, fusion	angiosarcoma	
+POLD1	1	TSG	CRC	CRC
+PPARG	1	TSG, fusion	follicular thyroid	
+PPM1D	1	oncogene	glioma, ovarian cancer, breast cancer	
+PPP6C	1	TSG	melanoma	
+PRDM1	1	TSG	DLBCL	
+PRDM2	2	TSG	glioma, colon adenocarcinoma, gastric carcinoma, ovarian carcinoma, HNSCC	
+PREX2	1	oncogene	melanoma, pancreatic ductal adenocarcinoma	
+PRKCB	2		adult T-cell lymphoma-leukaemia	
+PRKD1	2	fusion	cribriform adenocarcinoma of the minor salivary glands, polymorphous adenocarcinoma of the minor salivary glands	
+PRRX1	1	fusion	AML	
+PSIP1	1	oncogene, fusion	AML	
+PTCH1	1	TSG	skin basal cell, medulloblastoma	skin basal cell, medulloblastoma
+PTPN6	2	TSG	DLBCL	
+PTPRB	1	TSG	angiosarcoma	
+PTPRC	1	TSG	T-ALL	
+PTPRD	2	TSG	lung cancer, kidney cancer, HNSCC, glioblastoma	
+PTPRK	1	TSG, fusion	colorectal	
+PTPRT	1	TSG	HNSCC, colorectal cancer, gastric cancer, lung cancer, melanoma	
+RAD17	2	TSG	lymphoma, colon cancer	
+RAD21	1	oncogene, TSG	AML, endometrium, colorectal, lung	
+RBM10	1	TSG	lung adenocarcinoma	
+RBM15	1	fusion	acute megakaryocytic leukaemia	
+RFWD3	2	TSG	lung cancer	
+RGPD3	2		endometrioid adenocarcinoma	
+RNF43	1	TSG	cholangiocarcinoma, ovary, pancreas	
+ROBO2	2	TSG	colorectal adenocarcinoma, melanoma	
+RPL10	1	TSG	T-ALL	
+RPL22	1	TSG, fusion	AML, CML	
+RSPO2	1	TSG, fusion	colorectal	
+RSPO3	1	oncogene, fusion	colorectal	
+RUNX1	1	oncogene, TSG, fusion	AML, pre B-ALL, T-ALL	
+SALL4	1	oncogene	colorectal cancer, breast cancer, prostate cancer, glioblastoma, melanoma	
+SEPT5	2	fusion	AML	
+SEPT6	2	fusion	AML	
+SEPT9	2	fusion	AML*	
+SETD2	1	TSG	clear cell renal carcinoma	
+SF3B1	1	oncogene	myelodysplastic syndrome	
+SFRP4	1	TSG	colorectal cancer, melanoma, SCC, gastric cancer, oesophageal SCC	
+SH2B3	1	TSG	MPN, sAML, erythrocytosis, B-ALL	
+SHTN1	2	fusion	Spitzoid tumour	
+SIRPA	2	TSG	HNSCC, colorectal cancer, Lung SCC	
+SMAD2	1	TSG	colorectal carcinoma, hepatocellular carcinoma	
+SMAD3	1	TSG	colorectal carcinoma, oral squamous cell carcinoma	
+SMAD4	1	TSG	colorectal, pancreatic, small intestine	gastrointestinal polyp
+SMC1A	2	TSG	AML	
+SNX29	2	fusion	PMBL, Hodgkin lymphoma	
+SOCS1	1	TSG	Hodgkin lymphoma, PMBL	
+SOX21	2	TSG	multiple myeloma	
+SRSF2	1	oncogene	MDS, CLL	
+SRSF3	1	oncogene, fusion	follicular lymphoma	
+STAG1	2	TSG	colorectal cancer, AML	
+STAG2	1	TSG	bladder carcinoma, glioblastoma, melanoma, Ewing's sarcoma, myeloid neoplasms	
+STAT3	1	oncogene	T-cell large granular lymphocytic leukaemia	paediatric large granular lymphocytic leukaemia
+STAT6	1	oncogene, fusion	solitary fibrous tumour, meningeal haemangiopericytoma	
+STK11	1	TSG	NSCLC, pancreatic	jejunal hamartoma, ovarian, testicular, pancreatic
+SUZ12	1	oncogene, TSG, fusion	endometrial stromal tumour	
+TAF15	1	oncogene, fusion	extraskeletal myxoid chondrosarcoma, ALL	
+TCEA1	1	fusion	salivary adenoma	
+TCF12	1	fusion	extraskeletal myxoid chondrosarcoma	
+TCL1A	1	oncogene, fusion	T-CLL	
+TRAF7	1	TSG	meningioma	
+TRRAP	1	oncogene	melanoma	
+U2AF1	1	oncogene	CLL, MDS	
+USP44	2	TSG	lung cancer, colon cancer	
+USP9X	2	fusion	colon carcinoma	colon carcinoma
+VTI1A	2	fusion	colorectal	
+WWTR1	1	oncogene, fusion	epithelioid haemangioendothelioma	
+YWHAE	1	TSG, fusion	endometrial stromal sarcoma	
+ZFHX3	1	TSG	endometrial, gastric, prostate	
+ZMYM2	1	fusion	MPN, NHL	
+ZMYM3	2	TSG	CRC, breast cancer	
+ZNRF3	2	TSG	colorectal cancer, adrenocortical carcinoma, gastric cancer	
+ZRSR2	1	TSG	MDS, CLL	
+ACVR1B	1	TSG	pancreatic cancer	
+ACVR2A	1	TSG	large intestine carcinoma, stomach carcinoma, pancreatic carcinoma, biliary tract, oesophagus	
+ARID1A	1	TSG, fusion	clear cell ovarian carcinoma, RCC, breast	
+ARID1B	1	TSG	breast, hepatocellular carcinoma, clear cell ovarian carcinoma	
+ATP1A1	1	oncogene, TSG	adrenal aldosterone producing adenoma	
+ATP2B3	1	TSG	adrenal aldosterone producing adenoma	
+BCL11A	1	oncogene, fusion	B-CLL	
+BCL11B	1	oncogene, TSG, fusion	T-ALL	
+BCLAF1	2		melanoma, SCC	
+BCORL1	1	oncogene, TSG	AML, HNSCC	
+BMPR1A	1	oncogene, TSG		gastrointestinal polyps
+CAMTA1	1	TSG, fusion	epithelioid haemangioendothelioma	
+CARD11	1	oncogene	DLBCL	
+CDKN1A	2	oncogene, TSG	bladder cancer	
+CDKN1B	1	TSG	breast, small intestine neuroendocrine tumours	pituitary, parathyroid
+CDKN2A	1	TSG	melanoma, multiple other tumour types	melanoma, pancreatic
+CDKN2C	1	TSG	glioma, MM	
+CHCHD7	1	fusion	salivary adenoma	
+CHST11	2	oncogene, fusion	B-CLL	
+CLTCL1	1	TSG, fusion	ALCL	
+COL1A1	1	fusion	DFSP, aneurysmal bone cyst	
+COL2A1	1	fusion	chondrosarcoma, enchondroma	
+COL3A1	2	fusion	lipoblastoma	
+CREBBP	1	oncogene, TSG, fusion	ALL, AML, DLBCL, B-NHL	
+CRNKL1	2		base cell carcinoma	
+CTNNA1	2	TSG, fusion	AML, MDS, cutaneous melanoma	gastric cancer
+CTNNA2	2	oncogene	gastric cancer	
+CTNNB1	1	oncogene, fusion	colorectal, ovarian,  hepatoblastoma, pleomorphic salivary gland adenoma, other tumour types	
+CTNND1	2		large intestine carcinoma	
+CTNND2	2	oncogene	prostae adenocarcinoma, GIST	
+CYP2C8	2		melanoma	
+DICER1	1	TSG	sex cord-stromal tumour, TGCT, embryonal rhabdomyosarcoma, pleuropulmonary blastoma, pituitary blastoma, Wilms tumour, thyroid cancer, other tumour types	pleuropulmonary blastoma
+DNAJB1	1	fusion	fibrolamellar hepatocellular carcinoma	
+DNMT3A	1	TSG	AML	
+DROSHA	1	TSG	Wilms tumour, NSCLC, bladder carcinoma	
+DUX4L1	2	fusion	soft tissue sarcoma	
+EIF1AX	2		uveal melanoma, thyroid cancer (PDTC and ATC), low grade serous ovarian cancer	
+EIF4A2	1	fusion	NHL	
+FAM47C	2		melanoma, clear cell sarcoma of soft parts, SCLC	
+FANCD2	1	TSG		AML, leukaemia
+FBXO11	1	TSG	DLBCL	
+FCGR2B	1	oncogene, fusion	ALL	
+FIP1L1	1	fusion	idiopathic hypereosinophilic syndrome	
+GOLGA5	1	fusion	papillary thyroid, Spitzoid tumour	
+GRIN2A	1	TSG	melanoma, colorectal carcinoma, gastric carcinoma, lung carcinoma	
+HOXA11	1	oncogene, TSG, fusion	CML	
+HOXA13	1	oncogene, fusion	AML	
+HOXC11	1	oncogene, fusion	AML	
+HOXC13	1	oncogene, fusion	AML	
+HOXD11	1	oncogene, fusion	AML	
+HOXD13	1	oncogene, fusion	AML*	
+KNSTRN	2	oncogene	SCC	
+LARP4B	2	TSG	CRC, glioma	
+LHFPL6	2	fusion	lipoma	
+LSM14A	2	fusion	Spitzoid tumour	
+MALAT1	2	oncogene, TSG, fusion	renal cell carcinoma (childhood epithelioid), lung	
+MAP2K1	1	oncogene	NSCLC, melanoma, colorectal	
+MAP2K2	1	oncogene	NSCLC, melanoma	
+MAP2K4	1	oncogene, TSG	pancreatic, breast, colorectal	
+MAP3K1	1	oncogene, TSG	luminal A breast	
+MB21D2	2		lung cancer	
+MLLT10	1	oncogene, fusion	AL	
+MLLT11	1	fusion	ALL	
+NFATC2	1	oncogene, fusion	Ewing sarcoma	
+NFE2L2	1	oncogene, TSG	NSCLC, HNSCC	
+NFKBIE	1	TSG	CLL, desmoplastic melanoma	
+NKX2-1	1	oncogene, TSG	NSCLC	
+NOTCH1	1	oncogene, TSG, fusion	T-ALL, breast, bladder, skin SCC, lung SCC, head and neck SCC	
+NOTCH2	1	oncogene, TSG	marginal zone lymphoma, DLBCL, bladder	
+NUP214	1	fusion	AML, T-ALL	
+NUTM2B	1	fusion	endometrial stromal sarcoma	
+NUTM2D	1	fusion	endometrial stromal sarcoma	
+PABPC1	2	oncogene, TSG	HNSCC, biliary tract carcinoma	
+PDGFRA	1	oncogene, fusion	GIST, idiopathic hypereosinophilic syndrome, paediatric glioblastoma	GIST
+PDGFRB	1	oncogene, fusion	MPN, AML, CMML, CML	
+PHOX2B	1	TSG	neuroblastoma	neuroblastoma
+PICALM	1	fusion	T-ALL, AML	
+PIK3CA	1	oncogene	colorectal, gastric, glioblastoma, breast	
+PIK3CB	1	oncogene	SCC, NSCLC	
+PIK3R1	1	TSG	glioblastoma, ovarian, colorectal	
+POLR2A	2		meningioma	
+POU5F1	1	oncogene, fusion	sarcoma	
+PRDM16	1	oncogene, fusion	MDS, AML	
+PRKACA	1	oncogene	fibrolamellar hepatocellular carcinoma, cortisol secreting adrenal adenoma	
+PTPN11	1	oncogene	JMML, AML, MDS	
+PTPN13	1	TSG	lung, NSCLC, gastric, peritoneal carcinomatosis	hepatocellular
+PWWP2A	2	fusion	Spitzoid tumour	
+RABEP1	1	fusion	CMML	
+RAD51B	1	TSG, fusion	lipoma, uterine leiomyoma	
+RALGDS	2	fusion	PMBL, Hodgkin lymphoma,	
+RANBP2	1	TSG, fusion	inflammatory myofibroblastic tumour	
+RECQL4	1	oncogene, TSG		osteosarcoma, skin basal cell, skin sqamous cell
+RNF213	1	fusion	ALCL	
+S100A7	2	fusion	melanoma, T-cell lymphoma	
+SDHAF2	1	TSG		paraganglioma
+SETBP1	1	oncogene, fusion	aCML, sAML, MDS/MPN-U, CMML, JMML	neuroepithelial tumours
+SETD1B	2	TSG	CRC, endometrium	
+SETDB1	2	oncogene	malignant mesothelioma	
+SH3GL1	1	oncogene, fusion	AL	
+SPECC1	2	fusion	JMML	
+SRGAP3	2	fusion	pilocytic astrocytoma	
+SS18L1	1	fusion	synovial sarcoma	
+STAT5B	1	oncogene, TSG, fusion	large granular lymphocytic leukaemia, skin basal cell, APL	
+TCF7L2	1	oncogene, fusion	colorectal	
+TENT5C	1	TSG	MM	
+TGFBR2	1	TSG	head and neck, colorectal	colorectal
+THRAP3	2	fusion	aneurysmal bone cyst	
+TMSB4X	2	oncogene	DLBCL	
+TRIM24	1	oncogene, TSG, fusion	APL	
+TRIM27	1	oncogene, fusion	papillary thyroid	
+TRIM33	1	TSG, fusion	papillary thyroid	
+TRIP11	1	fusion	AML	
+ZBTB16	1	TSG, fusion	APL	
+ZCCHC8	2	fusion	Spitzoid tumour	
+ZNF331	1	TSG, fusion	follicular thyroid adenoma	
+ZNF384	1	fusion	ALL	
+ZNF429	2		GBM	
+ZNF479	2		lung cancer, bladder carcinoma, prostate carcinoma	
+ZNF521	1	oncogene, fusion	ALL	
+ARHGAP5	2	oncogene	colon cancer, glioma	
+ASPSCR1	1	fusion	alveolar soft part sarcoma	
+BCL2L12	2	oncogene	melanoma, SCC	
+CACNA1D	1	oncogene	adrenal aldosterone producing adenoma	
+CBFA2T3	1	TSG, fusion	AML	
+CNTNAP2	2	TSG	glioma, melanoma	
+CREB3L1	1	TSG, fusion	myxofibrosarcoma	
+CREB3L2	1	oncogene, fusion	fibromyxoid sarcoma	
+CYSLTR2	2	oncogene	uveal melanoma	
+FAM131B	2	fusion	pilocytic astrocytoma	
+FAM135B	2		SCLC	
+FGFR1OP	1	fusion	MPN, NHL	
+HERPUD1	1	fusion	prostate	
+IGF2BP2	2	TSG	lymphoma	
+MAP3K13	1	oncogene, TSG	breast	
+NCKIPSD	2	fusion	ALL	
+PDE4DIP	1	fusion	MPN	
+POU2AF1	1	oncogene, fusion	NHL	
+PPFIBP1	1	fusion	Spitzoid tumour, inflammatory myofibroblastic tumour	
+PPP2R1A	1	TSG	clear cell ovarian carcinoma	
+PRKAR1A	1	oncogene, TSG, fusion	papillary thyroid	myxoma, endocrine, papillary thyroid
+PRPF40B	2		melanoma, colon carcinoma, MDS	
+RUNX1T1	1	oncogene, TSG, fusion	AML	
+SLC34A2	1	TSG, fusion	NSCLC	
+SLC45A3	1	fusion	prostate	
+SMARCA4	1	TSG	NSCLC, SCCOHT	
+SMARCB1	1	TSG	malignant rhabdoid	malignant rhabdoid
+SMARCD1	1	TSG	breast	
+SMARCE1	1	TSG		meningioma
+TBL1XR1	1	oncogene, TSG, fusion	splenic marginal zone lymphoma, primary central nervous system lymphoma, colorectal carcinoma, gallbladder carcinoma	
+TMEM127	1	TSG		pheochromocytoma, renal cell carcinoma
+TMPRSS2	1	fusion	prostate	
+TNFAIP3	1	TSG	marginal zone B-cell lymphomas, Hodgkin lymphoma, PMBL	
+APOBEC3B	1	oncogene, TSG		breast cancer
+ARHGAP26	1	TSG, fusion	AML, MDS	
+ARHGAP35	1	TSG	endometrial carcinoma	
+ARHGEF10	2	TSG	colon cancer	
+ARHGEF12	1	TSG, fusion	AML	
+C15orf65	2	fusion	PMBL, Hodgkin lymphoma	
+CCNB1IP1	1	TSG, fusion	leiomyoma	
+DCAF12L2	2		CRC	
+HIST1H3B	1	oncogene	glioma	
+HIST1H4I	1	fusion	NHL	
+HMGN2P46	2	fusion	prostate	
+HSP90AA1	1	fusion	NHL	
+HSP90AB1	1	fusion	NHL	
+KIAA1549	2	fusion	pilocytic astrocytoma	
+LEPROTL1	2	TSG	lung cancer, colon cancer	
+PAFAH1B2	1	fusion	MLCLS	
+PDCD1LG2	1	oncogene, fusion	PMBL, Hodgkin lymphoma	
+RAP1GDS1	1	oncogene, fusion	T-ALL	
+TNFRSF14	1	TSG	follicular lymphoma	
+TNFRSF17	1	oncogene, fusion	intestinal T-cell lymphoma	
+ARHGEF10L	2	TSG	lymphoma	
+HNRNPA2B1	1	oncogene, fusion	prostate	
