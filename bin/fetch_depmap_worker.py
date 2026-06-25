@@ -43,6 +43,14 @@ log = logging.getLogger(__name__)
 
 CATALOGUE_URL = "https://depmap.org/portal/api/download/files"
 
+# Known filenames across DepMap releases (tried in order; first match wins)
+_MUTATION_FILENAMES = [
+    "OmicsSomaticMutations.csv",             # 22Q2 – 24Q1
+    "OmicsSomaticMutationsProfile.csv",      # 24Q2+
+    "OmicsSomaticMutationsMatrixDamaging.csv",
+    "CCLE_mutations.csv",                    # pre-22Q2 legacy
+]
+
 OUT_COLS = ["HugoSymbol", "Protein_position", "HGVSp_Short", "ModelID",
             "Start_Position", "EntrezGeneID", "Hotspot"]
 
@@ -91,26 +99,59 @@ def _req(sess, url, timeout=300, retries=4, **kw):
 
 
 def resolve_file_url(sess, catalogue_url, filename, release):
-    """Query the DepMap catalogue CSV → presigned URL for `filename`.
+    """Query the DepMap catalogue CSV → presigned URL for a somatic-mutations file.
 
-    If `release` is given, match it exactly; otherwise take the lexicographically
-    greatest release string (newest YYQn sorts correctly)."""
+    Tries `filename` first, then each entry in _MUTATION_FILENAMES, then falls
+    back to any catalogue row whose filename contains both 'somatic' and
+    'mutation' (case-insensitive). Takes the newest (lexicographically greatest)
+    release unless `release` is specified."""
     r = _req(sess, catalogue_url)
     if r is None:
         return None
     rows = list(csv.DictReader(io.StringIO(r.text)))
+
+    def _pick(candidates):
+        if not candidates:
+            return None
+        if release:
+            candidates = ([row for row in candidates
+                           if (row.get("release") or "").strip() == release]
+                          or candidates)
+        candidates.sort(key=lambda row: (row.get("release") or ""))
+        chosen = candidates[-1]
+        log.info("DepMap: using '%s' from release '%s'",
+                 chosen.get("filename", "?"), chosen.get("release", "?"))
+        return (chosen.get("url") or "").strip()
+
+    # 1. exact filename requested by caller
+    cand = [row for row in rows if (row.get("filename") or "").strip() == filename]
+    if cand:
+        return _pick(cand)
+
+    # 2. try known aliases in priority order
+    for known in _MUTATION_FILENAMES:
+        if known == filename:
+            continue
+        cand = [row for row in rows if (row.get("filename") or "").strip() == known]
+        if cand:
+            log.warning("'%s' not found — using '%s' instead", filename, known)
+            return _pick(cand)
+
+    # 3. fuzzy: any file whose name contains 'somatic' and 'mutation'
     cand = [row for row in rows
-            if (row.get("filename") or "").strip() == filename]
-    if not cand:
-        log.error("no '%s' in DepMap catalogue (%d rows)", filename, len(rows))
-        return None
-    if release:
-        cand = [row for row in cand
-                if (row.get("release") or "").strip() == release] or cand
-    cand.sort(key=lambda row: (row.get("release") or ""))
-    chosen = cand[-1]
-    log.info("DepMap: %s from release '%s'", filename, chosen.get("release"))
-    return (chosen.get("url") or "").strip()
+            if all(k in (row.get("filename") or "").lower()
+                   for k in ("somatic", "mutation"))]
+    if cand:
+        names = sorted(set(r.get("filename", "") for r in cand))
+        log.warning("'%s' not found — fuzzy match: %s", filename, names)
+        return _pick(cand)
+
+    # nothing matched — log everything to help diagnose future renames
+    all_files = sorted(set((row.get("filename") or "").strip() for row in rows))
+    omics = [f for f in all_files if "omics" in f.lower() or "mutation" in f.lower()]
+    log.error("no somatic-mutation file found in DepMap catalogue (%d rows)", len(rows))
+    log.error("mutation-related files available: %s", omics or all_files[:30])
+    return None
 
 
 def normalise(handle, limit=0):
@@ -162,28 +203,34 @@ def main():
     out_path.parent.mkdir(parents=True, exist_ok=True)
     cache_dir = Path(args.cache_dir) if args.cache_dir else out_path.parent / "depmap_cache"
     cache_dir.mkdir(parents=True, exist_ok=True)
-    raw_csv = cache_dir / "OmicsSomaticMutations.csv"
 
     sess = _session()
 
     # 1. obtain the raw mutations CSV (local path, direct URL, or via catalogue)
     if args.file_url and Path(args.file_url).exists():
         raw_csv = Path(args.file_url)
-    elif not raw_csv.exists() or raw_csv.stat().st_size == 0:
-        url = args.file_url or resolve_file_url(sess, args.catalogue_url,
-                                                args.filename, args.release)
-        if not url:
-            log.error("could not resolve a DepMap mutations URL — aborting")
-            sys.exit(1)
-        log.info("downloading DepMap mutations CSV...")
-        r = _req(sess, url, stream=True)
-        if r is None:
-            log.error("download failed — aborting")
-            sys.exit(1)
-        with open(raw_csv, "wb") as fh:
-            for chunk in r.iter_content(chunk_size=1 << 20):
-                fh.write(chunk)
-        log.info("cached %s (%d bytes)", raw_csv, raw_csv.stat().st_size)
+    else:
+        # Check whether any known cached file already exists (filename may differ from release to release)
+        raw_csv = next(
+            (cache_dir / fn for fn in _MUTATION_FILENAMES
+             if (cache_dir / fn).exists() and (cache_dir / fn).stat().st_size > 0),
+            cache_dir / args.filename,
+        )
+        if not raw_csv.exists() or raw_csv.stat().st_size == 0:
+            url = args.file_url or resolve_file_url(sess, args.catalogue_url,
+                                                    args.filename, args.release)
+            if not url:
+                log.error("could not resolve a DepMap mutations URL — aborting")
+                sys.exit(1)
+            log.info("downloading DepMap mutations CSV...")
+            r = _req(sess, url, stream=True)
+            if r is None:
+                log.error("download failed — aborting")
+                sys.exit(1)
+            with open(raw_csv, "wb") as fh:
+                for chunk in r.iter_content(chunk_size=1 << 20):
+                    fh.write(chunk)
+            log.info("cached %s (%d bytes)", raw_csv, raw_csv.stat().st_size)
 
     # 2. normalise columns
     with open(raw_csv, newline="", encoding="utf-8", errors="replace") as fh:
