@@ -209,10 +209,19 @@ process FETCH_MOBIDB {
 
     script:
     """
-    wget -q -O mobidb_curated.tsv \\
-        'https://mobidb.bio.unipd.it/api/download?ncbi_taxon_id=9606&projection=curated-disorder-merge&format=tsv'
-    wget -q -O mobidb_homol.tsv \\
-        'https://mobidb.bio.unipd.it/api/download?ncbi_taxon_id=9606&projection=homology-disorder-merge&format=tsv'
+    curl -fsSL --retry 3 --retry-delay 10 --connect-timeout 60 --max-time 1800 \\
+        -A 'DisCanVisFlow/0.6.0' \\
+        'https://mobidb.bio.unipd.it/api/download?ncbi_taxon_id=9606&projection=curated-disorder-merge&format=tsv' \\
+        -o mobidb_curated.tsv
+    curl -fsSL --retry 3 --retry-delay 10 --connect-timeout 60 --max-time 1800 \\
+        -A 'DisCanVisFlow/0.6.0' \\
+        'https://mobidb.bio.unipd.it/api/download?ncbi_taxon_id=9606&projection=homology-disorder-merge&format=tsv' \\
+        -o mobidb_homol.tsv
+
+    # sanity-check: each file must have at least a header + one data line
+    [ \$(wc -l < mobidb_curated.tsv) -gt 1 ] || { echo "ERROR: mobidb_curated.tsv is empty"; exit 1; }
+    [ \$(wc -l < mobidb_homol.tsv)   -gt 1 ] || { echo "ERROR: mobidb_homol.tsv is empty";   exit 1; }
+
     cat mobidb_curated.tsv mobidb_homol.tsv | sort -u > mobidb_human.tsv
     """
 
