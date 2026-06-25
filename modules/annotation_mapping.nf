@@ -209,18 +209,34 @@ process FETCH_MOBIDB {
 
     script:
     """
-    curl -fsSL --retry 3 --retry-delay 10 --connect-timeout 60 --max-time 1800 \\
-        -A 'DisCanVisFlow/0.6.0' \\
-        'https://mobidb.bio.unipd.it/api/download?ncbi_taxon_id=9606&projection=curated-disorder-merge&format=tsv' \\
-        -o mobidb_curated.tsv
-    curl -fsSL --retry 3 --retry-delay 10 --connect-timeout 60 --max-time 1800 \\
-        -A 'DisCanVisFlow/0.6.0' \\
-        'https://mobidb.bio.unipd.it/api/download?ncbi_taxon_id=9606&projection=homology-disorder-merge&format=tsv' \\
-        -o mobidb_homol.tsv
+    python3 - << 'PYEOF'
+import urllib.request, sys, time
 
-    # sanity-check: each file must have at least a header + one data line
-    [ \$(wc -l < mobidb_curated.tsv) -gt 1 ] || { echo "ERROR: mobidb_curated.tsv is empty"; exit 1; }
-    [ \$(wc -l < mobidb_homol.tsv)   -gt 1 ] || { echo "ERROR: mobidb_homol.tsv is empty";   exit 1; }
+downloads = [
+    ('https://mobidb.bio.unipd.it/api/download?ncbi_taxon_id=9606&projection=curated-disorder-merge&format=tsv',
+     'mobidb_curated.tsv'),
+    ('https://mobidb.bio.unipd.it/api/download?ncbi_taxon_id=9606&projection=homology-disorder-merge&format=tsv',
+     'mobidb_homol.tsv'),
+]
+
+for url, out in downloads:
+    for attempt in range(1, 4):
+        try:
+            req = urllib.request.Request(url, headers={'User-Agent': 'DisCanVisFlow/0.6.0'})
+            with urllib.request.urlopen(req, timeout=1800) as resp, open(out, 'wb') as fh:
+                fh.write(resp.read())
+            lines = sum(1 for _ in open(out))
+            if lines < 2:
+                print(f'ERROR: {out} has only {lines} line(s) — server returned no data', file=sys.stderr)
+                sys.exit(1)
+            print(f'{out}: {lines} lines OK')
+            break
+        except Exception as exc:
+            print(f'Attempt {attempt}/3 failed for {out}: {exc}', file=sys.stderr)
+            if attempt == 3:
+                sys.exit(1)
+            time.sleep(10)
+PYEOF
 
     cat mobidb_curated.tsv mobidb_homol.tsv | sort -u > mobidb_human.tsv
     """
