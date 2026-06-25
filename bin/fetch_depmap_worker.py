@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-fetch_depmap_worker.py — download DepMap somatic mutations (OPEN data) and
+bin/fetch_depmap_worker.py — download DepMap somatic mutations (OPEN data) and
 normalise them into the TSV that create_depmap_worker.py consumes.
 
-DepMap public data is freely downloadable. The portal exposes a CSV catalogue
-at https://depmap.org/portal/api/download/files whose rows are
+DepMap public data is freely downloadable. The portal normally exposes a CSV
+catalogue at https://depmap.org/portal/api/download/files whose rows are
 
     release,release_date,filename,url,md5_hash
 
@@ -13,6 +13,9 @@ it fresh at run time rather than hard-coding it. We pick the
 `OmicsSomaticMutations.csv` of the newest (or a requested) public release,
 download it, and emit a tab-separated table with the columns the mapper wants:
 
+If the portal catalogue is blocked by browser verification, this worker exits
+with instructions for the manual download path used by the pipeline preflight.
+
     HugoSymbol  Protein_position  HGVSp_Short  ModelID  Start_Position
     EntrezGeneID  Hotspot
 
@@ -20,7 +23,7 @@ Raw DepMap calls the protein-change column `ProteinChange` (e.g. "p.G12D") —
 we split it into HGVSp_Short (the p. string) + Protein_position (the integer).
 
 Usage:
-  fetch_depmap_worker.py --out depmap_mutations.tsv
+  bin/fetch_depmap_worker.py --out depmap_mutations.tsv
       [--catalogue_url URL] [--file_url URL] [--release "DepMap Public 26Q1"]
       [--filename OmicsSomaticMutations.csv] [--cache_dir DIR] [--limit N]
 """
@@ -98,6 +101,19 @@ def _req(sess, url, timeout=300, retries=4, **kw):
     return None
 
 
+def _portal_rows(text):
+    rows = list(csv.DictReader(io.StringIO(text)))
+    if not rows:
+        return []
+    fields = set(rows[0].keys())
+    required = {"filename", "url", "release"}
+    if not required.issubset(fields):
+        log.warning("DepMap catalogue response is not the expected CSV schema "
+                    "(fields: %s)", sorted(k for k in fields if k is not None))
+        return []
+    return rows
+
+
 def resolve_file_url(sess, catalogue_url, filename, release):
     """Query the DepMap catalogue CSV → presigned URL for a somatic-mutations file.
 
@@ -106,9 +122,7 @@ def resolve_file_url(sess, catalogue_url, filename, release):
     'mutation' (case-insensitive). Takes the newest (lexicographically greatest)
     release unless `release` is specified."""
     r = _req(sess, catalogue_url)
-    if r is None:
-        return None
-    rows = list(csv.DictReader(io.StringIO(r.text)))
+    rows = _portal_rows(r.text) if r is not None else []
 
     def _pick(candidates):
         if not candidates:
@@ -151,6 +165,11 @@ def resolve_file_url(sess, catalogue_url, filename, release):
     omics = [f for f in all_files if "omics" in f.lower() or "mutation" in f.lower()]
     log.error("no somatic-mutation file found in DepMap catalogue (%d rows)", len(rows))
     log.error("mutation-related files available: %s", omics or all_files[:30])
+    log.error("DepMap automatic download may be blocked by portal browser "
+              "verification. Download OmicsSomaticMutations.csv manually from "
+              "https://depmap.org/portal/download/all/, copy it to "
+              "references/depmap/OmicsSomaticMutations.csv, and rerun the "
+              "pipeline with -resume so the preflight can normalise it.")
     return None
 
 

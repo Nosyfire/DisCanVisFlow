@@ -11,7 +11,7 @@ These annotations require genomic coordinates derived from Module 3 (Genome Mapp
 | Annotation | Module | Output file(s) | Worker |
 |------------|--------|----------------|--------|
 | ClinVar disease variants | 4 | `mutations/ClinVar/Missense_filter_mutations_mapped.tsv` (+ Frameshift/Nonsense/Indel) | `create_mutation_map_worker.py` |
-| DepMap somatic mutations | 8e | `unmapped/annotations/depmap_mutations.tsv` | `create_depmap_worker.py` |
+| DepMap somatic mutations | 8e | `mutations/DepMap/depmap_mutations.tsv` | `create_depmap_worker.py` |
 | Exon boundaries | 5d | `genome/exon.tsv` | `create_exon_worker.py` |
 | phastCons 100-vertebrate conservation | 7 | `unmapped/conservation/conservation_phastcons.tsv` | `create_conservation_worker.py` |
 
@@ -20,7 +20,7 @@ These annotations require genomic coordinates derived from Module 3 (Genome Mapp
 - All genomic coordinates are hg38 (GRCh38).
 - `combined_map.map` provides the protein-position ↔ genomic-position bridge used by mutation mapping, exon mapping, and phastCons.
 - ClinVar auto-downloads from NCBI FTP on first run (cached via `storeDir`). Supply `--clinvar_vcf` to use a local copy.
-- DepMap and phastCons require pre-processed local files (`--depmap_tsv`, `--phastcons_dir`).
+- DepMap requires a local file when enabled. Download `OmicsSomaticMutations.csv` manually from <https://depmap.org/portal/download/all/> and save it as `references/depmap/OmicsSomaticMutations.csv`; the pipeline preflight confirms it and normalizes it to `references/depmap/depmap_mutations_raw.tsv` if needed. phastCons requires a local `--phastcons_dir` when conservation/phastCons are enabled.
 
 ---
 

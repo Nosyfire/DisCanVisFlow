@@ -216,7 +216,7 @@ Every annotation output uses `Protein_ID` (GENCODE transcript name, e.g. `RAF1-2
 | OMIM | Obtain OMIM API key; set `--omim_tsv` |
 | dbNSFP | Pre-mapped TSV; set `--dbnsfp_tsv` |
 | TCGA / cBioPortal | MAF files; set `--mutation_maf` |
-| DepMap | TSV; set `--depmap_tsv` |
+| DepMap | Download `OmicsSomaticMutations.csv` from [DepMap downloads](https://depmap.org/portal/download/all/) and save it as `references/depmap/OmicsSomaticMutations.csv`; the pipeline preflight confirms it and creates `references/depmap/depmap_mutations_raw.tsv` if needed. Set `--depmap_tsv` or `--depmap_raw_csv` only if using another path; use `--skip_depmap true` to omit it. |
 | GOPHER conservation | Local table; set `--gopher_conservation_table` |
 | phastCons | Local bigWig dir; set `--phastcons_dir` |
 

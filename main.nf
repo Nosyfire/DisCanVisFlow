@@ -70,6 +70,7 @@ include { FETCH_UNIPROT_FASTA;
           FETCH_MAVEDB;
           FETCH_PROTEINGYM;
           FETCH_DEPMAP;
+          NORMALISE_DEPMAP_MANUAL;
           FETCH_DBNSFP;
           FETCH_OMIM;
           FETCH_CBIOPORTAL;
@@ -155,6 +156,87 @@ workflow {
         def genes_from_file = glf.readLines().findAll { it.trim() && !it.startsWith('#') }*.trim().join(',')
         params.target_gene = genes_from_file
         log.info "Gene list file : ${params.gene_list_file} → ${genes_from_file.split(',').size()} genes"
+    }
+
+    // ── Manual-reference preflight ────────────────────────────────────────────
+    // Some public/licensed sources cannot always be fetched from a non-browser
+    // process. Create conventional reference folders and stop early with one
+    // actionable checklist when an enabled manual reference is missing.
+    new File(params.ref_dir.toString()).mkdirs()
+    [
+        "${params.ref_dir}/depmap",
+        "${params.ref_dir}/dbnsfp",
+        "${params.ref_dir}/phastcons"
+    ].each { new File(it.toString()).mkdirs() }
+
+    def manual_missing = []
+    def depmap_manual_ch = null
+    def depmap_raw_csv = params.depmap_raw_csv ?: "${params.ref_dir}/depmap/OmicsSomaticMutations.csv"
+
+    if ( !params.skip_depmap && !params.fetch_depmap ) {
+        def depmap_tsv_f = params.depmap_tsv ? file(params.depmap_tsv) : null
+        def depmap_raw_f = file(depmap_raw_csv)
+        def have_depmap_tsv = depmap_tsv_f && depmap_tsv_f.exists() && depmap_tsv_f.toFile().length() > 0
+        def have_depmap_raw = depmap_raw_f.exists() && depmap_raw_f.toFile().length() > 0
+
+        if ( have_depmap_tsv ) {
+            log.info "Manual reference confirmed: DepMap TSV → ${depmap_tsv_f}"
+            depmap_manual_ch = Channel.value(depmap_tsv_f)
+        } else if ( have_depmap_raw ) {
+            log.info "Manual reference confirmed: DepMap raw CSV → ${depmap_raw_f}"
+            log.info "DepMap normalized TSV missing; pipeline will create ${params.depmap_tsv}"
+            depmap_manual_ch = NORMALISE_DEPMAP_MANUAL( Channel.value(depmap_raw_f) ).tsv
+        } else {
+            manual_missing << """
+DepMap mutations
+  Needed because: --skip_depmap false and --fetch_depmap false
+  Download page: https://depmap.org/portal/download/all/
+  File to choose: OmicsSomaticMutations.csv
+  Copy to: ${depmap_raw_csv}
+  Pipeline output after normalization: ${params.depmap_tsv ?: "${params.ref_dir}/depmap/depmap_mutations_raw.tsv"}
+  To skip this annotation: --skip_depmap true
+"""
+        }
+    }
+
+    def genome_enabled = (params.hg38_2bit || params.fetch_hg38_2bit) as boolean
+
+    if ( !params.skip_pathogenicity && !params.fetch_dbnsfp &&
+         !params.dbnsfp_raw_dir && !params.dbnsfp_tsv ) {
+        manual_missing << """
+dbNSFP pathogenicity
+  Needed because: --skip_pathogenicity false and --fetch_dbnsfp false
+  Download/setup: obtain dbNSFP under its academic terms
+  Copy raw chr*.gz files under: ${params.ref_dir}/dbnsfp/
+  Then set: --dbnsfp_raw_dir ${params.ref_dir}/dbnsfp
+  Alternative: set --dbnsfp_tsv /path/to/pre_mapped_dbnsfp.tsv
+  To skip this annotation: --skip_pathogenicity true
+"""
+    }
+
+    if ( genome_enabled && !params.skip_conservation && !params.skip_phastcons &&
+         !params.phastcons_dir ) {
+        manual_missing << """
+phastCons conservation
+  Needed because: genome mapping and conservation are enabled, but no --phastcons_dir was provided
+  Copy hg38 per-chromosome bigWig files (chr1.bw ... chrY.bw) under: ${params.ref_dir}/phastcons/
+  Then set: --phastcons_dir ${params.ref_dir}/phastcons
+  To skip conservation entirely: --skip_conservation true
+  To skip only phastCons: --skip_phastcons true
+"""
+    }
+
+    if ( manual_missing ) {
+        error """
+Manual reference files are required before this run can continue.
+
+The reference folders have been created under:
+  ${params.ref_dir}
+
+Missing manual references:
+${manual_missing.join('\n')}
+After copying/downloading the files, rerun the same command with -resume.
+"""
     }
 
     // ── FASTA sourcing ───────────────────────────────────────────────────────
@@ -311,7 +393,6 @@ workflow {
     // ── Step 3: Genome Mapping ────────────────────────────────────────────────
     // Requires hg38.2bit: a local --hg38_2bit path, or fetched when --fetch_hg38_2bit.
     // Skipped entirely when neither is set.
-    def genome_enabled = (params.hg38_2bit || params.fetch_hg38_2bit) as boolean
     if ( genome_enabled ) {
         // Value channel: can be read by both BLAT_ALIGN and GENOME_MAP
         hg38_ch = params.hg38_2bit
@@ -507,6 +588,9 @@ workflow {
     mobidb_tsv_ch = params.mobidb_tsv
         ? Channel.value( file(params.mobidb_tsv, checkIfExists: true) )
         : FETCH_MOBIDB().mobidb_tsv
+    mobidb_disorder_input_ch = params.mobidb_tsv
+        ? mobidb_tsv_ch
+        : mobidb_tsv_ch.first()
 
     // DIBS / MFIB / PhasePro from legacy_data/ (auto-set in config)
     dibs_ch     = params.dibs_tsv     ? Channel.value( file(params.dibs_tsv,     checkIfExists: true) ) : Channel.value( no_file )
@@ -651,7 +735,7 @@ workflow {
 
     DISORDER_MAP(
         disorder_loc_ch,
-        mobidb_tsv_ch.first(),
+        mobidb_disorder_input_ch,
         ANNOTATION_MAP.out.pfam.first(),
         af_plddt_ch.first(),
         setup_done_ch.first(),
@@ -945,11 +1029,13 @@ workflow {
     }
 
     // ── Step 8e: DepMap cancer cell line mutations ────────────────────────────
-    // Source priority: open-data fetch (FETCH_DEPMAP) → local --depmap_tsv → skip.
+    // Default source: local manual --depmap_tsv. FETCH_DEPMAP remains available
+    // only when explicitly requested, because the DepMap portal may require
+    // browser verification and block scripted catalogue access.
     if ( !params.skip_depmap ) {
         def depmap_src = params.fetch_depmap
             ? FETCH_DEPMAP().tsv
-            : ( params.depmap_tsv ? file(params.depmap_tsv, checkIfExists: false) : no_file )
+            : ( depmap_manual_ch ?: Channel.value(no_file) )
         DEPMAP_MAP(SEQUENCE_PROCESS.out.loc_chrom_seq, depmap_src)
         DEPMAP_MAP.out.depmap.view { f ->
             "\n✔  DepMap mutations: ${f}\n"

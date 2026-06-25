@@ -555,6 +555,29 @@ process FETCH_DEPMAP {
     """ printf 'HugoSymbol\\tProtein_position\\tHGVSp_Short\\tModelID\\tStart_Position\\tEntrezGeneID\\tHotspot\\n' > depmap_mutations_raw.tsv """
 }
 
+// NORMALISE_DEPMAP_MANUAL — convert a browser-downloaded DepMap
+// OmicsSomaticMutations.csv into the TSV consumed by DEPMAP_MAP.
+// Used when automated DepMap catalogue downloads are blocked by portal
+// verification but the user has copied the raw CSV into references/depmap/.
+// ──────────────────────────────────────────────────────────────────────────
+process NORMALISE_DEPMAP_MANUAL {
+    label 'process_low'
+    tag 'depmap_manual'
+    storeDir { workflow.stubRun ? "${params.ref_dir}/_stub/depmap" : "${params.ref_dir}/depmap" }
+    input:
+    path raw_csv
+    output:
+    path 'depmap_mutations_raw.tsv', emit: tsv
+    script:
+    """
+    echo "Normalising manually downloaded DepMap file: ${raw_csv}"
+    fetch_depmap_worker.py --file_url ${raw_csv} --out depmap_mutations_raw.tsv --cache_dir .
+    echo "Done — \$(wc -l < depmap_mutations_raw.tsv) lines."
+    """
+    stub:
+    """ printf 'HugoSymbol\\tProtein_position\\tHGVSp_Short\\tModelID\\tStart_Position\\tEntrezGeneID\\tHotspot\\n' > depmap_mutations_raw.tsv """
+}
+
 // ──────────────────────────────────────────────────────────────────────────
 // FETCH_DBNSFP — raw dbNSFP academic distribution (per-chromosome variant gz).
 // dbNSFP is free for academic use; supply the release zip URL via --dbnsfp_url

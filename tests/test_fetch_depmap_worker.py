@@ -67,3 +67,8 @@ def test_resolve_file_url_picks_newest_release(monkeypatch):
     url2 = m.resolve_file_url(None, "ignored", "OmicsSomaticMutations.csv",
                               "DepMap Public 25Q4")
     assert url2 == "http://x/old"
+
+
+def test_portal_html_is_not_treated_as_catalogue():
+    html = "<!DOCTYPE html>\n<title>DepMap — Verification</title>\n"
+    assert m._portal_rows(html) == []
