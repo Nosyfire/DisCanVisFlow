@@ -35,13 +35,12 @@ All outputs are Protein_ID–keyed (GENCODE transcript name, e.g. `RAF1-201`) an
 ### 1. Install dependencies
 
 ```bash
-# Clone the repo
-git clone https://github.com/<org>/discanvisflow.git
-cd discanvisflow
+git clone https://github.com/Nosyfire/DisCanVisFlow.git
+cd DisCanVisFlow
 
 # Create the conda environment (Python workers + Nextflow + UCSC tools)
 conda env create -f environment.yml
-conda activate DisCanVis
+conda activate discanvis
 ```
 
 ### 2. Set up external programs (disorder predictors)
@@ -52,101 +51,123 @@ bash bin/setup_external_programs.sh
 
 Clones AIUPred from GitHub, creates the `discanvis_aiupred` conda env, and installs `bigBedToBed`. IUPred3/ANCHOR2 requires free academic registration at [iupred2a.elte.hu/download](https://iupred2a.elte.hu/download) — extract into `External_Programs/iupred3/`.
 
-With `-profile discanvis_data,conda` the `SETUP_DEPS` Nextflow process handles this automatically on first run (no manual setup needed).
+With `--data discanvis_data` the `SETUP_DEPS` Nextflow process handles this automatically on first run.
 
 ### 3. Run the pipeline
 
+Use the `./run` wrapper for a clean interface:
+
 ```bash
-conda activate DisCanVis
+conda activate discanvis
 
 # RAF1 single-gene test (~5-15 min) — validates the full DAG
-nextflow run main.nf -profile raf1,conda -resume
+./run --data local --target_gene RAF1
 
-# Full human proteome with all tracks
-nextflow run main.nf -profile discanvis_data,conda \
-    --skip_coiledcoils true \
-    -resume
+# Validate the DAG without running anything
+./run --data local --target_gene RAF1 -stub
+
+# Full human proteome, zero-config (all references auto-downloaded)
+./run --data discanvis_data -resume
+
+# Named project with description
+./run --data discanvis_data --project cellular_vulnerability \
+    --description "Q4 2026 Turbine feature run" -resume
+
+# HPC cluster
+./run --data discanvis_data --project discanvis --env slurm -resume
 ```
 
-All reference data (UniProt, GENCODE, AlphaFold, ClinVar, dbSNP, GO, MobiDB, SIFTS, AlphaMissense …) is auto-downloaded and `storeDir`-cached in `references/` — subsequent runs reuse the cache.
+The wrapper resolves `--env/--data/--project` to Nextflow profiles and prints the resolved command. All other arguments (like `-resume`, `--target_gene`, `--skip_pdb`) pass through to Nextflow unchanged.
 
-> **Track selection and gene subsets:** Use `python bin/new_project.py` to interactively generate a `projects/<name>.yaml` config with custom gene scope and annotation track selection. Then pass its parameters explicitly, e.g. `--target_gene "TP53,BRCA1" --skip_pdb false --skip_conservation true`.
+---
+
+## Arguments
+
+| Argument | Values | Default | Description |
+|----------|--------|---------|-------------|
+| `--env` | `conda`, `docker`, `slurm` | `conda` | Execution environment |
+| `--data` | `local`, `discanvis_data` | — | Reference data source. `local` reads machine-specific paths from `conf/local_refs.config`; `discanvis_data` auto-downloads all references |
+| `--project` | see below | — | Preset track selection + outdir |
+| `--description` | any string | — | Written to `mapping_reports/mapping_summary.md` |
+
+Any additional Nextflow argument (e.g. `-resume`, `-stub`, `--target_gene RAF1`) is passed through unchanged.
+
+### Project presets
+
+| `--project` | Scope | Key settings |
+|-------------|-------|--------------|
+| `test_one_protein` | Single gene (default: TP53) | Quick validation |
+| `test_subset` | TP53, RAF1, BRAF, KRAS, EGFR | Regression testing |
+| `discanvis` | Full proteome | All tracks (DisCanVis2 web server update) |
+| `vep_benchmarking` | Full proteome | Mutations + pathogenicity + disorder only |
+| `cellular_vulnerability` | Full proteome | ML feature set for Turbine cellular vulnerability model |
+
+Override any project param directly: `./run --project test_one_protein --target_gene BRCA1`
 
 ---
 
 ## Common run patterns
 
-### Single gene — full annotation set (~5-15 min)
+### Single gene — full annotation set
 
 ```bash
-nextflow run main.nf --target_gene RAF1 -profile raf1,conda -resume
+./run --data local --target_gene RAF1 -resume
 ```
 
 ### Single gene, subset of tracks
 
 ```bash
-nextflow run main.nf --target_gene TP53 \
-    --skip_pdb true --skip_conservation true --skip_ppi true \
-    -profile raf1,conda -resume
+./run --data local --target_gene TP53 \
+    --skip_pdb true --skip_conservation true --skip_ppi true -resume
 ```
 
-### Full human proteome — all tracks (~4-8 h on GPU server)
+### Full human proteome — all tracks
 
 ```bash
-nextflow run main.nf \
-    --skip_coiledcoils true \
-    --scatter_chunks 20 --blat_chunks 16 \
-    -profile discanvis_data,conda -resume
+./run --data discanvis_data \
+    --scatter_chunks 20 --blat_chunks 16 -resume
 ```
 
 ### Gene list from file
 
 ```bash
-nextflow run main.nf \
-    --gene_list_file projects/gene_lists/cellular_vulnerability.txt \
-    -profile discanvis_data,conda -resume
+./run --data discanvis_data \
+    --gene_list_file projects/gene_lists/cellular_vulnerability.txt -resume
 ```
 
-### VEP benchmarking — mutations + pathogenicity, full proteome
+### Named project run
 
 ```bash
-nextflow run main.nf -profile vep_benchmarking,conda -resume
+./run --data discanvis_data --project cellular_vulnerability \
+    --description "Q4 2026 Turbine feature run" -resume
 ```
 
-### Validate the DAG without running anything
+### HPC cluster
 
 ```bash
-nextflow run main.nf -profile raf1,conda -stub
+./run --data discanvis_data --project discanvis --env slurm \
+    --description "Full proteome DisCanVis2 update" -resume
 ```
 
----
-
-## Project config reference files
-
-`projects/*.yaml` document the parameter sets for named studies. Use them as reference or copy + adapt:
-
-| File | Purpose |
-|------|---------|
-| `projects/full_discanvis.yaml` | Full proteome, all tracks (DisCanVis2 update) |
-| `projects/single_protein.yaml` | Single gene or small subset |
-| `projects/vep_benchmarking.yaml` | Mutations + pathogenicity only |
-| `projects/cellular_vulnerability.yaml` | Full proteome for Turbine cellular vulnerability model |
-
-Generate a new config interactively:
+### TCGA/cBioPortal MAF mutations
 
 ```bash
-python bin/new_project.py
+./run --data local --target_gene TP53 \
+    --mutation_maf /path/to/tcga.maf --mutation_source TCGA -resume
 ```
 
-Key parameters (pass directly on the command line or set in `nextflow.config`):
+### Custom VCF input
 
+```bash
+./run --data local --target_gene TP53 \
+    --mutation_vcf /path/to/variants.vcf.gz --mutation_source MyStudy -resume
 ```
---target_gene "RAF1"             # or null (all), or "RAF1,TP53,BRCA1"
---gene_list_file path/to/genes.txt  # one gene per line, overrides --target_gene
---mapping_mode all_isoform_mapping  # or main_isoform_mapping
---scatter_chunks 20              # parallel DISORDER_MAP chunks (full proteome)
---skip_pdb true / false          # per-track switches for all 20+ tracks
---outdir results/my_study
+
+### Skip individual disorder predictors
+
+```bash
+./run --data local --target_gene RAF1 \
+    --skip_alphafold true --skip_iupred true --skip_aiupred true -resume
 ```
 
 ---
@@ -176,19 +197,6 @@ Every annotation output uses `Protein_ID` (GENCODE transcript name, e.g. `RAF1-2
 
 ---
 
-## Profiles
-
-Combine an **environment profile** with a **scope profile**:
-
-```
--profile discanvis_data,conda   # zero-machine-config, all refs auto-download
--profile raf1,conda             # local machine paths, RAF1 only
--profile full,conda             # local machine paths, full proteome
--profile discanvis_data,slurm   # HPC cluster
-```
-
----
-
 ## Environment setup details
 
 ### Disorder predictors
@@ -202,24 +210,22 @@ Combine an **environment profile** with a **scope profile**:
 
 ### Licence-gated data (not redistributed)
 
-These tracks are off by default until you supply the data:
-
 | Track | How to enable |
 |-------|--------------|
 | IUPred3 / ANCHOR2 | Register at [iupred2a.elte.hu/download](https://iupred2a.elte.hu/download), extract into `External_Programs/iupred3/` |
-| OMIM | Obtain OMIM API key; set `params.omim_tsv` |
-| dbNSFP | Pre-mapped TSV; set `params.dbnsfp_tsv` |
-| TCGA / cBioPortal | MAF files; set `params.mutation_maf` |
-| DepMap | TSV; set `params.depmap_tsv` |
-| GOPHER conservation | Local table; set `params.gopher_conservation_table` |
-| phastCons | Local bigWig dir; set `params.phastcons_dir` |
+| OMIM | Obtain OMIM API key; set `--omim_tsv` |
+| dbNSFP | Pre-mapped TSV; set `--dbnsfp_tsv` |
+| TCGA / cBioPortal | MAF files; set `--mutation_maf` |
+| DepMap | TSV; set `--depmap_tsv` |
+| GOPHER conservation | Local table; set `--gopher_conservation_table` |
+| phastCons | Local bigWig dir; set `--phastcons_dir` |
 
 ---
 
 ## Running tests
 
 ```bash
-conda activate DisCanVis
+conda activate discanvis
 pytest tests/ -v                                          # all tests
 pytest tests/test_create_disorder_worker.py -v           # single module
 pytest tests/test_create_mutation_map_worker.py -v -k missense
@@ -227,23 +233,19 @@ pytest tests/test_create_mutation_map_worker.py -v -k missense
 
 ---
 
-## Docs
+## Advanced: direct Nextflow invocation
 
-| File | Contents |
-|------|---------|
-| `PIPELINE_DESIGN.md` | Full pipeline overview: DAG, modules, design decisions, I/O |
-| `PROJECTS.md` | Predefined project profiles and their purpose |
-| `CITATIONS.md` | Citations for all data sources and tools |
-| `docs/pipeline_overview.md` | DAG walkthrough and module descriptions |
-| `docs/isoform_mapping.md` | Transcript-to-isoform mapping logic in detail |
-| `docs/conservation_calculation.md` | GOPHER + phastCons conservation pipeline |
-| `docs/annotations/` | Per-annotation-track data format documentation |
+The `run` wrapper is syntactic sugar for Nextflow profiles. You can call Nextflow directly if preferred:
 
----
+```bash
+# Equivalent to: ./run --data local --target_gene RAF1
+nextflow run main.nf -profile local,conda --target_gene RAF1
 
-## Name
+# Equivalent to: ./run --data discanvis_data --project cellular_vulnerability
+nextflow run main.nf -profile discanvis_data,cellular_vulnerability,conda -resume
+```
 
-This pipeline is published as **DisCanVisFlow** — combining DisCanVis (the web server it was built to power) with Flow (the Nextflow-based workflow). The name reflects both the origin and the architecture.
+Profile load order: `data → project → env` (project settings override data defaults).
 
 ---
 

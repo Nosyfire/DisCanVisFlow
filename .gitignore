@@ -20,9 +20,10 @@ External_Programs/
 # PTM data (PTMdb + PhosphoSitePlus) is licensed — place manually in legacy_data/ptm/
 legacy_data/ptm/
 
-# Nextflow hidden files
+# Nextflow hidden files and caches
 .nextflow/
 .nextflow.log*
+.nextflow-conda-cache/
 
 # Python
 *.pyc
