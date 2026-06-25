@@ -55,29 +55,28 @@ With `--data discanvis_data` the `SETUP_DEPS` Nextflow process handles this auto
 
 ### 3. Run the pipeline
 
-Use the `./run` wrapper for a clean interface:
+Use direct Nextflow commands. Configuration is selected with separate axes:
 
 ```bash
 conda activate discanvis
 
-# RAF1 single-gene test (~5-15 min) — validates the full DAG
-./run --data local --target_gene RAF1
+# Current target: cellular-vulnerability feature run on an 8 GB laptop
+export NXF_OPTS='-Xms256m -Xmx1g'
+nextflow run main.nf \
+    --project cellular_vulnerability \
+    --machine laptop \
+    --description "Q4 2026 Turbine feature run" \
+    -resume
 
 # Validate the DAG without running anything
-./run --data local --target_gene RAF1 -stub
+nextflow run main.nf --project test_one_protein --data local --machine laptop --target_gene RAF1 -stub
 
-# Full human proteome, zero-config (all references auto-downloaded)
-./run --data discanvis_data -resume
+# Full DisCanVis update on a stronger machine
+nextflow run main.nf --project full_discanvis --machine hard -resume
 
-# Named project with description
-./run --data discanvis_data --project cellular_vulnerability \
-    --description "Q4 2026 Turbine feature run" -resume
-
-# HPC cluster
-./run --data discanvis_data --project discanvis --env slurm -resume
+# Slurm
+nextflow run main.nf --project full_discanvis --machine slurm -resume
 ```
-
-The wrapper resolves `--env/--data/--project` to Nextflow profiles and prints the resolved command. All other arguments (like `-resume`, `--target_gene`, `--skip_pdb`) pass through to Nextflow unchanged.
 
 ---
 
@@ -85,24 +84,16 @@ The wrapper resolves `--env/--data/--project` to Nextflow profiles and prints th
 
 | Argument | Values | Default | Description |
 |----------|--------|---------|-------------|
-| `--env` | `conda`, `docker`, `slurm` | `conda` | Execution environment |
-| `--data` | `local`, `discanvis_data` | — | Reference data source. `local` reads machine-specific paths from `conf/local_refs.config`; `discanvis_data` auto-downloads all references |
-| `--project` | see below | — | Preset track selection + outdir |
+| `--project` | `cellular_vulnerability`, `full_discanvis`, `discanvis`, `vep_benchmarking`, `test_one_protein`, `test_subset` | `cellular_vulnerability` | Biological/annotation track preset from `config/projects/` |
+| `--machine` | `laptop`, `low`, `medium`, `hard`, `slurm` | `laptop` | Runtime/resource preset from `config/machines/` |
+| `--data` | `discanvis_data`, `local` | `discanvis_data` | Reference source preset from `config/data/` |
+| `--env` | `conda`, `docker`, `none` | `conda` | Software environment |
+| `--ram` | Nextflow memory string, e.g. `'4 GB'` | machine default | Override the machine memory request |
 | `--description` | any string | — | Written to `mapping_reports/mapping_summary.md` |
+| `--target_gene` | HGNC symbol | project default | Override the target gene for test/single-gene runs |
+| `--skip_*` | `true`/`false` | project default | Disable or enable individual annotation tracks |
 
-Any additional Nextflow argument (e.g. `-resume`, `-stub`, `--target_gene RAF1`) is passed through unchanged.
-
-### Project presets
-
-| `--project` | Scope | Key settings |
-|-------------|-------|--------------|
-| `test_one_protein` | Single gene (default: TP53) | Quick validation |
-| `test_subset` | TP53, RAF1, BRAF, KRAS, EGFR | Regression testing |
-| `discanvis` | Full proteome | All tracks (DisCanVis2 web server update) |
-| `vep_benchmarking` | Full proteome | Mutations + pathogenicity + disorder only |
-| `cellular_vulnerability` | Full proteome | ML feature set for Turbine cellular vulnerability model |
-
-Override any project param directly: `./run --project test_one_protein --target_gene BRCA1`
+Override any project setting directly: `nextflow run main.nf --project test_one_protein --data local --machine laptop --target_gene BRCA1 -resume`
 
 ---
 
@@ -111,62 +102,68 @@ Override any project param directly: `./run --project test_one_protein --target_
 ### Single gene — full annotation set
 
 ```bash
-./run --data local --target_gene RAF1 -resume
+nextflow run main.nf --project test_one_protein --data local --machine laptop --target_gene RAF1 -resume
 ```
 
 ### Single gene, subset of tracks
 
 ```bash
-./run --data local --target_gene TP53 \
+nextflow run main.nf --project test_one_protein --data local --machine laptop --target_gene TP53 \
     --skip_pdb true --skip_conservation true --skip_ppi true -resume
 ```
 
 ### Full human proteome — all tracks
 
 ```bash
-./run --data discanvis_data \
-    --scatter_chunks 20 --blat_chunks 16 -resume
+nextflow run main.nf --project full_discanvis --machine hard -resume
+```
+
+For an 8 GB laptop:
+
+```bash
+export NXF_OPTS='-Xms256m -Xmx1g'
+nextflow run main.nf --project full_discanvis --machine laptop -resume
 ```
 
 ### Gene list from file
 
 ```bash
-./run --data discanvis_data \
-    --gene_list_file projects/gene_lists/cellular_vulnerability.txt -resume
+nextflow run main.nf --project full_discanvis --machine medium \
+    --gene_list_file config/gene_lists/cellular_vulnerability.txt -resume
 ```
 
-### Named project run
+### Cellular vulnerability project
 
 ```bash
-./run --data discanvis_data --project cellular_vulnerability \
+nextflow run main.nf --project cellular_vulnerability --machine laptop \
     --description "Q4 2026 Turbine feature run" -resume
 ```
 
 ### HPC cluster
 
 ```bash
-./run --data discanvis_data --project discanvis --env slurm \
+nextflow run main.nf --project full_discanvis --machine slurm \
     --description "Full proteome DisCanVis2 update" -resume
 ```
 
 ### TCGA/cBioPortal MAF mutations
 
 ```bash
-./run --data local --target_gene TP53 \
+nextflow run main.nf --project test_one_protein --data local --machine laptop --target_gene TP53 \
     --mutation_maf /path/to/tcga.maf --mutation_source TCGA -resume
 ```
 
 ### Custom VCF input
 
 ```bash
-./run --data local --target_gene TP53 \
+nextflow run main.nf --project test_one_protein --data local --machine laptop --target_gene TP53 \
     --mutation_vcf /path/to/variants.vcf.gz --mutation_source MyStudy -resume
 ```
 
 ### Skip individual disorder predictors
 
 ```bash
-./run --data local --target_gene RAF1 \
+nextflow run main.nf --project test_one_protein --data local --machine laptop --target_gene RAF1 \
     --skip_alphafold true --skip_iupred true --skip_aiupred true -resume
 ```
 
@@ -233,19 +230,17 @@ pytest tests/test_create_mutation_map_worker.py -v -k missense
 
 ---
 
-## Advanced: direct Nextflow invocation
+## Configuration Layout
 
-The `run` wrapper is syntactic sugar for Nextflow profiles. You can call Nextflow directly if preferred:
+All run configuration lives under `config/`:
 
-```bash
-# Equivalent to: ./run --data local --target_gene RAF1
-nextflow run main.nf -profile local,conda --target_gene RAF1
-
-# Equivalent to: ./run --data discanvis_data --project cellular_vulnerability
-nextflow run main.nf -profile discanvis_data,cellular_vulnerability,conda -resume
-```
-
-Profile load order: `data → project → env` (project settings override data defaults).
+| Folder | Meaning |
+|--------|---------|
+| `config/projects/` | Biological goal and annotation-track selection |
+| `config/machines/` | Runtime resources: memory, CPUs, parallelism, executor |
+| `config/data/` | Reference source paths/download behavior |
+| `config/envs/` | Software environment: conda, docker, or current shell |
+| `config/gene_lists/` | Optional gene lists |
 
 ---
 

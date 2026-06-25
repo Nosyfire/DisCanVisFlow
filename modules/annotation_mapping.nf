@@ -1768,7 +1768,7 @@ process MAPPING_REPORT {
         --command          '${workflow.commandLine}' \\
         --pipeline_version '${workflow.manifest.version}' \\
         --nextflow_version '${workflow.nextflow.version}' \\
-        --profile          '${workflow.profile}' \\
+        --profile          'project=${params.project};data=${params.data};machine=${params.machine};env=${params.env}' \\
         --run_name         '${workflow.runName}' \\
         --start_time       '${workflow.start}' \\
         --work_dir         '${workflow.workDir}' \\

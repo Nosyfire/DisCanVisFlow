@@ -27,14 +27,11 @@
  *
  * Run modes
  * ─────────
- *   # Local files, RAF1 single-gene test (~2 min)
- *   nextflow run main.nf -profile test
+ *   # Cellular-vulnerability project on an 8 GB laptop
+ *   nextflow run main.nf --project cellular_vulnerability --machine laptop -resume
  *
- *   # FTP download + RAF1 single-gene test (~5-10 min first run, cached afterwards)
- *   nextflow run main.nf -profile ftp_test
- *
- *   # FTP download, full proteome run (hours)
- *   nextflow run main.nf -profile ftp
+ *   # Full DisCanVis update on a stronger workstation/server
+ *   nextflow run main.nf --project full_discanvis --machine hard -resume
  *
  *   # Provide local FASTAs explicitly
  *   nextflow run main.nf \
@@ -42,7 +39,7 @@
  *       --gencode_fasta /path/to/gencode_pc_translations.fasta
  *
  *   # DAG-only stub validation (no BLAST, no download)
- *   nextflow run main.nf -profile test -stub
+ *   nextflow run main.nf --project test_one_protein --data local --machine laptop -stub
  */
 
 nextflow.enable.dsl = 2

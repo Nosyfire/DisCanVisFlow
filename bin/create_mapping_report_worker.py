@@ -19,7 +19,7 @@ Usage (driven by modules/annotation_mapping.nf :: MAPPING_REPORT):
       --outdir .
       [--mapping_mode all_isoform_mapping]
       [--command "nextflow run ..."] [--pipeline_version 0.5.0]
-      [--nextflow_version 26.04.3] [--profile test_one_protein,conda]
+      [--nextflow_version 26.04.3] [--profile project=test_one_protein;data=local;machine=laptop;env=conda]
       [--run_name foo] [--start_time ...] [--work_dir ...] [--launch_dir ...]
       [--versions_file versions.txt]
       [--source "ELM motifs=local|/abs/path" ...]

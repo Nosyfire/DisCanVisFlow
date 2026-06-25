@@ -42,33 +42,31 @@ conda activate DisCanVis
 |---------|-------------|
 | `raf1,conda` | Single-gene RAF1 test (~5–15 min) |
 | `full,conda` | Full human proteome (hours) |
-| `raf1,docker` | RAF1 test using Docker container |
-| `full,docker` | Full proteome using Docker container |
-| `raf1,slurm,conda` | RAF1 test on SLURM cluster |
+Use `--project`, `--data`, and `--machine` to select a run configuration.
 
 ### Common Invocations
 
 ```bash
 # RAF1 test run (recommended first run)
-nextflow run main.nf -profile raf1,conda -resume
+nextflow run main.nf --project test_one_protein --data local --machine laptop --target_gene RAF1 -resume
 
 # Validate DAG without executing
-nextflow run main.nf -profile raf1,conda -stub
+nextflow run main.nf --project test_one_protein --data local --machine laptop --target_gene RAF1 -stub
 
 # Full proteome
-nextflow run main.nf -profile full,conda -resume
+nextflow run main.nf --project full_discanvis --machine hard -resume
 
 # Supply local ClinVar VCF
-nextflow run main.nf -profile raf1,conda \
+nextflow run main.nf --project test_one_protein --data local --machine laptop --target_gene RAF1 \
     --clinvar_vcf /path/to/clinvar.vcf.gz -resume
 
 # TCGA MAF mutations
-nextflow run main.nf -profile raf1,conda \
+nextflow run main.nf --project test_one_protein --data local --machine laptop --target_gene RAF1 \
     --mutation_maf /path/to/tcga.maf \
     --mutation_source TCGA -resume
 
 # Skip API calls for offline/fast testing
-nextflow run main.nf -profile raf1,conda \
+nextflow run main.nf --project test_one_protein --data local --machine laptop --target_gene RAF1 \
     --skip_uniprot_api --skip_alphafold --skip_iupred --skip_aiupred -resume
 ```
 
