@@ -11,31 +11,21 @@ The pipeline consumes UniProt SwissProt + GENCODE FASTA/GTF references and produ
 ## Environment Setup
 
 ```bash
-# Conda env name is 'DisCanVis' (capital D and V)
+# Conda env name is 'discanvis' (lowercase)
 conda env create -f environment.yml
+conda activate discanvis
 
-# Activate before running pipeline or tests
-conda activate DisCanVis
-
-# If the env was created before bioconda UCSC tools were added to environment.yml,
-# update it (installs blat, pslCDnaFilter, twoBitToFa, bigWigToBedGraph, nextflow):
-conda env update -n DisCanVis -f environment.yml --prune
+# If the env was created before bioconda UCSC tools were added to environment.yml:
+conda env update -n discanvis -f environment.yml --prune
 
 # Disorder predictions (IUPred3/AIUPred) need scipy+torch in a separate env.
-# With -profile discanvis_data,conda the SETUP_DEPS Nextflow process runs once on
-# first launch: clones AIUPred from GitHub, creates the discanvis_aiupred conda env,
-# installs bigBedToBed, and auto-detects the aiupred_python path. No manual config
-# needed. For raf1/full profiles, run `bash bin/setup_external_programs.sh` once.
+# With --data discanvis_data the SETUP_DEPS Nextflow process handles this on first run.
+# For --data local runs: bash bin/setup_external_programs.sh
 #
-# IUPred3 / ANCHOR2: academic licence (Dosztányi lab, ELTE) — NO redistribution.
-# Cannot be bundled in the repo or on GitHub. Each user must register at:
-#   https://iupred2a.elte.hu/download
-# then extract into External_Programs/, OR set params.iupred3_url to a private URL
-# and SETUP_DEPS will auto-download it. Without IUPred3 those tracks will be empty.
+# IUPred3 / ANCHOR2: academic licence — register at https://iupred2a.elte.hu/download
+# then extract into External_Programs/iupred3/
 
-# bigBedToBed (polymorphism track): environment.yml lists ucsc-bigbedtobed, but the
-# conda solver can be very slow. If `which bigBedToBed` is empty, drop the UCSC
-# static binary straight into the env (instant):
+# bigBedToBed (polymorphism track): if 'which bigBedToBed' is empty:
 #   curl -fsSL https://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/bigBedToBed \
 #     -o "$CONDA_PREFIX/bin/bigBedToBed" && chmod +x "$CONDA_PREFIX/bin/bigBedToBed"
 # A missing bigBedToBed no longer crashes the run — it just skips polymorphism.
@@ -43,63 +33,70 @@ conda env update -n DisCanVis -f environment.yml --prune
 
 ## Running the Pipeline
 
-```bash
-conda activate DisCanVis
+Config is selected through four named axes — data source, project, machine, environment:
 
-# RAF1 single-gene test — recommended first run (~5-15 min)
-nextflow run main.nf -profile raf1,conda -resume
+```bash
+conda activate discanvis
+
+# Single-gene RAF1 test — fastest (4 min on 64-CPU server, ~15-30 min on laptop)
+nextflow run main.nf --project test_one_protein --data local --machine hard --target_gene RAF1 -resume
 
 # Validate DAG without running anything
-nextflow run main.nf -profile raf1,conda -stub
+nextflow run main.nf --project test_one_protein --data local --machine laptop --target_gene RAF1 -stub
 
-# Full human proteome (hours) — local machine paths
-nextflow run main.nf -profile full,conda -resume
+# Cellular vulnerability run (auto-downloads all references)
+nextflow run main.nf --project cellular_vulnerability --data discanvis_data --machine laptop \
+    --description "Q4 2026 Turbine run" -resume
 
-# Zero-config full run (all references auto-download)
-nextflow run main.nf -profile discanvis_data,conda -resume
-nextflow run main.nf -profile discanvis_data,conda --target_gene 'TP53,BRCA1' -resume
+# Full DisCanVis2 update on the GPU server
+nextflow run main.nf --project discanvis --data local --machine hard -resume
 
-# Transcript→UniProt mapping mode (default: main_isoform_mapping = canonical only).
-# all_isoform_mapping pairs each transcript to its best curated SwissProt isoform
-# (needs --uniprot_isoform_fasta, set in raf1/full/discanvis_data profiles).
-nextflow run main.nf -profile raf1,conda --mapping_mode all_isoform_mapping -resume
+# Full proteome on SLURM cluster
+nextflow run main.nf --project discanvis --data local --machine slurm -resume
 
-# Predefined project profiles
-nextflow run main.nf -profile test_one_protein,conda -resume            # default TP53
-nextflow run main.nf -profile test_one_protein,conda --target_gene RAF1 -resume
-nextflow run main.nf -profile test_subset_of_protein,conda -resume      # TP53,RAF1,BRAF,KRAS,EGFR
-nextflow run main.nf -profile vep_benchmarking,conda -resume            # mutations + pathogenicity, full proteome
-nextflow run main.nf -profile discanvis,conda -resume                   # DisCanVis2 update (full proteome)
-
-# Gene list from file
-nextflow run main.nf --gene_list_file projects/gene_lists/cellular_vulnerability.txt \
-    -profile discanvis_data,conda -resume
-
-# Skip individual disorder predictors (for faster testing)
-nextflow run main.nf -profile raf1,conda --skip_alphafold true --skip_iupred true --skip_aiupred true -resume
-
-# Skip Pfam API lookup
-nextflow run main.nf -profile raf1,conda --skip_pfam_api true -resume
+# Skip individual disorder predictors
+nextflow run main.nf --project test_one_protein --data local --machine hard --target_gene RAF1 \
+    --skip_alphafold true --skip_iupred true --skip_aiupred true -resume
 
 # Supply local ClinVar VCF instead of auto-download
-nextflow run main.nf -profile raf1,conda --clinvar_vcf /path/to/clinvar.vcf.gz -resume
+nextflow run main.nf --project test_one_protein --data local --machine hard --target_gene RAF1 \
+    --clinvar_vcf /path/to/clinvar.vcf.gz -resume
 
 # TCGA/cBioPortal MAF mutation input
-nextflow run main.nf -profile raf1,conda \
-    --mutation_maf /path/to/tcga.maf \
-    --mutation_source TCGA -resume
+nextflow run main.nf --project test_one_protein --data local --machine hard --target_gene RAF1 \
+    --mutation_maf /path/to/tcga.maf --mutation_source TCGA -resume
 
-# Generic VCF (non-ClinVar)
-nextflow run main.nf -profile raf1,conda \
-    --mutation_vcf /path/to/variants.vcf.gz \
-    --mutation_source CustomStudy -resume
+# Gene list from file
+nextflow run main.nf --project cellular_vulnerability --data discanvis_data --machine laptop \
+    --gene_list_file config/gene_lists/cellular_vulnerability.txt -resume
 ```
 
-Profile combinations: `raf1,conda` | `full,conda` | `raf1,docker` | `full,docker` | `discanvis_data,conda` | `discanvis_data,slurm`
+Config axes: `--data local|discanvis_data` + `--project <name>` + `--machine laptop|hard|slurm` + `--env conda|docker`
 
-Docker image must be built once before using docker profiles:
+Docker:
 ```bash
 docker build -t discanvis-pipeline:latest .
+nextflow run main.nf --project test_one_protein --data local --machine hard --env docker --target_gene RAF1 -resume
+```
+
+## Reference Data Management
+
+```bash
+# List all cached references with sizes and dates
+bin/refresh_refs.sh
+
+# Force re-download of specific sources (then -resume to fetch only those)
+bin/refresh_refs.sh clinvar
+bin/refresh_refs.sh clinvar mobidb go
+bin/refresh_refs.sh all          # everything except hg38/dbsnp/alphafold
+bin/refresh_refs.sh --force all  # truly everything
+
+# Generate MANIFEST.tsv (what's in references/, sizes, dates)
+python bin/generate_manifest.py --no_checksum
+
+# Extract one gene from a completed full-proteome run (no recomputation)
+python bin/extract_gene_from_results.py --source results/discanvis --gene RAF1 --out results/discanvis_raf1
+python bin/extract_gene_from_results.py --source results/discanvis --gene RAF1,BRAF,KRAS --out results/discanvis_kinases
 ```
 
 ## Running Tests
@@ -167,40 +164,35 @@ MAKEBLASTDB × 2 ──► BLASTP × 2 (reciprocal) ──► MERGE_BLAST_HITS �
     DEPMAP_MAP ◄── DepMap TSV             TRANSCRIPT_MAP ◄── annotation + disorder
 ```
 
-### Output Directory Structure
+### Directory Structure
 
 ```
-results/<project>/
-├── intermediate/             Entry_Isoform-keyed staging inputs to TRANSCRIPT_MAP
-│   ├── annotations/          elm.tsv, dibs.tsv, mfib.tsv, phasepro.tsv,
-│   │                         uniprot_roi.tsv, uniprot_binding.tsv, ptm_merged.tsv, pfam_domains.tsv
-│   └── disorder/             mobidb_disorder.tsv
-└── final/                    ALL DB-ready outputs (Protein_ID-keyed)
-    ├── sequence/             isoform table with sequences, coordinates, MANE/APPRIS flags
-    ├── genome/               combined_map.map, exon.tsv, genome_protein_index.tsv,
-    │                         genome_protein_mutations.tsv (every possible SNV reference table)
-    ├── mutations/            ClinVar/, TCGA/, CBioportal/, DepMap/ — per-source TSVs
-    ├── annotations/          elm, dibs, mfib, phasepro, uniprot_roi, uniprot_binding,
-    │                         ptm_merged, pfam_domains, go_terms, polymorphism,
-    │                         pem_core_motifs, pem_core_motifs_mapped, coiled_coils, DeepCoil,
-    │                         interactions, scansite, elm_classes, homology_similarity_manifest
-    ├── disorder/             IUPredscores, Anchorscores, AIUPredscores, AIUPredBinding,
-    │                         AlphaFoldTable, CombinedDisorderNew, CombinedDisorderNew_Pos, rsa_scores
-    ├── pdb/                  pdb_structures.tsv (chain + region + resolution), pdb_missing.tsv
-    ├── conservation/         conservation_multiple_level.tsv, conservation_phastcons.tsv
-    ├── position/             position_based_annotations.tsv
-    ├── disease/              clinvar_disease.tsv, clinvar_disease_mutations.tsv,
-    │                         omim_disease.tsv, omim_mutations.tsv
-    ├── pathogenicity/        pathogenicity_scores.tsv (dbNSFP), alphamissense.tsv,
-    │                         mavedb.tsv, proteingym.tsv
-    └── drivers/              cancer_driver.tsv, census_driver.tsv, compendium_driver.tsv
-mapping_reports/
-├── <GENE>_mapping_report.md  per-gene: isoform coverage, annotation source counts, mapping QC
-├── mapping_summary.md        run command, tool versions, provenance, run-wide coverage
-└── mapping_coverage.tsv      flat per-(Gene × annotation) table (full proteome runs)
+DisCanVisFlow/
+├── work/
+│   ├── local/           Nextflow task cache for --data local runs
+│   ├── discanvis_data/  Nextflow task cache for --data discanvis_data runs
+│   └── benchmark/       ad-hoc benchmark work dirs
+├── references/          storeDir cache for all FETCH_* downloads (shared across all runs)
+│   └── MANIFEST.tsv     auto-generated by bin/generate_manifest.py
+├── results/<project>/
+│   ├── intermediate/    Entry_Isoform-keyed staging inputs to TRANSCRIPT_MAP
+│   └── final/           ALL DB-ready outputs (Protein_ID-keyed)
+│       ├── sequence/, genome/, mutations/, annotations/, disorder/
+│       ├── pdb/, conservation/, position/, disease/, pathogenicity/, drivers/
+│       └── mapping_reports/
+└── config/
+    ├── data/            local.config | discanvis_data.config
+    ├── projects/        cellular_vulnerability | discanvis | vep_benchmarking | test_* | full_discanvis
+    ├── machines/        laptop | hard | medium | low | slurm
+    └── envs/            conda | docker
 ```
 
-Annotations transferred from a main isoform to an alternative isoform are flagged `mapping_type=homology_similarity` and collected in `final/annotations/homology_similarity_manifest.tsv`.
+**Cross-project data reuse**: same `--data` flag → same `work/<data>/` dir → Nextflow `-resume` shares all task cache automatically between projects. BLAST, GENOME_MAP, and FETCH_* steps computed for `cellular_vulnerability` are fully reused when running `discanvis` with the same `--data local`.
+
+**Single-gene extraction from full run** (no recomputation):
+```bash
+python bin/extract_gene_from_results.py --source results/discanvis --gene RAF1 --out results/discanvis_raf1
+```
 
 ### Module → File Mapping
 

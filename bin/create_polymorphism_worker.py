@@ -127,13 +127,18 @@ def _classify_type(freq_class: str) -> str:
 def extract_from_bigbed(dbsnp_bb: str, ucsc_bin: str, regions: dict,
                         g2p: dict, protein_ids: set, rows: list) -> int:
     """Extract every dbSNP record overlapping each selected isoform's genomic
-    region directly from the dbSnp*.bb bigBed (legacy get_snp.py approach), map
-    each SNV's genomic coordinate to a protein residue via combined_map, and emit
-    a row carrying rsid + ref/alt + allele_frequency for ALL selected isoforms.
+    region directly from the dbSnp*.bb bigBed, map each SNV's genomic coordinate
+    to a protein residue via combined_map, and emit a row carrying
+    rsid + ref/alt + allele_frequency for ALL selected isoforms.
 
-    The bigBed columns follow the UCSC dbSnp155 schema (same as common_poly.out):
+    The bigBed columns follow the UCSC dbSnp155 schema:
       0 chrom  1 chromStart(0-based)  2 chromEnd(1-based)  3 name(rsid)
       4 ref    6 alts                 9 freqs              14 freqSourceCount/flags
+
+    Optimisation: instead of one bigBedToBed call per isoform region, sweep the
+    entire bounding box of each chromosome once (at most 24 calls for a full-
+    proteome run) and filter to individual isoform positions in memory.  For a
+    single gene this reduces N calls (one per isoform) to 1 call.
     """
     bb = Path(dbsnp_bb)
     if not bb.exists() or bb.stat().st_size == 0:
@@ -141,33 +146,41 @@ def extract_from_bigbed(dbsnp_bb: str, ucsc_bin: str, regions: dict,
         return 0
     tool = Path(ucsc_bin) / "bigBedToBed" if ucsc_bin and ucsc_bin != "NO_FILE" else Path("bigBedToBed")
     tool_s = str(tool) if Path(tool).exists() else "bigBedToBed"
-    # Degrade gracefully if the UCSC binary is absent: a missing optional tool
-    # should not abort the whole pipeline — emit no bigBed rows and warn.
     if not Path(tool_s).exists() and shutil.which(tool_s) is None:
         log.warning("bigBedToBed not found (PATH or --ucsc_bin) — skipping dbSnp "
                     "bigBed extraction; install ucsc-bigbedtobed for the "
                     "polymorphism track")
         return 0
 
-    # Dedupe identical genomic regions so we only run bigBedToBed once per locus,
-    # then fan the SNVs out to every isoform sharing that region.
-    region_to_pids: dict = {}
+    # Build chromosome → (bounding_start, bounding_end, {pid: (start, end)}) map.
+    # One bigBedToBed call per chromosome sweeps the entire locus set at once.
+    chrom_bounds: dict = {}   # chrom → [min_start, max_end]
+    chrom_pids:   dict = {}   # chrom → {pid: (start, end)}
     for pid in protein_ids:
         reg = regions.get(pid)
-        if reg:
-            region_to_pids.setdefault(reg, []).append(pid)
+        if not reg:
+            continue
+        chrom, start, end = reg
+        if chrom not in chrom_bounds:
+            chrom_bounds[chrom] = [start, end]
+            chrom_pids[chrom]   = {}
+        else:
+            chrom_bounds[chrom][0] = min(chrom_bounds[chrom][0], start)
+            chrom_bounds[chrom][1] = max(chrom_bounds[chrom][1], end)
+        chrom_pids[chrom][pid] = (start, end)
 
     n = 0
-    for (chrom, start, end), pids in region_to_pids.items():
+    for chrom, (b_start, b_end) in chrom_bounds.items():
+        pids_on_chrom = chrom_pids[chrom]
         with tempfile.NamedTemporaryFile(mode="r", suffix=".bed", delete=False) as tf:
             bed_path = tf.name
         try:
             cmd = [tool_s, dbsnp_bb, f"-chrom={chrom}",
-                   f"-start={start}", f"-end={end}", bed_path]
+                   f"-start={b_start}", f"-end={b_end}", bed_path]
             res = subprocess.run(cmd, capture_output=True, text=True)
             if res.returncode != 0:
                 log.warning("bigBedToBed failed for %s:%d-%d: %s",
-                            chrom, start, end, res.stderr.strip()[:200])
+                            chrom, b_start, b_end, res.stderr.strip()[:200])
                 continue
             with open(bed_path, encoding="utf-8") as fh:
                 for line in fh:
@@ -176,28 +189,34 @@ def extract_from_bigbed(dbsnp_bb: str, ucsc_bin: str, regions: dict,
                         continue
                     gpos = c[2].strip()             # chromEnd = SNV base (1-based)
                     rsid = c[3]
-                    ref = c[4]
-                    alt = c[6].rstrip(",")
-                    freq = _max_allele_freq(c[9]) if len(c) > 9 else ""
+                    ref  = c[4]
+                    alt  = c[6].rstrip(",")
+                    freq  = _max_allele_freq(c[9]) if len(c) > 9 else ""
                     ptype = _classify_type(c[14]) if len(c) > 14 else "All Polymorphisms"
-                    for pid in pids:
+                    try:
+                        snv_pos = int(gpos)
+                    except (ValueError, TypeError):
+                        continue
+                    for pid, (p_start, p_end) in pids_on_chrom.items():
+                        # Quick range check before the dict lookup
+                        if not (p_start <= snv_pos <= p_end):
+                            continue
                         prot_pos = g2p.get((pid, gpos))
                         if prot_pos is None:
-                            # fallback: 0-based start + 1
                             try:
                                 prot_pos = g2p.get((pid, str(int(c[1]) + 1)))
                             except (ValueError, TypeError):
                                 prot_pos = None
                         if prot_pos is None:
-                            continue   # SNV not in this isoform's CDS (e.g. UTR/intron)
+                            continue
                         rows.append({
                             "Protein_ID": pid,
-                            "Position": prot_pos,
-                            "rsid": rsid,
-                            "ref": ref,
-                            "alt": alt,
+                            "Position":   prot_pos,
+                            "rsid":       rsid,
+                            "ref":        ref,
+                            "alt":        alt,
                             "allele_frequency": freq,
-                            "Type": ptype,
+                            "Type":       ptype,
                         })
                         n += 1
         finally:
@@ -205,8 +224,8 @@ def extract_from_bigbed(dbsnp_bb: str, ucsc_bin: str, regions: dict,
                 Path(bed_path).unlink()
             except OSError:
                 pass
-    log.info("dbsnp_bb: %d polymorphism rows extracted across %d regions",
-             n, len(region_to_pids))
+    log.info("dbsnp_bb: %d polymorphism rows extracted across %d chromosomes (%d isoforms)",
+             n, len(chrom_bounds), len(protein_ids))
     return n
 
 

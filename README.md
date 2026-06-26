@@ -38,7 +38,6 @@ All outputs are Protein_ID–keyed (GENCODE transcript name, e.g. `RAF1-201`) an
 git clone https://github.com/Nosyfire/DisCanVisFlow.git
 cd DisCanVisFlow
 
-# Create the conda environment (Python workers + Nextflow + UCSC tools)
 conda env create -f environment.yml
 conda activate discanvis
 ```
@@ -55,27 +54,18 @@ With `--data discanvis_data` the `SETUP_DEPS` Nextflow process handles this auto
 
 ### 3. Run the pipeline
 
-Use direct Nextflow commands. Configuration is selected with separate axes:
-
 ```bash
 conda activate discanvis
 
-# Current target: cellular-vulnerability feature run on an 8 GB laptop
-export NXF_OPTS='-Xms256m -Xmx1g'
-nextflow run main.nf \
-    --project cellular_vulnerability \
-    --machine laptop \
-    --description "Q4 2026 Turbine feature run" \
-    -resume
+# Cellular vulnerability project — auto-downloads all references
+nextflow run main.nf --project cellular_vulnerability --data discanvis_data --machine laptop \
+    --description "Q4 2026 Turbine feature run" -resume
+
+# Single-gene RAF1 test (uses pre-existing local paths, fastest)
+nextflow run main.nf --project test_one_protein --data local --machine hard --target_gene RAF1 -resume
 
 # Validate the DAG without running anything
 nextflow run main.nf --project test_one_protein --data local --machine laptop --target_gene RAF1 -stub
-
-# Full DisCanVis update on a stronger machine
-nextflow run main.nf --project full_discanvis --machine hard -resume
-
-# Slurm
-nextflow run main.nf --project full_discanvis --machine slurm -resume
 ```
 
 ---
@@ -84,16 +74,14 @@ nextflow run main.nf --project full_discanvis --machine slurm -resume
 
 | Argument | Values | Default | Description |
 |----------|--------|---------|-------------|
-| `--project` | `cellular_vulnerability`, `full_discanvis`, `discanvis`, `vep_benchmarking`, `test_one_protein`, `test_subset` | `cellular_vulnerability` | Biological/annotation track preset from `config/projects/` |
+| `--project` | `cellular_vulnerability`, `full_discanvis`, `discanvis`, `vep_benchmarking`, `test_one_protein`, `test_subset` | `cellular_vulnerability` | Biological/annotation preset from `config/projects/` |
+| `--data` | `local`, `discanvis_data` | `discanvis_data` | Reference source: `local` = pre-existing paths on this machine; `discanvis_data` = auto-download everything |
 | `--machine` | `laptop`, `low`, `medium`, `hard`, `slurm` | `laptop` | Runtime/resource preset from `config/machines/` |
-| `--data` | `discanvis_data`, `local` | `discanvis_data` | Reference source preset from `config/data/` |
-| `--env` | `conda`, `docker`, `none` | `conda` | Software environment |
-| `--ram` | Nextflow memory string, e.g. `'4 GB'` | machine default | Override the machine memory request |
+| `--env` | `conda`, `docker` | `conda` | Software environment |
+| `--ram` | Nextflow memory string, e.g. `'4 GB'` | machine default | Override memory request |
 | `--description` | any string | — | Written to `mapping_reports/mapping_summary.md` |
-| `--target_gene` | HGNC symbol | project default | Override the target gene for test/single-gene runs |
+| `--target_gene` | HGNC symbol | project default | Override target gene for test/single-gene runs |
 | `--skip_*` | `true`/`false` | project default | Disable or enable individual annotation tracks |
-
-Override any project setting directly: `nextflow run main.nf --project test_one_protein --data local --machine laptop --target_gene BRCA1 -resume`
 
 ---
 
@@ -102,68 +90,47 @@ Override any project setting directly: `nextflow run main.nf --project test_one_
 ### Single gene — full annotation set
 
 ```bash
-nextflow run main.nf --project test_one_protein --data local --machine laptop --target_gene RAF1 -resume
+nextflow run main.nf --project test_one_protein --data local --machine hard --target_gene RAF1 -resume
 ```
 
-### Single gene, subset of tracks
+### Zero-config full run (downloads all references automatically)
 
 ```bash
-nextflow run main.nf --project test_one_protein --data local --machine laptop --target_gene TP53 \
-    --skip_pdb true --skip_conservation true --skip_ppi true -resume
+nextflow run main.nf --project cellular_vulnerability --data discanvis_data --machine laptop \
+    --description "Q4 2026 Turbine run" -resume
 ```
 
 ### Full human proteome — all tracks
 
 ```bash
-nextflow run main.nf --project full_discanvis --machine hard -resume
-```
-
-For an 8 GB laptop:
-
-```bash
-export NXF_OPTS='-Xms256m -Xmx1g'
-nextflow run main.nf --project full_discanvis --machine laptop -resume
-```
-
-### Gene list from file
-
-```bash
-nextflow run main.nf --project full_discanvis --machine medium \
-    --gene_list_file config/gene_lists/cellular_vulnerability.txt -resume
-```
-
-### Cellular vulnerability project
-
-```bash
-nextflow run main.nf --project cellular_vulnerability --machine laptop \
-    --description "Q4 2026 Turbine feature run" -resume
+nextflow run main.nf --project full_discanvis --data local --machine hard -resume
 ```
 
 ### HPC cluster
 
 ```bash
-nextflow run main.nf --project full_discanvis --machine slurm \
+nextflow run main.nf --project full_discanvis --data local --machine slurm \
     --description "Full proteome DisCanVis2 update" -resume
 ```
 
 ### TCGA/cBioPortal MAF mutations
 
 ```bash
-nextflow run main.nf --project test_one_protein --data local --machine laptop --target_gene TP53 \
+nextflow run main.nf --project test_one_protein --data local --machine hard --target_gene TP53 \
     --mutation_maf /path/to/tcga.maf --mutation_source TCGA -resume
 ```
 
-### Custom VCF input
+### Custom VCF
 
 ```bash
-nextflow run main.nf --project test_one_protein --data local --machine laptop --target_gene TP53 \
+nextflow run main.nf --project test_one_protein --data local --machine hard --target_gene TP53 \
     --mutation_vcf /path/to/variants.vcf.gz --mutation_source MyStudy -resume
 ```
 
-### Skip individual disorder predictors
+### Skip individual annotation tracks
 
 ```bash
-nextflow run main.nf --project test_one_protein --data local --machine laptop --target_gene RAF1 \
+nextflow run main.nf --project test_one_protein --data local --machine hard --target_gene RAF1 \
     --skip_alphafold true --skip_iupred true --skip_aiupred true -resume
 ```
 
@@ -188,9 +155,73 @@ results/<project>/
 └── mapping_reports/
     ├── mapping_summary.md        Run metadata + provenance + run-wide coverage table
     └── mapping_coverage.tsv      Per-(Gene, annotation) coverage (full proteome runs)
+
+work/
+├── local/           Nextflow task cache for --data local runs
+└── discanvis_data/  Nextflow task cache for --data discanvis_data runs
+
+references/          Auto-downloaded reference data (storeDir cache, shared across all runs)
+├── MANIFEST.tsv     Auto-generated: every cached file with size + modification date
+└── ...
 ```
 
 Every annotation output uses `Protein_ID` (GENCODE transcript name, e.g. `RAF1-201`) as its primary key. Annotations transferred from a main isoform to an alternative isoform via sequence homology are flagged `mapping_type=homology_similarity`.
+
+---
+
+## Cross-project data reuse
+
+### Reuse pipeline cache across projects
+
+Two runs with the **same `--data` flag share the same `work/` directory** (`work/local/` or `work/discanvis_data/`). Nextflow's `-resume` automatically reuses any task whose inputs are identical — so running `cellular_vulnerability` then `discanvis` (both `--data local`) reuses BLAST, genome mapping, and all FETCH steps without re-running them.
+
+### Extract one gene from a completed full-proteome run
+
+If you've already run the full proteome, extracting a single gene's data takes seconds:
+
+```bash
+python bin/extract_gene_from_results.py \
+    --source results/discanvis \
+    --gene   RAF1 \
+    --out    results/discanvis_raf1
+
+# Multiple genes
+python bin/extract_gene_from_results.py \
+    --source results/discanvis \
+    --gene   RAF1,BRAF,KRAS \
+    --out    results/discanvis_kinases
+```
+
+This filters all TSVs in `results/discanvis/final/` by Protein_ID prefix and writes filtered copies. No Nextflow, no recomputation.
+
+---
+
+## Reference data management
+
+### Check what's cached
+
+```bash
+bin/refresh_refs.sh          # list all cached sources, sizes, and dates
+python bin/generate_manifest.py --no_checksum   # write references/MANIFEST.tsv
+```
+
+### Force re-download of specific sources
+
+```bash
+bin/refresh_refs.sh clinvar              # delete cached ClinVar → re-download on next run
+bin/refresh_refs.sh clinvar mobidb go   # multiple sources at once
+bin/refresh_refs.sh all                  # refresh everything except hg38/dbsnp/alphafold
+bin/refresh_refs.sh --force all         # refresh truly everything
+```
+
+Then re-run with `-resume` — only the deleted files are re-fetched.
+
+### Two data modes
+
+| Mode | When to use | Re-downloads? |
+|------|-------------|--------------|
+| `--data local` | Pre-existing paths on this machine; reproducible frozen snapshot | Never |
+| `--data discanvis_data` | Zero-config; downloads any missing reference automatically | Only if missing (or deleted via `refresh_refs.sh`) |
 
 ---
 
@@ -213,7 +244,7 @@ Every annotation output uses `Protein_ID` (GENCODE transcript name, e.g. `RAF1-2
 | OMIM | Obtain OMIM API key; set `--omim_tsv` |
 | dbNSFP | Pre-mapped TSV; set `--dbnsfp_tsv` |
 | TCGA / cBioPortal | MAF files; set `--mutation_maf` |
-| DepMap | Download `OmicsSomaticMutations.csv` from [DepMap downloads](https://depmap.org/portal/download/all/) and save it as `references/depmap/OmicsSomaticMutations.csv`; the pipeline preflight confirms it and creates `references/depmap/depmap_mutations_raw.tsv` if needed. Set `--depmap_tsv` or `--depmap_raw_csv` only if using another path; use `--skip_depmap true` to omit it. |
+| DepMap | Download `OmicsSomaticMutationsProfile.csv` from [DepMap downloads](https://depmap.org/portal/download/all/) and save as `references/depmap/OmicsSomaticMutationsProfile.csv`; or let auto-download try via `--data discanvis_data`. |
 | GOPHER conservation | Local table; set `--gopher_conservation_table` |
 | phastCons | Local bigWig dir; set `--phastcons_dir` |
 
@@ -230,7 +261,7 @@ pytest tests/test_create_mutation_map_worker.py -v -k missense
 
 ---
 
-## Configuration Layout
+## Configuration layout
 
 All run configuration lives under `config/`:
 
@@ -238,9 +269,21 @@ All run configuration lives under `config/`:
 |--------|---------|
 | `config/projects/` | Biological goal and annotation-track selection |
 | `config/machines/` | Runtime resources: memory, CPUs, parallelism, executor |
-| `config/data/` | Reference source paths/download behavior |
-| `config/envs/` | Software environment: conda, docker, or current shell |
+| `config/data/` | Reference source paths/download behavior (`local` or `discanvis_data`) |
+| `config/envs/` | Software environment: conda or docker |
 | `config/gene_lists/` | Optional gene lists |
+
+---
+
+## Performance notes
+
+Full-proteome benchmark on `gpu0.dlab.elte.hu` (64 CPUs): see `docs/performance_benchmark.md`.
+
+Key findings:
+- **Total wall time for single gene (RAF1)**: ~4 minutes (64 CPUs)
+- **Top bottleneck**: `POLYMORPHISM_MAP` (chromosome-sweep optimized; was per-isoform bigBedToBed)
+- **Second bottleneck**: `DBNSFP_MAP` — use `--dbnsfp_tsv` (pre-mapped) instead of `--dbnsfp_raw_dir` for full-proteome runs
+- **PDB**: always use `--pdb_bulk true` (SIFTS join) — set by default in both `local.config` and `discanvis_data.config`
 
 ---
 
