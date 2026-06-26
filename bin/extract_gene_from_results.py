@@ -14,11 +14,17 @@ Usage:
       --gene   RAF1 \
       --out    results/discanvis_raf1
 
-  # Multiple genes
+  # Multiple genes (comma-separated)
   python bin/extract_gene_from_results.py \
       --source results/discanvis \
       --gene   RAF1,BRAF,KRAS \
       --out    results/discanvis_kinases
+
+  # Gene list from file (one HGNC name per line, # comments OK)
+  python bin/extract_gene_from_results.py \
+      --source           results/discanvis \
+      --gene_list_file   config/gene_lists/cellular_vulnerability.txt \
+      --out              results/cellular_vulnerability
 """
 
 import argparse
@@ -140,15 +146,31 @@ def main():
     ap = argparse.ArgumentParser(description="Extract gene rows from completed results")
     ap.add_argument("--source", required=True,
                     help="source project results dir (e.g. results/discanvis)")
-    ap.add_argument("--gene", required=True,
+    ap.add_argument("--gene", default="",
                     help="HGNC gene name(s), comma-separated (e.g. RAF1 or RAF1,BRAF)")
+    ap.add_argument("--gene_list_file", default="",
+                    help="plain-text file: one HGNC name per line, # comments OK")
     ap.add_argument("--out", required=True,
                     help="output dir (e.g. results/discanvis_raf1)")
     args = ap.parse_args()
 
-    genes = [g.strip().upper() for g in args.gene.split(",") if g.strip()]
+    genes: list[str] = []
+    if args.gene:
+        genes += [g.strip().upper() for g in args.gene.split(",") if g.strip()]
+    if args.gene_list_file:
+        gene_list_path = Path(args.gene_list_file)
+        if not gene_list_path.exists():
+            log.error("--gene_list_file not found: %s", gene_list_path)
+            sys.exit(1)
+        for line in gene_list_path.read_text(encoding="utf-8").splitlines():
+            line = line.split("#")[0].strip()
+            if line:
+                genes.append(line.upper())
+
     if not genes:
-        ap.error("--gene must specify at least one gene name")
+        ap.error("Specify at least one gene via --gene or --gene_list_file")
+
+    genes = list(dict.fromkeys(genes))  # deduplicate, preserve order
 
     source = Path(args.source)
     out = Path(args.out)
