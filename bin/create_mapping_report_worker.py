@@ -113,7 +113,7 @@ COVERAGE_LABELS = {
     "drivers/census_driver.tsv": ("CGC census driver", "rows"),
     "drivers/compendium_driver.tsv": ("Compendium driver", "rows"),
     # pathogenicity
-    "pathogenicity/pathogenicity_scores.tsv": ("dbNSFP pathogenicity scores", "variants"),
+    "pathogenicity/dbnsfp_scores.tsv": ("dbNSFP scores", "variants"),
     "pathogenicity/alphamissense.tsv": ("AlphaMissense", "variants"),
     "pathogenicity/mavedb.tsv": ("MaveDB functional scores", "variants"),
     "pathogenicity/proteingym.tsv": ("ProteinGym DMS scores", "variants"),
@@ -172,7 +172,7 @@ SOURCE_REGISTRY = {
     "drivers/cancer_driver.tsv": ("local", "legacy_data/drivers/cancer_driver.tsv"),
     "drivers/census_driver.tsv": ("local", "legacy_data/drivers/census_roles.tsv"),
     "drivers/compendium_driver.tsv": ("local", "legacy_data/drivers/compendium_roles.tsv"),
-    "pathogenicity/pathogenicity_scores.tsv": ("local", "dbNSFP"),
+    "pathogenicity/dbnsfp_scores.tsv": ("local", "dbNSFP (raw chr*.gz → DBNSFP_MAP)"),
     "pathogenicity/alphamissense.tsv": ("downloaded", "AlphaMissense (Google)"),
     "pathogenicity/mavedb.tsv": ("local", "MaveDB"),
     "pathogenicity/proteingym.tsv": ("local", "ProteinGym"),
@@ -183,6 +183,14 @@ MUTATION_SOURCE = {
     "CBioportal": ("local", "cBioPortal MAF"),
     "DepMap": ("local", "DepMap TSV"),
 }
+
+# VEP predictor columns included in dbnsfp_scores.tsv (mirrors _KEEP_COLS in create_dbnsfp_map_worker.py)
+_DBNSFP_VEPS = [
+    "AlphaMissense", "CADD (phred + raw)", "ClinPred", "ESM1b", "EVE",
+    "Polyphen2 HDIV", "Polyphen2 HVAR", "PrimateAI", "SIFT",
+    "VARITY_ER_LOO", "VARITY_ER", "VARITY_R_LOO", "VARITY_R",
+    "REVEL (score + rankscore)", "gMVP",
+]
 
 
 def source_of(rel: str, overrides: dict):
@@ -584,6 +592,55 @@ def build_summary(args, seq_df, coverage, meta, regions, genes,
             L.append(f"| {k} | {v} |")
         L.append("")
 
+    # ── annotation data sources ──
+    L.append("## Annotation data sources\n")
+    L.append("Each row is an annotation track with its origin (data source / tool), "
+             "provenance kind (downloaded / local / computed / derived), and when the "
+             "output file was last generated or downloaded.\n")
+    L.append("| Category | Annotation | Source / Tool | Kind | File date |")
+    L.append("|---|---|---|---|---|")
+    for rel in sorted(SOURCE_REGISTRY):
+        fp = final_dir / rel
+        kind, origin = SOURCE_REGISTRY[rel]
+        label, _unit = COVERAGE_LABELS.get(rel, (rel.split("/")[-1], "rows"))
+        cat = rel.split("/")[0]
+        fdate = datetime.fromtimestamp(fp.stat().st_mtime).strftime("%Y-%m-%d %H:%M") \
+            if fp.exists() else "—"
+        L.append(f"| {cat} | {label} | {origin} | {kind} | {fdate} |")
+    L.append("")
+
+    # dbNSFP VEP details
+    dbnsfp_fp = final_dir / "pathogenicity" / "dbnsfp_scores.tsv"
+    if dbnsfp_fp.exists():
+        dbnsfp_ver = getattr(args, "dbnsfp_version", "") or "unknown"
+        vep_header = "  ".join([f"`{v}`" for v in _DBNSFP_VEPS])
+        L.append(f"**dbNSFP variant effect predictors** (version {dbnsfp_ver}) included in "
+                 f"`pathogenicity/dbnsfp_scores.tsv`:")
+        L.append("")
+        L.append(vep_header)
+        L.append("")
+        # Also read the actual column names from the file to stay in sync
+        try:
+            import csv
+            with open(dbnsfp_fp) as fh:
+                cols = next(csv.reader(fh, delimiter="\t"))
+            score_cols = [c for c in cols if c not in (
+                "Protein_ID", "chr", "Start_Position", "End_Position",
+                "Protein_position", "aaref", "aaalt", "aapos", "ref", "alt", "rs_dbSNP")]
+            if score_cols:
+                L.append(f"_Actual score columns in file: {', '.join(score_cols)}_")
+                L.append("")
+        except Exception:
+            pass
+
+    # polymorphism source info
+    poly_fp = final_dir / "annotations" / "polymorphism.tsv"
+    if poly_fp.exists():
+        fdate = datetime.fromtimestamp(poly_fp.stat().st_mtime).strftime("%Y-%m-%d %H:%M")
+        L.append(f"**Polymorphism source:** dbSNP (compact MAF TSV from NCBI latest release "
+                 f"VCF, or legacy dbSnp155Common.bb — see run config). Generated {fdate}.")
+        L.append("")
+
     # ── output file locations (relative to the run output dir) ──
     L.append("## Output locations\n")
     L.append(f"All outputs are under `{final_dir}`. Paths below are relative to it.\n")
@@ -683,6 +740,7 @@ def main():
     ap.add_argument("--work_dir", default="")
     ap.add_argument("--launch_dir", default="")
     ap.add_argument("--versions_file", default=None)
+    ap.add_argument("--dbnsfp_version", default="")
     ap.add_argument("--source", action="append", default=[])
     ap.add_argument("--per_gene_md_threshold", type=int, default=50,
                     help="Write per-gene MD only when gene count <= this (default 50). "

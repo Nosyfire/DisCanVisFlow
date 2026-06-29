@@ -798,14 +798,16 @@ process POLYMORPHISM_MAP {
     path snp_common,  stageAs: 'snp_common/*'   // legacy common_poly.out or NO_FILE
     path snp_all,     stageAs: 'snp_all/*'      // legacy all_poly.out or NO_FILE
     path snp_pos_tsv, stageAs: 'snp_pos/*'      // polymorphism_pos.tsv or NO_FILE
-    path dbsnp_bb                               // dbSnp*Common.bb bigBed or NO_FILE
-    path setup_done, stageAs: 'setup.done'      // sentinel: ensures bigBedToBed is installed
+    path dbsnp_bb                                // dbSnp*Common.bb bigBed or NO_FILE
+    path dbsnp_maf_gz                            // compact dbSNP MAF TSV (bgzipped) or NO_FILE
+    path setup_done, stageAs: 'setup.done'       // sentinel: ensures bigBedToBed is installed
 
     output:
     path "polymorphism.tsv", emit: polymorphism
 
     script:
-    def ucsc_arg = (params.ucsc_bin) ? "--ucsc_bin ${params.ucsc_bin}" : ""
+    def ucsc_arg   = (params.ucsc_bin) ? "--ucsc_bin ${params.ucsc_bin}" : ""
+    def maf_arg    = (dbsnp_maf_gz.name != 'NO_FILE') ? "--dbsnp_maf ${dbsnp_maf_gz}" : ""
     """
     create_polymorphism_worker.py \\
         --loc_chrom    ${loc_chrom} \\
@@ -814,6 +816,7 @@ process POLYMORPHISM_MAP {
         --snp_all      ${snp_all} \\
         --snp_pos_tsv  ${snp_pos_tsv} \\
         --dbsnp_bb     ${dbsnp_bb} \\
+        ${maf_arg} \\
         ${ucsc_arg} \\
         --output_dir   .
     """
@@ -1451,8 +1454,8 @@ process DBNSFP_MAP {
     label 'process_high'
 
     publishDir(
-        path: { params.gene_dir ? "${params.outdir}/${params.gene_dir}/final/dbnsfp"
-                                : "${params.outdir}/final/dbnsfp" },
+        path: { params.gene_dir ? "${params.outdir}/${params.gene_dir}/final/pathogenicity"
+                                : "${params.outdir}/final/pathogenicity" },
         mode: 'copy'
     )
 
@@ -1738,7 +1741,11 @@ process MAPPING_REPORT {
     def ov = []
     if ( params.mavedb_tsv )     ov << "--source 'pathogenicity/mavedb.tsv=local|${params.mavedb_tsv}'"
     if ( params.proteingym_tsv ) ov << "--source 'pathogenicity/proteingym.tsv=local|${params.proteingym_tsv}'"
-    if ( params.dbnsfp_tsv )     ov << "--source 'pathogenicity/pathogenicity_scores.tsv=local|${params.dbnsfp_tsv}'"
+    if ( params.dbnsfp_tsv )     ov << "--source 'pathogenicity/dbnsfp_scores.tsv=local|${params.dbnsfp_tsv}'"
+    // Extract dbNSFP version string from raw dir path (e.g. /path/to/dbNSFP4.8a → 4.8a)
+    def dbnsfp_ver = params.dbnsfp_raw_dir
+        ? (params.dbnsfp_raw_dir =~ /dbNSFP(\S+)/)[0]?.getAt(1) ?: "unknown"
+        : (params.dbnsfp_tsv ? "pre-mapped" : "n/a")
     if ( params.omim_tsv ) {     ov << "--source 'disease/omim_disease.tsv=local|${params.omim_tsv}'"
                                  ov << "--source 'disease/omim_mutations.tsv=local|${params.omim_tsv}'" }
     if ( params.gopher_conservation_table ) ov << "--source 'conservation/conservation_multiple_level.tsv=local|${params.gopher_conservation_table}'"
@@ -1777,6 +1784,7 @@ process MAPPING_REPORT {
         --launch_dir       '${workflow.launchDir}' \\
         --versions_file    versions.txt \\
         --per_gene_md_threshold ${params.per_gene_md_threshold ?: 50} \\
+        --dbnsfp_version   '${dbnsfp_ver}' \\
         ${src_args} \\
         --outdir .
     """

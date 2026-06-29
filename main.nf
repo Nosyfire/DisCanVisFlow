@@ -61,6 +61,7 @@ include { FETCH_UNIPROT_FASTA;
           FETCH_HIPPIE;
           FETCH_HG38_2BIT;
           FETCH_DBSNP_BB;
+          FETCH_DBSNP_VCF;
           FETCH_UNIPROT_ISOFORMS;
           FETCH_SIFTS;
           FETCH_ALPHAFOLD_BULK;
@@ -814,6 +815,11 @@ After copying/downloading the files, rerun the same command with -resume.
         def snp_pos_f    = params.snp_pos_tsv    ? file(params.snp_pos_tsv,     checkIfExists: false) : no_file
         def dbsnp_bb_f   = params.dbsnp_bb       ? file(params.dbsnp_bb,        checkIfExists: false)
                            : ( params.fetch_dbsnp ? FETCH_DBSNP_BB().bb : no_file )
+        // Preferred: compact MAF table from NCBI latest-release VCF (downloads ~28 GiB,
+        // processes to ~200-500 MiB, deletes raw VCF).  Triggered by fetch_dbsnp_vcf=true
+        // or by pointing dbsnp_maf at a pre-built compact TSV.
+        def dbsnp_maf_f  = params.dbsnp_maf      ? file(params.dbsnp_maf,        checkIfExists: false)
+                           : ( params.fetch_dbsnp_vcf ? FETCH_DBSNP_VCF().maf_gz : no_file )
         POLYMORPHISM_MAP(
             SEQUENCE_PROCESS.out.loc_chrom_seq,
             combined_map_ch,
@@ -821,6 +827,7 @@ After copying/downloading the files, rerun the same command with -resume.
             snp_all_f,
             snp_pos_f,
             dbsnp_bb_f,
+            dbsnp_maf_f,
             setup_done_ch.first()
         )
         POLYMORPHISM_MAP.out.polymorphism.view { f ->

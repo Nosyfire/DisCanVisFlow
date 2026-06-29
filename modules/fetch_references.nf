@@ -409,6 +409,46 @@ process FETCH_DBSNP_BB {
     """ touch dbSnp155Common.bb """
 }
 
+// NCBI dbSNP latest-release VCF → compact MAF table (download + process + delete raw).
+// Downloads GCF_000001405.40.gz (hg38, ~28 GiB) + pre-built tabix index (.tbi),
+// streams through it to extract COMMON variants with allele frequency, writes a compact
+// bgzipped+indexed TSV, then deletes the large source files.  storeDir caches only the
+// compact output (~200-500 MiB).  Triggered by --fetch_dbsnp_vcf true or --dbsnp_maf null.
+process FETCH_DBSNP_VCF {
+    label 'process_high'
+    storeDir { workflow.stubRun ? "${params.ref_dir}/_stub/dbsnp" : "${params.ref_dir}/dbsnp" }
+
+    output:
+    path 'dbsnp_maf.tsv.gz',     emit: maf_gz
+    path 'dbsnp_maf.tsv.gz.tbi', emit: maf_tbi
+
+    script:
+    def vcf_url = 'https://ftp.ncbi.nih.gov/snp/latest_release/VCF/GCF_000001405.40.gz'
+    def tbi_url = 'https://ftp.ncbi.nih.gov/snp/latest_release/VCF/GCF_000001405.40.gz.tbi'
+    """
+    echo "Downloading NCBI dbSNP latest-release VCF (~28 GiB) + index (~3 MiB)..."
+    curl -fsSL '${vcf_url}' -o snp_raw.vcf.gz
+    curl -fsSL '${tbi_url}' -o snp_raw.vcf.gz.tbi
+    echo "Download complete — \$(du -sh snp_raw.vcf.gz | cut -f1). Preprocessing..."
+
+    preprocess_dbsnp_vcf.py \\
+        --vcf  snp_raw.vcf.gz \\
+        --out  dbsnp_maf.tsv.gz
+
+    echo "Preprocessing done — \$(du -sh dbsnp_maf.tsv.gz | cut -f1). Indexing..."
+    tabix -s 1 -b 2 -e 2 dbsnp_maf.tsv.gz
+    echo "Deleting large source VCF to reclaim disk space."
+    rm -f snp_raw.vcf.gz snp_raw.vcf.gz.tbi
+    echo "Done. Compact MAF table: \$(du -sh dbsnp_maf.tsv.gz | cut -f1)."
+    """
+
+    stub:
+    """
+    printf 'chrom\tpos\trsid\tref\talt\tmaf\tis_common\n' | bgzip -c > dbsnp_maf.tsv.gz
+    touch dbsnp_maf.tsv.gz.tbi
+    """
+}
+
 // UniProt human proteome additional (isoform) FASTA — sp|Pxxxxx-N| headers — ~40 MiB gz
 process FETCH_UNIPROT_ISOFORMS {
     label 'process_low'

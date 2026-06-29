@@ -124,6 +124,90 @@ def _classify_type(freq_class: str) -> str:
     return "All Polymorphisms"
 
 
+def extract_from_dbsnp_maf(maf_gz: str, regions: dict, g2p: dict,
+                           protein_ids: set, rows: list) -> int:
+    """Extract polymorphisms from the compact dbSNP MAF TSV (from FETCH_DBSNP_VCF).
+
+    Columns: chrom | pos | rsid | ref | alt | maf | is_common
+    Loads the compact TSV into memory grouped by chromosome, then for each protein
+    queries its positional slice and maps hits to protein residues via g2p.
+    """
+    p = Path(maf_gz)
+    if not p.exists() or p.stat().st_size == 0:
+        log.info("dbsnp_maf: missing/empty — skipped")
+        return 0
+
+    log.info("dbsnp_maf: loading compact MAF table from %s …", p)
+    import pandas as pd
+    try:
+        df = pd.read_csv(p, sep="\t", dtype=str,
+                         names=["chrom", "pos", "rsid", "ref", "alt", "maf", "is_common"],
+                         skiprows=1)
+    except Exception as exc:
+        log.warning("dbsnp_maf: could not read %s — %s", p, exc)
+        return 0
+
+    # Group by chromosome for fast per-chrom slice
+    chrom_groups: dict = {}
+    for chrom, grp in df.groupby("chrom"):
+        grp_int = grp.copy()
+        try:
+            grp_int["_pos_int"] = grp_int["pos"].astype(int)
+        except ValueError:
+            grp_int["_pos_int"] = 0
+        chrom_groups[chrom] = grp_int
+
+    # Same bounding-box strategy as extract_from_bigbed
+    chrom_bounds: dict = {}
+    chrom_pids:   dict = {}
+    for pid in protein_ids:
+        reg = regions.get(pid)
+        if not reg:
+            continue
+        chrom, start, end = reg
+        if chrom not in chrom_bounds:
+            chrom_bounds[chrom] = [start, end]
+            chrom_pids[chrom]   = {}
+        else:
+            chrom_bounds[chrom][0] = min(chrom_bounds[chrom][0], start)
+            chrom_bounds[chrom][1] = max(chrom_bounds[chrom][1], end)
+        chrom_pids[chrom][pid] = (start, end)
+
+    n = 0
+    for chrom, (b_start, b_end) in chrom_bounds.items():
+        cdf = chrom_groups.get(chrom)
+        if cdf is None or cdf.empty:
+            continue
+        pids_on_chrom = chrom_pids[chrom]
+        window = cdf[(cdf["_pos_int"] >= b_start) & (cdf["_pos_int"] <= b_end)]
+        for row in window.itertuples(index=False):
+            pos_str = row.pos
+            try:
+                pos_int = int(pos_str)
+            except (ValueError, TypeError):
+                continue
+            ptype = "Common Polymorphisms" if str(row.is_common) == "1" else "All Polymorphisms"
+            for pid, (p_start, p_end) in pids_on_chrom.items():
+                if not (p_start <= pos_int <= p_end):
+                    continue
+                prot_pos = g2p.get((pid, pos_str))
+                if prot_pos is None:
+                    continue
+                rows.append({
+                    "Protein_ID": pid,
+                    "Position":   prot_pos,
+                    "rsid":       row.rsid,
+                    "ref":        row.ref,
+                    "alt":        row.alt,
+                    "allele_frequency": row.maf,
+                    "Type":       ptype,
+                })
+                n += 1
+    log.info("dbsnp_maf: %d polymorphism rows extracted (%d isoforms)",
+             n, len(protein_ids))
+    return n
+
+
 def extract_from_bigbed(dbsnp_bb: str, ucsc_bin: str, regions: dict,
                         g2p: dict, protein_ids: set, rows: list) -> int:
     """Extract every dbSNP record overlapping each selected isoform's genomic
@@ -311,6 +395,9 @@ def main():
     ap.add_argument("--snp_pos_tsv", default="NO_FILE",
                     help="polymorphism_pos.tsv — comprehensive pre-mapped "
                          "Protein_ID|position polymorphism table (fallback only)")
+    ap.add_argument("--dbsnp_maf", default="NO_FILE",
+                    help="compact dbSNP MAF bgzipped TSV from FETCH_DBSNP_VCF "
+                         "(preferred over --dbsnp_bb when provided)")
     ap.add_argument("--dbsnp_bb", default="NO_FILE",
                     help="dbSnp*.bb bigBed (e.g. dbSnp155Common.bb) — extract "
                          "polymorphisms with rsid + allele frequency per isoform")
@@ -334,17 +421,21 @@ def main():
 
     rows: list = []
     cm = Path(args.combined_map)
-    bigbed_used = False
+    snp_map_used = False
     if cm.exists() and cm.stat().st_size > 0:
         g2p, regions = parse_map(args.combined_map)
-        # 1a. Preferred: extract directly from the dbSnp bigBed per isoform so that
-        #     EVERY selected isoform gets its polymorphisms with rsid + allele freq.
-        if args.dbsnp_bb and args.dbsnp_bb != "NO_FILE" and Path(args.dbsnp_bb).exists():
+        # 1a. Best source: compact MAF TSV from FETCH_DBSNP_VCF (latest NCBI dbSNP)
+        if args.dbsnp_maf and args.dbsnp_maf != "NO_FILE" and Path(args.dbsnp_maf).exists():
+            n_maf = extract_from_dbsnp_maf(args.dbsnp_maf, regions, g2p, protein_ids, rows)
+            snp_map_used = n_maf > 0 or Path(args.dbsnp_maf).stat().st_size > 0
+        # 1b. Fallback: legacy dbSnp155Common bigBed
+        if not snp_map_used and args.dbsnp_bb and args.dbsnp_bb != "NO_FILE" \
+                and Path(args.dbsnp_bb).exists():
             n_bb = extract_from_bigbed(args.dbsnp_bb, args.ucsc_bin, regions,
                                        g2p, protein_ids, rows)
-            bigbed_used = n_bb > 0 or Path(args.dbsnp_bb).stat().st_size > 0
-        # 1b. Fallback / supplement: pre-baked legacy .out tables (if present)
-        if not bigbed_used:
+            snp_map_used = n_bb > 0 or Path(args.dbsnp_bb).stat().st_size > 0
+        # 1c. Last resort: pre-baked legacy .out tables
+        if not snp_map_used:
             parse_out(args.snp_common, "Common Polymorphisms", protein_ids, g2p, rows)
             parse_out(args.snp_all, "All Polymorphisms", protein_ids, g2p, rows)
     else:
@@ -353,8 +444,8 @@ def main():
     covered = {(r["Protein_ID"], str(r["Position"])) for r in rows}
 
     # 2. Supplement with the comprehensive pre-mapped positional table only when no
-    #    bigBed was available (those rows have no allele frequency / rsid).
-    if not bigbed_used:
+    #    VCF/bigBed was available (those rows have no allele frequency / rsid).
+    if not snp_map_used:
         parse_pos_tsv(args.snp_pos_tsv, protein_ids, covered, rows)
 
     df = pd.DataFrame(rows, columns=OUT_COLS).drop_duplicates()
