@@ -410,42 +410,89 @@ process FETCH_DBSNP_BB {
 }
 
 // NCBI dbSNP latest-release VCF → compact MAF table (download + process + delete raw).
-// Downloads GCF_000001405.40.gz (hg38, ~28 GiB) + pre-built tabix index (.tbi),
-// streams through it to extract COMMON variants with allele frequency, writes a compact
-// bgzipped+indexed TSV, then deletes the large source files.  storeDir caches only the
-// compact output (~200-500 MiB).  Triggered by --fetch_dbsnp_vcf true or --dbsnp_maf null.
+// Downloads GCF_000001405.40.gz (hg38, ~28 GiB), streams through it to extract COMMON
+// variants (MAF ≥ 1%) with allele frequency, writes a compact gzip-compressed TSV, then
+// deletes the large source file.  storeDir caches only the compact output (~200-500 MiB).
+// Triggered by --fetch_dbsnp_vcf true; or point --dbsnp_maf at a pre-built local file.
 process FETCH_DBSNP_VCF {
     label 'process_high'
     storeDir { workflow.stubRun ? "${params.ref_dir}/_stub/dbsnp" : "${params.ref_dir}/dbsnp" }
 
     output:
-    path 'dbsnp_maf.tsv.gz',     emit: maf_gz
-    path 'dbsnp_maf.tsv.gz.tbi', emit: maf_tbi
+    path 'dbsnp_maf.tsv.gz', emit: maf_gz
 
     script:
     def vcf_url = 'https://ftp.ncbi.nih.gov/snp/latest_release/VCF/GCF_000001405.40.gz'
-    def tbi_url = 'https://ftp.ncbi.nih.gov/snp/latest_release/VCF/GCF_000001405.40.gz.tbi'
     """
-    echo "Downloading NCBI dbSNP latest-release VCF (~28 GiB) + index (~3 MiB)..."
+    echo "Downloading NCBI dbSNP latest-release VCF (~28 GiB)..."
     curl -fsSL '${vcf_url}' -o snp_raw.vcf.gz
-    curl -fsSL '${tbi_url}' -o snp_raw.vcf.gz.tbi
     echo "Download complete — \$(du -sh snp_raw.vcf.gz | cut -f1). Preprocessing..."
 
     preprocess_dbsnp_vcf.py \\
         --vcf  snp_raw.vcf.gz \\
         --out  dbsnp_maf.tsv.gz
 
-    echo "Preprocessing done — \$(du -sh dbsnp_maf.tsv.gz | cut -f1). Indexing..."
-    tabix -s 1 -b 2 -e 2 dbsnp_maf.tsv.gz
     echo "Deleting large source VCF to reclaim disk space."
-    rm -f snp_raw.vcf.gz snp_raw.vcf.gz.tbi
-    echo "Done. Compact MAF table: \$(du -sh dbsnp_maf.tsv.gz | cut -f1)."
+    rm -f snp_raw.vcf.gz
+    echo "Done. Compact dbSNP MAF table: \$(du -sh dbsnp_maf.tsv.gz | cut -f1)."
     """
 
     stub:
     """
-    printf 'chrom\tpos\trsid\tref\talt\tmaf\tis_common\n' | bgzip -c > dbsnp_maf.tsv.gz
-    touch dbsnp_maf.tsv.gz.tbi
+    printf 'chrom\tpos\trsid\tref\talt\tmaf\tis_common\n' | gzip -c > dbsnp_maf.tsv.gz
+    """
+}
+
+// gnomAD v4.1 exomes VCF → compact MAF table (per-chromosome download + process + delete).
+// Downloads gnomad.exomes.v4.1.sites.chrN.vcf.bgz for each of chr1-22,X,Y sequentially,
+// streams each through preprocess_gnomad_vcf.py, merges into a single compact TSV, then
+// deletes raw files.  storeDir caches only the compact output (~1-3 GiB for exomes).
+// Triggered by --fetch_gnomad_vcf true; or point --gnomad_maf at a pre-built local file.
+process FETCH_GNOMAD_VCF {
+    label 'process_high'
+    storeDir { workflow.stubRun ? "${params.ref_dir}/_stub/gnomad" : "${params.ref_dir}/gnomad" }
+
+    output:
+    path 'gnomad_maf.tsv.gz', emit: maf_gz
+
+    script:
+    def base = 'https://gnomad-public-us-east-1.s3.amazonaws.com/release/4.1/vcf/exomes'
+    """
+    echo "Downloading gnomAD v4.1 exome VCFs (per chromosome) and preprocessing..."
+    > gnomad_maf_parts.tsv
+
+    for CHR in chr1 chr2 chr3 chr4 chr5 chr6 chr7 chr8 chr9 chr10 \\
+               chr11 chr12 chr13 chr14 chr15 chr16 chr17 chr18 chr19 chr20 \\
+               chr21 chr22 chrX chrY; do
+        url="${base}/gnomad.exomes.v4.1.sites.\${CHR}.vcf.bgz"
+        echo "  Downloading \${CHR} (\${url})..."
+        curl -fsSL "\${url}" -o raw_\${CHR}.vcf.bgz
+
+        preprocess_gnomad_vcf.py \\
+            --vcf  raw_\${CHR}.vcf.bgz \\
+            --chrom \${CHR} >> gnomad_maf_parts.tsv
+
+        rm -f raw_\${CHR}.vcf.bgz
+        echo "  \${CHR} done."
+    done
+
+    # Sort + compress
+    sort -k1,1 -k2,2n -T . gnomad_maf_parts.tsv | \\
+        python3 -c "
+import sys, gzip
+hdr = 'chrom\tpos\trsid\tref\talt\taf\taf_popmax\tis_common\n'
+with gzip.open('gnomad_maf.tsv.gz', 'wb') as f:
+    f.write(hdr.encode())
+    for ln in sys.stdin:
+        f.write(ln.encode())
+"
+    rm -f gnomad_maf_parts.tsv
+    echo "Done. Compact gnomAD MAF table: \$(du -sh gnomad_maf.tsv.gz | cut -f1)."
+    """
+
+    stub:
+    """
+    printf 'chrom\tpos\trsid\tref\talt\taf\taf_popmax\tis_common\n' | gzip -c > gnomad_maf.tsv.gz
     """
 }
 

@@ -799,15 +799,19 @@ process POLYMORPHISM_MAP {
     path snp_all,     stageAs: 'snp_all/*'      // legacy all_poly.out or NO_FILE
     path snp_pos_tsv, stageAs: 'snp_pos/*'      // polymorphism_pos.tsv or NO_FILE
     path dbsnp_bb                                // dbSnp*Common.bb bigBed or NO_FILE
-    path dbsnp_maf_gz                            // compact dbSNP MAF TSV (bgzipped) or NO_FILE
+    path dbsnp_maf_gz,  stageAs: 'dbsnp_maf/*'  // compact dbSNP MAF TSV (gzipped) or NO_FILE
+    path gnomad_maf_gz, stageAs: 'gnomad_maf/*' // compact gnomAD MAF TSV (gzipped) or NO_FILE
     path setup_done, stageAs: 'setup.done'       // sentinel: ensures bigBedToBed is installed
 
     output:
     path "polymorphism.tsv", emit: polymorphism
 
     script:
-    def ucsc_arg   = (params.ucsc_bin) ? "--ucsc_bin ${params.ucsc_bin}" : ""
-    def maf_arg    = (dbsnp_maf_gz.name != 'NO_FILE') ? "--dbsnp_maf ${dbsnp_maf_gz}" : ""
+    def ucsc_arg      = (params.ucsc_bin) ? "--ucsc_bin ${params.ucsc_bin}" : ""
+    def maf_arg       = (dbsnp_maf_gz.name  != 'NO_FILE') ? "--dbsnp_maf ${dbsnp_maf_gz}"  : ""
+    def gnomad_arg    = (gnomad_maf_gz.name != 'NO_FILE') ? "--gnomad_maf ${gnomad_maf_gz}" : ""
+    def dbsnp_api_arg = params.fetch_dbsnp_api  ? "--use_dbsnp_api"  : ""
+    def gnomad_api_arg= params.fetch_gnomad_api ? "--use_gnomad_api" : ""
     """
     create_polymorphism_worker.py \\
         --loc_chrom    ${loc_chrom} \\
@@ -817,6 +821,9 @@ process POLYMORPHISM_MAP {
         --snp_pos_tsv  ${snp_pos_tsv} \\
         --dbsnp_bb     ${dbsnp_bb} \\
         ${maf_arg} \\
+        ${gnomad_arg} \\
+        ${dbsnp_api_arg} \\
+        ${gnomad_api_arg} \\
         ${ucsc_arg} \\
         --output_dir   .
     """

@@ -100,9 +100,6 @@ def main():
                                       dir=out_path.parent)
     tmp_path = Path(tmp.name)
 
-    header = "chrom\tpos\trsid\tref\talt\tmaf\tis_common\n"
-    tmp.write(header)
-
     n_written = n_skip_chrom = n_skip_snv = n_skip_nocommon = 0
     log.info("Streaming %s …", vcf_path)
 
@@ -149,7 +146,7 @@ def main():
              "non-common: %d)", n_written, n_skip_chrom + n_skip_snv + n_skip_nocommon,
              n_skip_chrom, n_skip_snv, n_skip_nocommon)
 
-    # Sort by chrom+pos (required for tabix), then bgzip
+    # Sort by chrom+pos then gzip-compress
     log.info("Sorting by chrom+pos …")
     sorted_tmp = tmp_path.with_suffix(".sorted.tsv")
     sort_cmd = ["sort", "-k1,1", "-k2,2n", "-T", str(out_path.parent),
@@ -157,8 +154,10 @@ def main():
     subprocess.run(sort_cmd, check=True)
     tmp_path.unlink()
 
-    log.info("bgzipping → %s …", out_path)
+    log.info("Compressing → %s …", out_path)
+    header = "chrom\tpos\trsid\tref\talt\tmaf\tis_common\n"
     with open(sorted_tmp, "rb") as src, gzip.open(out_path, "wb") as dst:
+        dst.write(header.encode())
         while chunk := src.read(4 * 1024 * 1024):
             dst.write(chunk)
     sorted_tmp.unlink()
