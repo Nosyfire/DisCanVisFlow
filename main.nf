@@ -547,7 +547,7 @@ After copying/downloading the files, rerun the same command with -resume.
                 dbnsfp_dir
             )
             DBNSFP_MAP.out.scores.view { f ->
-                "\n✔  Pathogenicity scores (raw dbNSFP map): ${f}\n"
+                "\n✔  dbNSFP scores (raw chr*.gz map): ${f}\n"
             }
         }
 

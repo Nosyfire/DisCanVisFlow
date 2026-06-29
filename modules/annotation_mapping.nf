@@ -1451,8 +1451,8 @@ process DBNSFP_MAP {
     label 'process_high'
 
     publishDir(
-        path: { params.gene_dir ? "${params.outdir}/${params.gene_dir}/final/pathogenicity"
-                                : "${params.outdir}/final/pathogenicity" },
+        path: { params.gene_dir ? "${params.outdir}/${params.gene_dir}/final/dbnsfp"
+                                : "${params.outdir}/final/dbnsfp" },
         mode: 'copy'
     )
 
@@ -1462,22 +1462,24 @@ process DBNSFP_MAP {
     path dbnsfp_raw_dir
 
     output:
-    path "pathogenicity_scores.tsv", emit: scores
+    path "dbnsfp_scores.tsv", emit: scores
 
     script:
     def hdr_arg = params.dbnsfp_bed_header ? "--dbnsfp_bed_header ${params.dbnsfp_bed_header}" : ""
+    def n_cpu   = task.cpus ?: 1
     """
     create_dbnsfp_map_worker.py \\
         --seq_table       ${loc_chrom} \\
         --combined_map    ${combined_map} \\
         --dbnsfp_raw_dir  ${dbnsfp_raw_dir} \\
         ${hdr_arg} \\
+        --n_cpu           ${n_cpu} \\
         --outdir          .
     """
 
     stub:
     """
-    echo -e "Protein_ID\tProtein_position\tAlphaMissense_score" > pathogenicity_scores.tsv
+    echo -e "Protein_ID\tProtein_position\tAlphaMissense_score" > dbnsfp_scores.tsv
     """
 }
 

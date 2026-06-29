@@ -11,6 +11,7 @@ Usage:
       --combined_map    <combined_map.map>
       --dbnsfp_raw_dir  <directory with dbNSFP chr*.gz files>
       --outdir          <output directory>
+      --n_cpu           <number of parallel chromosome workers (default: 1)>
 
 Output:
   pathogenicity_scores.tsv
@@ -19,6 +20,9 @@ Output:
 import argparse
 import gzip
 import logging
+import multiprocessing as mp
+import os
+import re
 import sys
 from pathlib import Path
 
@@ -63,6 +67,17 @@ _COL_MAP = {
     "rs_dbSNP": "rs_dbSNP",
 }
 
+# Module-level shared state — set in main() before Pool creation.
+# Fork-inherited by worker processes via copy-on-write; no pickling needed.
+_g_pid_map: dict = {}
+_g_gene_to_rows: dict = {}
+_g_pid_to_seq: dict = {}
+_g_pid_to_gene: dict = {}
+_g_chr_to_pids: dict = {}   # {chrN: set of protein_ids on that chromosome}
+_g_protein_ids: set = set() # fallback if chr-level lookup unavailable
+_g_chromosomes: set = set()
+_g_bed_header: list | None = None
+
 
 def _chromosomes_from_seq(seq_df: pd.DataFrame) -> set[str]:
     if "Chromosome" not in seq_df.columns:
@@ -74,6 +89,20 @@ def _chromosomes_from_seq(seq_df: pd.DataFrame) -> set[str]:
             continue
         chrs.add(c if c.startswith("chr") else f"chr{c}")
     return chrs
+
+
+def _chr_to_pids_from_seq(seq_df: pd.DataFrame) -> dict[str, set[str]]:
+    """Map each chromosome to the set of Protein_IDs located on it."""
+    if "Chromosome" not in seq_df.columns or "Protein_ID" not in seq_df.columns:
+        return {}
+    tmp = seq_df[["Protein_ID", "Chromosome"]].dropna()
+    tmp = tmp[tmp["Protein_ID"].str.strip() != ""]
+    tmp = tmp[tmp["Chromosome"].str.strip() != ""]
+    tmp = tmp.copy()
+    tmp["Chromosome"] = tmp["Chromosome"].apply(
+        lambda c: str(c) if str(c).startswith("chr") else f"chr{c}"
+    )
+    return tmp.groupby("Chromosome")["Protein_ID"].apply(set).to_dict()
 
 
 def _find_chr_files(raw_dir: Path, chromosomes: set[str]) -> list[Path]:
@@ -104,6 +133,12 @@ def _normalize_chrom(raw: str) -> str:
     if not c:
         return c
     return c if c.startswith("chr") else f"chr{c}"
+
+
+def _chrom_from_path(gz_path: Path) -> str | None:
+    """Extract chromosome name from filename, e.g. chr5 from dbNSFP4.8a_variant.chr5.gz."""
+    m = re.search(r"\b(chr(?:\d+|X|Y|M|MT))\b", gz_path.name, re.IGNORECASE)
+    return m.group(1) if m else None
 
 
 def map_dbnsfp_bed(
@@ -249,7 +284,38 @@ def map_dbnsfp_file(
     return kept
 
 
+def _process_one_file(gz_path_str: str) -> list[dict]:
+    """Worker function for multiprocessing.Pool — inherits globals via fork (COW).
+
+    Filters protein_ids to only those on this chromosome before scanning,
+    reducing the inner loop from ~110k proteins to ~2-5k per chromosome.
+    """
+    gz_path = Path(gz_path_str)
+    chrom = _chrom_from_path(gz_path)
+    if chrom and _g_chr_to_pids:
+        pids = _g_chr_to_pids.get(chrom, set())
+        if not pids:
+            log.info("pid=%d no proteins on %s — skip", os.getpid(), chrom)
+            return []
+    else:
+        pids = _g_protein_ids
+
+    log.info("pid=%d scanning %s (%d proteins) …", os.getpid(), gz_path.name, len(pids))
+    if gz_path.suffix == ".bed":
+        return map_dbnsfp_bed(
+            gz_path, pids, _g_pid_map, _g_chromosomes, _g_bed_header,
+            _g_gene_to_rows, _g_pid_to_seq, _g_pid_to_gene,
+        )
+    return map_dbnsfp_file(
+        gz_path, pids, _g_pid_map,
+        _g_gene_to_rows, _g_pid_to_seq, _g_pid_to_gene,
+    )
+
+
 def main():
+    global _g_pid_map, _g_gene_to_rows, _g_pid_to_seq, _g_pid_to_gene
+    global _g_chr_to_pids, _g_protein_ids, _g_chromosomes, _g_bed_header
+
     p = argparse.ArgumentParser()
     p.add_argument("--seq_table", required=True)
     p.add_argument("--combined_map", required=True)
@@ -257,11 +323,13 @@ def main():
     p.add_argument("--dbnsfp_bed_header", default=None,
                    help="Path to dbNSFP_custom.bed.header (score column names)")
     p.add_argument("--outdir", required=True)
+    p.add_argument("--n_cpu", type=int, default=1,
+                   help="Number of parallel chromosome workers (default: 1)")
     args = p.parse_args()
 
     outdir = Path(args.outdir)
     outdir.mkdir(parents=True, exist_ok=True)
-    out = outdir / "pathogenicity_scores.tsv"
+    out = outdir / "dbnsfp_scores.tsv"
     empty_cols = ["Protein_ID", "Protein_position", "AlphaMissense_score"]
     empty = pd.DataFrame(columns=empty_cols)
 
@@ -274,6 +342,13 @@ def main():
     seq_df = pd.read_csv(args.seq_table, sep="\t", dtype=str)
     protein_ids = set(seq_df["Protein_ID"].dropna())
     chromosomes = _chromosomes_from_seq(seq_df)
+    chr_to_pids = _chr_to_pids_from_seq(seq_df)
+
+    if chr_to_pids:
+        total_pids = sum(len(v) for v in chr_to_pids.values())
+        log.info("Per-chromosome protein filter built: %d chromosomes, %d protein-chr assignments",
+                 len(chr_to_pids), total_pids)
+
     gene_to_rows, pid_to_seq, pid_to_gene, _ = load_gene_isoform_lookup(args.seq_table)
 
     log.info("Loading combined_map …")
@@ -302,16 +377,40 @@ def main():
         else:
             inputs = _find_chr_files(raw_dir, chromosomes) if chromosomes else sorted(raw_dir.glob("*.gz"))
 
-    for gz in inputs:
-        if gz.suffix == ".bed":
-            log.info("Scanning BED %s …", gz.name)
-            all_rows.extend(map_dbnsfp_bed(
-                gz, protein_ids, pid_map, chromosomes, header,
-                gene_to_rows, pid_to_seq, pid_to_gene))
+    if inputs:
+        n_workers = min(max(1, args.n_cpu), len(inputs))
+        log.info("Processing %d chromosome files with %d workers …", len(inputs), n_workers)
+
+        if n_workers > 1:
+            # Set module globals before forking — child processes inherit via COW,
+            # so large dicts are shared without pickling.
+            _g_pid_map = pid_map
+            _g_gene_to_rows = gene_to_rows
+            _g_pid_to_seq = pid_to_seq
+            _g_pid_to_gene = pid_to_gene
+            _g_chr_to_pids = chr_to_pids
+            _g_protein_ids = protein_ids
+            _g_chromosomes = chromosomes
+            _g_bed_header = header
+
+            ctx = mp.get_context("fork")
+            with ctx.Pool(processes=n_workers) as pool:
+                chunks = pool.map(_process_one_file, [str(gz) for gz in inputs])
+            for chunk in chunks:
+                all_rows.extend(chunk)
         else:
-            log.info("Scanning %s …", gz.name)
-            all_rows.extend(map_dbnsfp_file(
-                gz, protein_ids, pid_map, gene_to_rows, pid_to_seq, pid_to_gene))
+            for gz in inputs:
+                chrom = _chrom_from_path(gz)
+                pids = chr_to_pids.get(chrom, protein_ids) if (chrom and chr_to_pids) else protein_ids
+                if gz.suffix == ".bed":
+                    log.info("Scanning BED %s (%d proteins) …", gz.name, len(pids))
+                    all_rows.extend(map_dbnsfp_bed(
+                        gz, pids, pid_map, chromosomes, header,
+                        gene_to_rows, pid_to_seq, pid_to_gene))
+                else:
+                    log.info("Scanning %s (%d proteins) …", gz.name, len(pids))
+                    all_rows.extend(map_dbnsfp_file(
+                        gz, pids, pid_map, gene_to_rows, pid_to_seq, pid_to_gene))
 
     if not all_rows and not inputs and raw_dir.is_dir():
         log.info("No dbNSFP chr files for run chromosomes — empty output")
@@ -324,7 +423,7 @@ def main():
         df = empty
 
     df.to_csv(out, sep="\t", index=False)
-    log.info("Pathogenicity (raw map): %d rows for %d proteins",
+    log.info("dbNSFP (raw map): %d rows for %d proteins",
              len(df), df["Protein_ID"].nunique() if len(df) else 0)
 
 
