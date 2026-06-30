@@ -123,6 +123,9 @@ def parse_trace(trace_path: Path) -> dict:
             tid    = row.get("task_id", name)
             if not name:
                 continue
+            # Nextflow writes CACHED for -resume'd tasks; treat as COMPLETED
+            if status == "CACHED":
+                status = "COMPLETED"
             tasks[tid] = {
                 "name":     name,
                 "status":   status,
@@ -366,12 +369,18 @@ def find_blat_dirs(work_dir: Path) -> list[dict]:
             psl = psl_files[0] if psl_files else None
             exit_file = sub / ".exitcode"
             cmd_out   = sub / ".command.out"
-            # Skip dirs where the PSL hasn't been touched for >2h and no exitcode —
-            # these are ghost dirs from previously killed runs, not real stalls.
-            if not exit_file.exists() and psl and psl.exists():
+            # Skip ghost dirs from killed/failed runs: old PSL (>2h) with
+            # either no exitcode, or a non-zero exitcode (SIGTERM=143, etc.)
+            if psl and psl.exists():
                 psl_age = time.time() - psl.stat().st_mtime
                 if psl_age > 7200:
-                    continue
+                    if not exit_file.exists():
+                        continue
+                    try:
+                        if exit_file.read_text().strip() != "0":
+                            continue
+                    except OSError:
+                        continue
             entry = {
                 "chunk": chunk_name, "fasta": fasta, "psl": psl,
                 "exit_file": exit_file, "cmd_out": cmd_out,
