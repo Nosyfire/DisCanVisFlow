@@ -157,6 +157,25 @@ workflow {
         log.info "Gene list file : ${params.gene_list_file} → ${genes_from_file.split(',').size()} genes"
     }
 
+    // ── Module include-list resolution ────────────────────────────────────────
+    // mods == null  → run everything (default, backward-compatible).
+    // mods == Set   → run only those modules + backbone.
+    def mods = params.modules
+        ? new java.util.HashSet(params.modules.tokenize(',')*.trim())
+        : null
+
+    if (mods != null) {
+        // Auto-add genome when needed by a requested module
+        if (['mutations','clinvar_disease','exon','conservation'].any { mods.contains(it) })
+            mods.add('genome')
+        // dbnsfp raw-mode needs genome; pre-mapped (dbnsfp_tsv) does not
+        if (mods.contains('dbnsfp') && (params.dbnsfp_raw_dir || params.fetch_dbnsfp))
+            mods.add('genome')
+        // clinvar_disease needs mutations
+        if (mods.contains('clinvar_disease')) mods.add('mutations')
+        log.info "▶  Modules enabled: ${mods.sort().join(', ')}"
+    }
+
     // ── Manual-reference preflight ────────────────────────────────────────────
     // Some public/licensed sources cannot always be fetched from a non-browser
     // process. Create conventional reference folders and stop early with one
@@ -172,7 +191,7 @@ workflow {
     def depmap_manual_ch = null
     def depmap_raw_csv = params.depmap_raw_csv ?: "${params.ref_dir}/depmap/OmicsSomaticMutations.csv"
 
-    if ( !params.skip_depmap && !params.fetch_depmap ) {
+    if ( (mods == null || mods.contains('depmap')) && !params.skip_depmap && !params.fetch_depmap ) {
         def depmap_tsv_f = params.depmap_tsv ? file(params.depmap_tsv) : null
         def depmap_raw_f = file(depmap_raw_csv)
         def have_depmap_tsv = depmap_tsv_f && depmap_tsv_f.exists() && depmap_tsv_f.toFile().length() > 0
@@ -198,9 +217,9 @@ DepMap mutations
         }
     }
 
-    def genome_enabled = (params.hg38_2bit || params.fetch_hg38_2bit) as boolean
+    def genome_enabled = (mods == null || mods.contains('genome')) && ((params.hg38_2bit || params.fetch_hg38_2bit) as boolean)
 
-    if ( !params.skip_pathogenicity && !params.fetch_dbnsfp &&
+    if ( (mods == null || mods.contains('dbnsfp')) && !params.skip_pathogenicity && !params.fetch_dbnsfp &&
          !params.dbnsfp_raw_dir && !params.dbnsfp_tsv ) {
         manual_missing << """
 dbNSFP pathogenicity
@@ -213,7 +232,7 @@ dbNSFP pathogenicity
 """
     }
 
-    if ( genome_enabled && !params.skip_conservation && !params.skip_phastcons &&
+    if ( genome_enabled && (mods == null || mods.contains('conservation')) && !params.skip_conservation && !params.skip_phastcons &&
          !params.phastcons_dir ) {
         manual_missing << """
 phastCons conservation
@@ -432,16 +451,16 @@ After copying/downloading the files, rerun the same command with -resume.
         // ClinVar outputs feed CLINVAR_DISEASE_BUILD via MUTATION_MAP_CLINVAR alias.
 
         def cancer_mut_specs = []
-        if ( params.mutation_maf ) {
+        if ( (mods == null || mods.contains('mutations')) && params.mutation_maf ) {
             cancer_mut_specs << [file(params.mutation_maf, checkIfExists: true),
                                  params.mutation_source ?: 'custom', 'maf']
         }
-        if ( params.mutation_vcf ) {
+        if ( (mods == null || mods.contains('mutations')) && params.mutation_vcf ) {
             cancer_mut_specs << [file(params.mutation_vcf, checkIfExists: true),
                                  params.mutation_source ?: 'custom', 'vcf']
         }
 
-        if ( params.tcga_maf ) {
+        if ( (mods == null || mods.contains('mutations')) && params.tcga_maf ) {
             MUTATION_MAP_TCGA(
                 GENOME_MAP.out.map_file,
                 SEQUENCE_PROCESS.out.loc_chrom_seq,
@@ -455,7 +474,7 @@ After copying/downloading the files, rerun the same command with -resume.
         }
 
         // cBioPortal: open datahub study bundle (FETCH_CBIOPORTAL) or a local MAF.
-        if ( params.fetch_cbioportal || params.cbioportal_maf ) {
+        if ( (mods == null || mods.contains('mutations')) && (params.fetch_cbioportal || params.cbioportal_maf) ) {
             def cbio_maf = params.fetch_cbioportal
                 ? FETCH_CBIOPORTAL().maf
                 : file(params.cbioportal_maf, checkIfExists: true)
@@ -489,7 +508,8 @@ After copying/downloading the files, rerun the same command with -resume.
             }
         }
 
-        if ( params.clinvar_vcf ) {
+        if ( (mods == null || mods.contains('mutations') || mods.contains('clinvar_disease'))
+             && params.clinvar_vcf ) {
             MUTATION_MAP_CLINVAR(
                 GENOME_MAP.out.map_file,
                 SEQUENCE_PROCESS.out.loc_chrom_seq,
@@ -500,7 +520,8 @@ After copying/downloading the files, rerun the same command with -resume.
             MUTATION_MAP_CLINVAR.out.stats.view { f ->
                 "\n✔  Mutation mapping stats (ClinVar): ${f}\n"
             }
-        } else if ( !params.tcga_maf && !params.cbioportal_maf && !cancer_mut_specs ) {
+        } else if ( (mods == null || mods.contains('mutations') || mods.contains('clinvar_disease'))
+                    && !params.tcga_maf && !params.cbioportal_maf && !cancer_mut_specs ) {
             clinvar_ch = FETCH_CLINVAR()
             MUTATION_MAP_CLINVAR(
                 GENOME_MAP.out.map_file,
@@ -516,7 +537,8 @@ After copying/downloading the files, rerun the same command with -resume.
 
         // ── Step 8a (build): ClinVar disease from MONDO OBO + ClinVar mutations only ─
         // mondo_obo: use local path if provided, else download via FETCH_MONDO (storeDir cached)
-        if ( !params.skip_clinvar_disease && params.clinvar_disease_from_mutations
+        if ( (mods == null || mods.contains('clinvar_disease'))
+             && !params.skip_clinvar_disease && params.clinvar_disease_from_mutations
              && (params.clinvar_vcf || (!params.tcga_maf && !params.cbioportal_maf && !cancer_mut_specs)) ) {
             def mondo_ch = params.mondo_obo
                 ? Channel.value( file(params.mondo_obo, checkIfExists: true) )
@@ -539,7 +561,7 @@ After copying/downloading the files, rerun the same command with -resume.
 
         // ── Step 8f: dbNSFP pathogenicity (raw map via combined_map.map) ─────────
         // Raw chr*.gz dir from FETCH_DBNSFP (academic download) or a local path.
-        if ( !params.skip_pathogenicity && (params.dbnsfp_raw_dir || params.fetch_dbnsfp) ) {
+        if ( (mods == null || mods.contains('dbnsfp')) && !params.skip_pathogenicity && (params.dbnsfp_raw_dir || params.fetch_dbnsfp) ) {
             def dbnsfp_dir = params.fetch_dbnsfp
                 ? FETCH_DBNSFP().dir
                 : Channel.value( file(params.dbnsfp_raw_dir, checkIfExists: false) )
@@ -583,13 +605,20 @@ After copying/downloading the files, rerun the same command with -resume.
         ? Channel.value( file(params.elm_tsv, checkIfExists: true) )
         : Channel.value( no_file )
 
-    // MobiDB: download via FETCH_MOBIDB unless local file provided
-    mobidb_tsv_ch = params.mobidb_tsv
-        ? Channel.value( file(params.mobidb_tsv, checkIfExists: true) )
-        : FETCH_MOBIDB().mobidb_tsv
-    mobidb_disorder_input_ch = params.mobidb_tsv
-        ? mobidb_tsv_ch
-        : mobidb_tsv_ch.first()
+    // MobiDB: only fetch when disorder or mobidb module is requested
+    def mobidb_disorder_input_ch = Channel.value(no_file)
+    if ( (mods == null || mods.contains('disorder')) || (mods == null || mods.contains('mobidb')) ) {
+        def _mobidb_ch = params.mobidb_tsv
+            ? Channel.value( file(params.mobidb_tsv, checkIfExists: true) )
+            : FETCH_MOBIDB().mobidb_tsv
+        mobidb_disorder_input_ch = params.mobidb_tsv ? _mobidb_ch : _mobidb_ch.first()
+        if ( (mods == null || mods.contains('mobidb')) ) {
+            MOBIDB_MAP( SEQUENCE_PROCESS.out.loc_chrom_seq, _mobidb_ch )
+            MOBIDB_MAP.out.mobidb_disorder.view { f ->
+                "\n✔  MobiDB disorder features: ${f}\n"
+            }
+        }
+    }
 
     // DIBS / MFIB / PhasePro from legacy_data/ (auto-set in config)
     dibs_ch     = params.dibs_tsv     ? Channel.value( file(params.dibs_tsv,     checkIfExists: true) ) : Channel.value( no_file )
@@ -638,12 +667,6 @@ After copying/downloading the files, rerun the same command with -resume.
         "\n✔  Annotation mapping stats: ${f}\n"
     }
 
-    // ── Step 5o: MobiDB disorder features (MobiDBDisorder) ───────────────────
-    MOBIDB_MAP( SEQUENCE_PROCESS.out.loc_chrom_seq, mobidb_tsv_ch )
-    MOBIDB_MAP.out.mobidb_disorder.view { f ->
-        "\n✔  MobiDB disorder features: ${f}\n"
-    }
-
     // ── Step 5n: ELM class lookup table (ElmProteomeClassMatch) ──────────────
     def elm_classes_f = params.elm_classes_tsv
         ? file(params.elm_classes_tsv, checkIfExists: true)
@@ -665,7 +688,7 @@ After copying/downloading the files, rerun the same command with -resume.
     // ── MaveDB single-mutant functional scores ──────────────────────────────
     // Source priority: fresh fetch (api.mavedb.org, uniprot mode) → --mavedb_raw
     // (uniprot mode) → --mavedb_tsv (pre-mapped, premapped mode).
-    def mavedb_enabled = !params.skip_mavedb &&
+    def mavedb_enabled = (mods == null || mods.contains('mavedb')) && !params.skip_mavedb &&
                          (params.fetch_mavedb || params.mavedb_raw || params.mavedb_tsv)
     if ( mavedb_enabled ) {
         def mavedb_src = params.fetch_mavedb ? FETCH_MAVEDB().raw
@@ -678,7 +701,7 @@ After copying/downloading the files, rerun the same command with -resume.
     }
 
     // ── ProteinGym DMS scores + pathogenicity proxy ─────────────────────────
-    def proteingym_enabled = !params.skip_proteingym &&
+    def proteingym_enabled = (mods == null || mods.contains('proteingym')) && !params.skip_proteingym &&
                              (params.fetch_proteingym || params.proteingym_raw || params.proteingym_tsv)
     if ( proteingym_enabled ) {
         def proteingym_src = params.fetch_proteingym ? FETCH_PROTEINGYM().raw
@@ -709,69 +732,73 @@ After copying/downloading the files, rerun the same command with -resume.
         setup_deepcoil_py_ch = Channel.value(no_file)
     }
 
-    // ── Step 5b: Disorder Mapping ─────────────────────────────────────────────
-    // Uses local IUPred3/AIUPred libs (ext_programs param) + AlphaFold API.
-    // MobiDB comes from FETCH_MOBIDB; Pfam from ANNOTATION_MAP.
     // ── Scatter the per-isoform heavy steps (DISORDER, COILEDCOILS) ───────────
     def scatter_n = Math.max(1, (params.scatter_chunks ?: 1) as int)
     def split_chunks = ( scatter_n > 1 )
         ? SPLIT_SEQ_TABLE( SEQUENCE_PROCESS.out.loc_chrom_seq, scatter_n ).chunks
         : null
-    def disorder_loc_ch = ( scatter_n > 1 ) ? split_chunks.flatten()
-                                            : SEQUENCE_PROCESS.out.loc_chrom_seq
 
-    // Pre-extract AlphaFold pLDDT from bulk tar → local dict lookup (no EBI API per protein)
-    def af_plddt_ch
-    def _have_af_bulk = !params.skip_alphafold && (params.alphafold_tar || params.fetch_alphafold_bulk)
-    if ( _have_af_bulk ) {
-        def af_tar_ch = params.alphafold_tar
-            ? Channel.value( file(params.alphafold_tar) )
-            : FETCH_ALPHAFOLD_BULK().tar
-        af_plddt_ch = PARSE_ALPHAFOLD_PLDDT( af_tar_ch ).plddt
-    } else {
-        af_plddt_ch = Channel.value(no_file)
-    }
+    // ── Step 5b: Disorder Mapping ─────────────────────────────────────────────
+    // Pre-initialise all disorder channels to NO_FILE so downstream steps
+    // (TRANSCRIPT_MAP, report_gate) receive a value even when disorder is skipped.
+    def disorder_iupred  = Channel.value(no_file)
+    def disorder_anchor  = Channel.value(no_file)
+    def disorder_aiupred = Channel.value(no_file)
+    def disorder_aiubind = Channel.value(no_file)
+    def disorder_plddt   = Channel.value(no_file)
+    def disorder_regions = Channel.value(no_file)
+    def disorder_pos     = Channel.value(no_file)
 
-    // Pre-computed AlphaFoldTable.tsv from a previous run (Protein_ID|Plldtscores).
-    // Avoids re-fetching pLDDT via EBI API when --alphafold_precomputed_table is set.
-    def af_precomputed_ch = params.alphafold_precomputed_table
-        ? Channel.value( file(params.alphafold_precomputed_table, checkIfExists: false) )
-        : Channel.value(no_file)
+    if ( (mods == null || mods.contains('disorder')) ) {
+        def disorder_loc_ch = ( scatter_n > 1 ) ? split_chunks.flatten()
+                                                : SEQUENCE_PROCESS.out.loc_chrom_seq
 
-    DISORDER_MAP(
-        disorder_loc_ch,
-        mobidb_disorder_input_ch,
-        ANNOTATION_MAP.out.pfam.first(),
-        af_plddt_ch.first(),
-        af_precomputed_ch.first(),
-        setup_done_ch.first(),
-        setup_aiupred_py_ch.first()
-    )
+        def af_plddt_ch
+        def _have_af_bulk = !params.skip_alphafold && (params.alphafold_tar || params.fetch_alphafold_bulk)
+        if ( _have_af_bulk ) {
+            def af_tar_ch = params.alphafold_tar
+                ? Channel.value( file(params.alphafold_tar) )
+                : FETCH_ALPHAFOLD_BULK().tar
+            af_plddt_ch = PARSE_ALPHAFOLD_PLDDT( af_tar_ch ).plddt
+        } else {
+            af_plddt_ch = Channel.value(no_file)
+        }
 
-    // Merge per-chunk disorder tables. Genes never split across chunks, so this
-    // concatenates whole-gene blocks → functionally identical to the single task.
-    def _dis_pub = params.gene_dir ? "${params.outdir}/${params.gene_dir}/final/disorder"
-                                   : "${params.outdir}/final/disorder"
-    def _mergeDis = { ch, fname -> ( scatter_n > 1
-        ? ch.collectFile(name: fname, keepHeader: true, skip: 1, sort: true, storeDir: _dis_pub)
-        : ch ).first() }
-    def disorder_iupred  = _mergeDis.call( DISORDER_MAP.out.iupred,           'IUPredscores.tsv' )
-    def disorder_anchor  = _mergeDis.call( DISORDER_MAP.out.anchor,           'Anchorscores.tsv' )
-    def disorder_aiupred = _mergeDis.call( DISORDER_MAP.out.aiupred,          'AIUPredscores.tsv' )
-    def disorder_aiubind = _mergeDis.call( DISORDER_MAP.out.aiupred_binding,  'AIUPredBinding.tsv' )
-    def disorder_plddt   = _mergeDis.call( DISORDER_MAP.out.plddt,            'AlphaFoldTable.tsv' )
-    def disorder_regions = _mergeDis.call( DISORDER_MAP.out.disorder_regions, 'CombinedDisorderNew.tsv' )
-    def disorder_pos     = _mergeDis.call( DISORDER_MAP.out.disorder_pos,     'CombinedDisorderNew_Pos.tsv' )
+        def af_precomputed_ch = params.alphafold_precomputed_table
+            ? Channel.value( file(params.alphafold_precomputed_table, checkIfExists: false) )
+            : Channel.value(no_file)
 
-    disorder_regions.view { f ->
-        "\n✔  Combined disorder regions: ${f}\n"
+        DISORDER_MAP(
+            disorder_loc_ch,
+            mobidb_disorder_input_ch,
+            ANNOTATION_MAP.out.pfam.first(),
+            af_plddt_ch.first(),
+            af_precomputed_ch.first(),
+            setup_done_ch.first(),
+            setup_aiupred_py_ch.first()
+        )
+
+        def _dis_pub = params.gene_dir ? "${params.outdir}/${params.gene_dir}/final/disorder"
+                                       : "${params.outdir}/final/disorder"
+        def _mergeDis = { ch, fname -> ( scatter_n > 1
+            ? ch.collectFile(name: fname, keepHeader: true, skip: 1, sort: true, storeDir: _dis_pub)
+            : ch ).first() }
+        disorder_iupred  = _mergeDis.call( DISORDER_MAP.out.iupred,           'IUPredscores.tsv' )
+        disorder_anchor  = _mergeDis.call( DISORDER_MAP.out.anchor,           'Anchorscores.tsv' )
+        disorder_aiupred = _mergeDis.call( DISORDER_MAP.out.aiupred,          'AIUPredscores.tsv' )
+        disorder_aiubind = _mergeDis.call( DISORDER_MAP.out.aiupred_binding,  'AIUPredBinding.tsv' )
+        disorder_plddt   = _mergeDis.call( DISORDER_MAP.out.plddt,            'AlphaFoldTable.tsv' )
+        disorder_regions = _mergeDis.call( DISORDER_MAP.out.disorder_regions, 'CombinedDisorderNew.tsv' )
+        disorder_pos     = _mergeDis.call( DISORDER_MAP.out.disorder_pos,     'CombinedDisorderNew_Pos.tsv' )
+
+        disorder_regions.view { f -> "\n✔  Combined disorder regions: ${f}\n" }
     }
 
     // ── Step 5c: PDB structure mapping ───────────────────────────────────────
     // Two routes: PDB_MAP (PDBe API per protein, also yields pdb_missing) or, when
     // params.pdb_bulk, PDB_BULK_MAP (SIFTS bulk join — ~1000× faster, no
     // pdb_missing). SIFTS comes from a local --sifts_tsv or FETCH_SIFTS.
-    if ( !params.skip_pdb ) {
+    if ( (mods == null || mods.contains('pdb')) && !params.skip_pdb ) {
         if ( params.pdb_bulk ) {
             def sifts_ch = params.sifts_tsv
                 ? Channel.value( file(params.sifts_tsv, checkIfExists: false) )
@@ -803,21 +830,23 @@ After copying/downloading the files, rerun the same command with -resume.
     }
 
     // ── Step 5f: GO Term annotation ───────────────────────────────────────────
-    go_refs = FETCH_GO()
-    GO_MAP(
-        SEQUENCE_PROCESS.out.loc_chrom_seq,
-        go_refs.goa,
-        go_refs.obo
-    )
-    GO_MAP.out.go_terms.view { f ->
-        "\n✔  GO terms: ${f}\n"
+    if ( (mods == null || mods.contains('go')) ) {
+        def go_refs = FETCH_GO()
+        GO_MAP(
+            SEQUENCE_PROCESS.out.loc_chrom_seq,
+            go_refs.goa,
+            go_refs.obo
+        )
+        GO_MAP.out.go_terms.view { f ->
+            "\n✔  GO terms: ${f}\n"
+        }
     }
 
     // ── Step 5g: Polymorphism — ALL polymorphisms + allele frequency ──────────
     // common_poly.out provides allele frequency / rsid (mapped via combined_map);
     // polymorphism_pos.tsv provides the comprehensive all-polymorphism set.
     // (Supersedes the former separate SNP_MAP / snp_polymorphisms.tsv output.)
-    if ( !params.skip_polymorphism ) {
+    if ( (mods == null || mods.contains('polymorphism')) && !params.skip_polymorphism ) {
         def snp_common_f = params.snp_out_common ? file(params.snp_out_common, checkIfExists: false) : no_file
         def snp_all_f    = params.snp_out_all    ? file(params.snp_out_all,    checkIfExists: false) : no_file
         def snp_pos_f    = params.snp_pos_tsv    ? file(params.snp_pos_tsv,     checkIfExists: false) : no_file
@@ -848,18 +877,20 @@ After copying/downloading the files, rerun the same command with -resume.
     }
 
     // ── Step 5h: PEM Core Motifs ──────────────────────────────────────────────
-    pem_file_ch = params.pem_dataset
-        ? Channel.value( file(params.pem_dataset, checkIfExists: false) )
-        : Channel.value( file("${projectDir}/assets/NO_FILE") )
-    PEM_MAP(
-        SEQUENCE_PROCESS.out.loc_chrom_seq,
-        pem_file_ch
-    )
-    PEM_MAP.out.pem.view { f ->
-        "\n✔  PEM Core Motifs: ${f}\n"
+    if ( (mods == null || mods.contains('pem')) ) {
+        def pem_file_ch = params.pem_dataset
+            ? Channel.value( file(params.pem_dataset, checkIfExists: false) )
+            : Channel.value( file("${projectDir}/assets/NO_FILE") )
+        PEM_MAP(
+            SEQUENCE_PROCESS.out.loc_chrom_seq,
+            pem_file_ch
+        )
+        PEM_MAP.out.pem.view { f ->
+            "\n✔  PEM Core Motifs: ${f}\n"
+        }
     }
 
-    if ( !params.skip_pem && params.pem_transfer ) {
+    if ( (mods == null || mods.contains('pem')) && !params.skip_pem && params.pem_transfer ) {
         PEM_TRANSFER_MAP(
             SEQUENCE_PROCESS.out.loc_chrom_seq,
             PEM_MAP.out.pem
@@ -872,7 +903,7 @@ After copying/downloading the files, rerun the same command with -resume.
     // ── Step 5i: CoiledCoils (DeepCoil) ──────────────────────────────────────
     // Scattered alongside disorder (reuses the same gene-balanced chunk list).
     def coiled_coils_ch = null
-    if ( !params.skip_coiledcoils ) {
+    if ( (mods == null || mods.contains('coiledcoils')) && !params.skip_coiledcoils ) {
         def cc_loc_ch = ( scatter_n > 1 ) ? split_chunks.flatten()
                                           : SEQUENCE_PROCESS.out.loc_chrom_seq
         COILEDCOILS_MAP( cc_loc_ch, setup_done_ch.first(), setup_deepcoil_py_ch.first() )
@@ -890,7 +921,7 @@ After copying/downloading the files, rerun the same command with -resume.
     // ── Step 5j: PPI (BioGRID + IntAct + HIPPIE) ─────────────────────────────
     // Pre-processed files (params.ppi_intact etc.) take priority.
     // When not set: download raw MiTab via FETCH_* and preprocess via PPI_PREPROCESS.
-    if ( !params.skip_ppi ) {
+    if ( (mods == null || mods.contains('ppi')) && !params.skip_ppi ) {
         def intact_f  = params.ppi_intact  ? file(params.ppi_intact,  checkIfExists: false) : null
         def biogrid_f = params.ppi_biogrid ? file(params.ppi_biogrid, checkIfExists: false) : null
         def hippie_f  = params.ppi_hippie  ? file(params.ppi_hippie,  checkIfExists: false) : null
@@ -928,7 +959,7 @@ After copying/downloading the files, rerun the same command with -resume.
 
     // ── Step 7: Conservation (GOPHER multi-level + phastCons) ────────────────
     // phastCons requires combined_map.map (GENOME_MAP); GOPHER runs without it.
-    if ( !params.skip_conservation && genome_enabled ) {
+    if ( (mods == null || mods.contains('conservation')) && !params.skip_conservation && genome_enabled ) {
         // GOPHER conservation: recompute from orthologue alignments (run_gopher)
         // or consume a precomputed table (gopher_conservation_table).
         def cons_table
@@ -961,7 +992,7 @@ After copying/downloading the files, rerun the same command with -resume.
     }
 
     // ── Step 5k: ScanSite 4.0 kinase motif predictions ───────────────────────
-    if ( !params.skip_scansite ) {
+    if ( (mods == null || mods.contains('scansite')) && !params.skip_scansite ) {
         def scansite_f = params.scansite_tsv
             ? file(params.scansite_tsv, checkIfExists: false)
             : no_file
@@ -978,7 +1009,7 @@ After copying/downloading the files, rerun the same command with -resume.
 
     // ── Step 8a: ClinVar Disease Ontology (filter fallback) ─────────────────
     // Skipped when CLINVAR_DISEASE_BUILD already ran (hg38 + clinvar_disease_from_mutations).
-    if ( !params.skip_clinvar_disease
+    if ( (mods == null || mods.contains('clinvar_disease')) && !params.skip_clinvar_disease
          && !(genome_enabled && params.clinvar_disease_from_mutations) ) {
         def clinvar_disease_f = params.clinvar_disease_tsv
             ? file(params.clinvar_disease_tsv, checkIfExists: false)
@@ -995,7 +1026,7 @@ After copying/downloading the files, rerun the same command with -resume.
     // ── Step 8b: OMIM Disease Ontology ───────────────────────────────────────
     // Raw path: FETCH_OMIM (key-gated download of genemap2.txt) → raw parse.
     // Processed path: pre-built disease/variant tables (--omim_tsv).
-    if ( !params.skip_omim ) {
+    if ( (mods == null || mods.contains('omim')) && !params.skip_omim ) {
         def omim_f = params.fetch_omim
             ? FETCH_OMIM().dir
             : ( params.omim_raw_dir ? file(params.omim_raw_dir, checkIfExists: false)
@@ -1013,7 +1044,7 @@ After copying/downloading the files, rerun the same command with -resume.
     }
 
     // ── Step 8c: Cancer Gene Census + Compendium ─────────────────────────────
-    if ( !params.skip_cancer_drivers ) {
+    if ( (mods == null || mods.contains('cancer_drivers')) && !params.skip_cancer_drivers ) {
         def cancer_driver_f = params.cancer_driver_tsv
             ? file(params.cancer_driver_tsv, checkIfExists: false)
             : no_file
@@ -1033,7 +1064,7 @@ After copying/downloading the files, rerun the same command with -resume.
     // ── Step 8d: AlphaMissense GENCODE isoform scores ─────────────────────────
     // Decompress the .gz once (storeDir-cached); ALPHAMISSENSE_MAP reads the
     // plain TSV with the pandas C engine (much faster than gzip line-by-line).
-    if ( !params.skip_alphamissense ) {
+    if ( (mods == null || mods.contains('alphamissense')) && !params.skip_alphamissense ) {
         def am_gz_ch = params.alphamissense_gz
             ? Channel.value( file(params.alphamissense_gz, checkIfExists: false) )
             : FETCH_ALPHAMISSENSE().gz
@@ -1048,7 +1079,7 @@ After copying/downloading the files, rerun the same command with -resume.
     // Default source: local manual --depmap_tsv. FETCH_DEPMAP remains available
     // only when explicitly requested, because the DepMap portal may require
     // browser verification and block scripted catalogue access.
-    if ( !params.skip_depmap ) {
+    if ( (mods == null || mods.contains('depmap')) && !params.skip_depmap ) {
         def depmap_src = params.fetch_depmap
             ? FETCH_DEPMAP().tsv
             : ( depmap_manual_ch ?: Channel.value(no_file) )
@@ -1059,7 +1090,7 @@ After copying/downloading the files, rerun the same command with -resume.
     }
 
     // ── Step 8f: dbNSFP pathogenicity scores (pre-mapped fallback when no raw dir) ─
-    if ( !params.skip_pathogenicity && !(genome_enabled && (params.dbnsfp_raw_dir || params.fetch_dbnsfp)) ) {
+    if ( (mods == null || mods.contains('dbnsfp')) && !params.skip_pathogenicity && !(genome_enabled && (params.dbnsfp_raw_dir || params.fetch_dbnsfp)) ) {
         def dbnsfp_f = params.dbnsfp_tsv
             ? file(params.dbnsfp_tsv, checkIfExists: false)
             : no_file
@@ -1073,7 +1104,7 @@ After copying/downloading the files, rerun the same command with -resume.
     // Computes homotypic self-interaction energy change for every possible
     // single-AA substitution using the Mpipi_GGv1 force field.
     // ⚠  Non-commercial only (FINCHES CC BY-NC 4.0).
-    if ( !params.skip_finches ) {
+    if ( (mods == null || mods.contains('finches')) && !params.skip_finches ) {
         FINCHES_MAP( SEQUENCE_PROCESS.out.loc_chrom_seq )
         FINCHES_MAP.out.finches.view { f ->
             "\n✔  FINCHES Δε saturation scan: ${f}\n"
@@ -1081,29 +1112,29 @@ After copying/downloading the files, rerun the same command with -resume.
     }
 
     // ── Step 5m: PositionBasedAnnotations + RSAscores ────────────────────────
-    // Aggregates per-residue data: IUPred, pLDDT, CombinedDisorder, phastCons,
-    // GOPHER conservation, and Pfam domain coverage into one row-per-position
-    // table. RSA is derived from pLDDT as (100 - plddt) / 100.
-    def pb_cons_gopher_ch = (!params.skip_conservation && genome_enabled)
-        ? CONSERVATION_MAP.out.gopher
-        : Channel.value(no_file)
-    def pb_cons_pcons_ch  = (!params.skip_conservation && genome_enabled)
-        ? CONSERVATION_MAP.out.phastcons
-        : Channel.value(no_file)
-    POSITION_BASED_MAP(
-        SEQUENCE_PROCESS.out.loc_chrom_seq,
-        disorder_iupred,
-        disorder_plddt,
-        disorder_pos,
-        pb_cons_pcons_ch,
-        pb_cons_gopher_ch,
-        ANNOTATION_MAP.out.pfam,
-    )
-    POSITION_BASED_MAP.out.pos_annotations.view { f ->
-        "\n✔  Position-based annotations: ${f}\n"
-    }
-    POSITION_BASED_MAP.out.rsa_scores.view { f ->
-        "\n✔  RSA scores: ${f}\n"
+    // Requires disorder outputs (IUPred + pLDDT). Skipped when disorder is not requested.
+    if ( (mods == null || mods.contains('disorder')) ) {
+        def pb_cons_gopher_ch = ((mods == null || mods.contains('conservation')) && !params.skip_conservation && genome_enabled)
+            ? CONSERVATION_MAP.out.gopher
+            : Channel.value(no_file)
+        def pb_cons_pcons_ch  = ((mods == null || mods.contains('conservation')) && !params.skip_conservation && genome_enabled)
+            ? CONSERVATION_MAP.out.phastcons
+            : Channel.value(no_file)
+        POSITION_BASED_MAP(
+            SEQUENCE_PROCESS.out.loc_chrom_seq,
+            disorder_iupred,
+            disorder_plddt,
+            disorder_pos,
+            pb_cons_pcons_ch,
+            pb_cons_gopher_ch,
+            ANNOTATION_MAP.out.pfam,
+        )
+        POSITION_BASED_MAP.out.pos_annotations.view { f ->
+            "\n✔  Position-based annotations: ${f}\n"
+        }
+        POSITION_BASED_MAP.out.rsa_scores.view { f ->
+            "\n✔  RSA scores: ${f}\n"
+        }
     }
 
     // ── Step 5e: Transcript Mapping ───────────────────────────────────────────
@@ -1149,30 +1180,27 @@ After copying/downloading the files, rerun the same command with -resume.
     // LAST. We gate it on a broad bundle of the slowest / terminal outputs
     // (guarded by the same skip conditions that produce them) so every
     // publishDir copy has completed before the report scans the directory.
-    report_gate = HOMOLOGY_MANIFEST.out.manifest
-        .mix( TRANSCRIPT_MAP.out.stats,
-              disorder_pos,
-              POSITION_BASED_MAP.out.rsa_scores,
-              GO_MAP.out.go_terms )
-    // When scattering, the merge (collectFile) of the disorder tables that have no
-    // downstream consumer must still be materialised so they publish; gating the
-    // report on them also guarantees publish completes before the report scans.
-    if ( scatter_n > 1 ) report_gate = report_gate.mix( disorder_anchor, disorder_aiupred, disorder_aiubind )
-    if ( genome_enabled )                report_gate = report_gate.mix( GENOME_MAP.out.map_file, GENOME_QUERY_MAP.out.mutations )
-    if ( !params.skip_pdb )                report_gate = report_gate.mix( params.pdb_bulk ? PDB_BULK_MAP.out.structures : PDB_MAP.out.structures )
-    if ( !params.skip_ppi )                report_gate = report_gate.mix( PPI_MAP.out.interactions )
-    if ( !params.skip_coiledcoils )        report_gate = report_gate.mix( coiled_coils_ch )
-    if ( !params.skip_scansite )           report_gate = report_gate.mix( SCANSITE_MAP.out.scansite )
-    if ( !params.skip_polymorphism )       report_gate = report_gate.mix( POLYMORPHISM_MAP.out.polymorphism )
-    if ( !params.skip_conservation && genome_enabled ) report_gate = report_gate.mix( CONSERVATION_MAP.out.phastcons )
-    if ( !params.skip_alphamissense )      report_gate = report_gate.mix( ALPHAMISSENSE_MAP.out.alphamissense )
-    if ( mavedb_enabled )                  report_gate = report_gate.mix( MAVEDB_MAP.out.mavedb )
-    if ( proteingym_enabled )              report_gate = report_gate.mix( PROTEINGYM_MAP.out.proteingym )
-    if ( !params.skip_depmap )             report_gate = report_gate.mix( DEPMAP_MAP.out.depmap )
-    if ( !params.skip_cancer_drivers )     report_gate = report_gate.mix( CANCER_DRIVER_MAP.out.combined )
-    if ( !params.skip_omim )               report_gate = report_gate.mix( OMIM_MAP.out.omim_disease )
-    if ( !params.skip_pathogenicity && !(genome_enabled && (params.dbnsfp_raw_dir || params.fetch_dbnsfp)) ) report_gate = report_gate.mix( PATHOGENICITY_MAP.out.scores )
-    if ( !params.skip_finches )              report_gate = report_gate.mix( FINCHES_MAP.out.finches )
+    // disorder_pos is Channel.value(no_file) when disorder is skipped — emits immediately.
+    report_gate = HOMOLOGY_MANIFEST.out.manifest.mix( TRANSCRIPT_MAP.out.stats, disorder_pos )
+    if ( (mods == null || mods.contains('disorder')) )                                    report_gate = report_gate.mix( POSITION_BASED_MAP.out.rsa_scores )
+    if ( (mods == null || mods.contains('go')) )                                          report_gate = report_gate.mix( GO_MAP.out.go_terms )
+    // When scattering, disorder merge outputs must materialise before the report scans.
+    if ( scatter_n > 1 && (mods == null || mods.contains('disorder')) )                   report_gate = report_gate.mix( disorder_anchor, disorder_aiupred, disorder_aiubind )
+    if ( genome_enabled )                                     report_gate = report_gate.mix( GENOME_MAP.out.map_file, GENOME_QUERY_MAP.out.mutations )
+    if ( (mods == null || mods.contains('pdb')) && !params.skip_pdb )                     report_gate = report_gate.mix( params.pdb_bulk ? PDB_BULK_MAP.out.structures : PDB_MAP.out.structures )
+    if ( (mods == null || mods.contains('ppi')) && !params.skip_ppi )                     report_gate = report_gate.mix( PPI_MAP.out.interactions )
+    if ( (mods == null || mods.contains('coiledcoils')) && !params.skip_coiledcoils )     report_gate = report_gate.mix( coiled_coils_ch )
+    if ( (mods == null || mods.contains('scansite')) && !params.skip_scansite )           report_gate = report_gate.mix( SCANSITE_MAP.out.scansite )
+    if ( (mods == null || mods.contains('polymorphism')) && !params.skip_polymorphism )   report_gate = report_gate.mix( POLYMORPHISM_MAP.out.polymorphism )
+    if ( (mods == null || mods.contains('conservation')) && !params.skip_conservation && genome_enabled ) report_gate = report_gate.mix( CONSERVATION_MAP.out.phastcons )
+    if ( (mods == null || mods.contains('alphamissense')) && !params.skip_alphamissense ) report_gate = report_gate.mix( ALPHAMISSENSE_MAP.out.alphamissense )
+    if ( mavedb_enabled )                                     report_gate = report_gate.mix( MAVEDB_MAP.out.mavedb )
+    if ( proteingym_enabled )                                 report_gate = report_gate.mix( PROTEINGYM_MAP.out.proteingym )
+    if ( (mods == null || mods.contains('depmap')) && !params.skip_depmap )               report_gate = report_gate.mix( DEPMAP_MAP.out.depmap )
+    if ( (mods == null || mods.contains('cancer_drivers')) && !params.skip_cancer_drivers ) report_gate = report_gate.mix( CANCER_DRIVER_MAP.out.combined )
+    if ( (mods == null || mods.contains('omim')) && !params.skip_omim )                   report_gate = report_gate.mix( OMIM_MAP.out.omim_disease )
+    if ( (mods == null || mods.contains('dbnsfp')) && !params.skip_pathogenicity && !(genome_enabled && (params.dbnsfp_raw_dir || params.fetch_dbnsfp)) ) report_gate = report_gate.mix( PATHOGENICITY_MAP.out.scores )
+    if ( (mods == null || mods.contains('finches')) && !params.skip_finches )             report_gate = report_gate.mix( FINCHES_MAP.out.finches )
 
     MAPPING_REPORT(
         SEQUENCE_PROCESS.out.loc_chrom_seq,
