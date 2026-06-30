@@ -625,15 +625,19 @@ def compute_scores(
                     "AIUPredBinding": ", ".join(f"{v:.4f}" for v in bind_sc)})
 
         # ── AlphaFold pLDDT ───────────────────────────────────────────────────
-        if not skip_alphafold and acc and acc not in ("nan", ""):
-            acc_base = acc.split("-")[0] if "-" in acc else acc
+        # When plddt_local is provided, use dict lookup regardless of skip_alphafold.
+        # Lookup tries Protein_ID (pid) first, then UniProt accession (acc_base).
+        _use_af = (not skip_alphafold) or (plddt_local is not None)
+        if _use_af and (plddt_local is not None or (acc and acc not in ("nan", ""))):
+            acc_base = acc.split("-")[0] if "-" in acc and acc else acc
             if plddt_local is not None:
-                # Fast path: dict lookup from pre-extracted bulk tar
-                plddt = plddt_local.get(acc_base)
-            else:
-                # Slow path: per-protein EBI API call (not recommended at full proteome scale)
+                plddt = plddt_local.get(pid) or plddt_local.get(acc_base)
+            elif not skip_alphafold and acc and acc not in ("nan", ""):
+                # Slow path: per-protein EBI API call
                 plddt = fetch_alphafold_plddt(acc, delay)
                 time.sleep(delay)
+            else:
+                plddt = None
             if plddt:
                 if len(plddt) > len(seq):
                     plddt = plddt[:len(seq)]
@@ -864,7 +868,12 @@ def main():
     log.info("Computing disorder/binding scores for %d proteins (all isoforms, key=%s)…",
              len(proteins), id_col)
 
-    # Load pre-extracted AlphaFold pLDDT TSV when provided (replaces per-protein API)
+    # Load pre-extracted AlphaFold pLDDT TSV when provided (replaces per-protein API).
+    # Accepts two formats:
+    #   1. Accession | Plldtscores  (from PARSE_ALPHAFOLD_PLDDT / bulk tar)
+    #   2. Protein_ID | Plldtscores (from a previous DISORDER_MAP merged output)
+    # The dict is keyed by whichever ID column is present; lookup tries Protein_ID
+    # first, then the UniProt accession (acc_base), so both formats work at runtime.
     plddt_local: dict | None = None
     _plddt_path = Path(args.alphafold_plddt_tsv) if args.alphafold_plddt_tsv else None
     _plddt_ok   = (_plddt_path is not None
@@ -873,16 +882,18 @@ def main():
                    and _plddt_path.stat().st_size > 0)
     if _plddt_ok:
         af_df = pd.read_csv(args.alphafold_plddt_tsv, sep="\t", dtype=str)
-        if not af_df.empty and "Accession" in af_df.columns and "Plldtscores" in af_df.columns:
+        key_col = next((c for c in ["Accession", id_col, "Protein_ID", "Entry_Name"]
+                        if c in af_df.columns), None)
+        if not af_df.empty and key_col and "Plldtscores" in af_df.columns:
             plddt_local = {}
             for _, row in af_df.iterrows():
                 try:
                     scores = [float(x) for x in str(row["Plldtscores"]).split(",") if x.strip()]
-                    plddt_local[str(row["Accession"])] = scores
+                    plddt_local[str(row[key_col])] = scores
                 except (ValueError, AttributeError):
                     pass
-            log.info("AlphaFold (local): loaded pLDDT for %d proteins (no API calls)",
-                     len(plddt_local))
+            log.info("AlphaFold (local, key=%s): loaded pLDDT for %d proteins (no API calls)",
+                     key_col, len(plddt_local))
 
     iupred_df, anchor_df, aiupred_df, aiu_bind_df, plddt_df = compute_scores(
         proteins, id_col, args.ext_programs, args.aiupred_python,

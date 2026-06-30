@@ -503,11 +503,12 @@ process DISORDER_MAP {
 
     input:
     path loc_chrom
-    path mobidb_tsv,        stageAs: 'mobidb_dis.tsv'
-    path pfam_tsv,          stageAs: 'pfam_dis.tsv'
-    path alphafold_plddt,   stageAs: 'alphafold_plddt_in.tsv'   // from PARSE_ALPHAFOLD_PLDDT or NO_FILE
-    path setup_done,        stageAs: 'setup.done'                // sentinel from SETUP_DEPS (ordering)
-    path aiupred_py_file,   stageAs: 'aiupred_py.txt'           // detected path from SETUP_DEPS
+    path mobidb_tsv,            stageAs: 'mobidb_dis.tsv'
+    path pfam_tsv,              stageAs: 'pfam_dis.tsv'
+    path alphafold_plddt,       stageAs: 'alphafold_plddt_in.tsv'     // from PARSE_ALPHAFOLD_PLDDT or NO_FILE
+    path af_precomputed_table,  stageAs: 'af_precomputed_table.tsv'   // pre-computed Protein_ID|Plldtscores or NO_FILE
+    path setup_done,            stageAs: 'setup.done'                  // sentinel from SETUP_DEPS (ordering)
+    path aiupred_py_file,       stageAs: 'aiupred_py.txt'             // detected path from SETUP_DEPS
 
     output:
     path "IUPredscores.tsv",         emit: iupred
@@ -519,21 +520,18 @@ process DISORDER_MAP {
     path "CombinedDisorderNew_Pos.tsv", emit: disorder_pos
 
     script:
-    // skip_alphafold only when explicitly requested — NOT when af_local is provided:
-    // when a local pLDDT TSV exists, af_local passes --alphafold_plddt_tsv to the worker
-    // so it uses dict lookup instead of the EBI API; skip_af would bypass the dict lookup too.
     def skip_af  = params.skip_alphafold ? "--skip_alphafold" : ""
-    def af_local = (alphafold_plddt.name  != 'NO_FILE') ? "--alphafold_plddt_tsv alphafold_plddt_in.tsv" : ""
     def skip_iu  = params.skip_iupred  ? "--skip_iupred"  : ""
     def skip_aiu = params.skip_aiupred ? "--skip_aiupred" : ""
     def mob_arg  = (mobidb_tsv.name != 'NO_FILE') ? "--mobidb_tsv mobidb_dis.tsv" : ""
     def pfam_arg = (pfam_tsv.name   != 'NO_FILE') ? "--pfam_tsv pfam_dis.tsv"     : ""
-    // aiupred_python: use the explicit param if set; otherwise read from the
-    // SETUP_DEPS-detected path file (auto-detected on first run for any machine).
+    // pLDDT source priority: bulk-tar parsed (Accession-keyed) > pre-computed merged (Protein_ID-keyed)
+    def af_local = (alphafold_plddt.name      != 'NO_FILE') ? "--alphafold_plddt_tsv alphafold_plddt_in.tsv"
+                 : (af_precomputed_table.name != 'NO_FILE') ? "--alphafold_plddt_tsv af_precomputed_table.tsv"
+                 : ""
     def aiupred_param = params.aiupred_python ?: ""
     """
-    # plddt_fix_2026-06-23: fix skip_alphafold logic; gpu_fix: PyTorch 2.7.0+cu128 for SM12.0
-    # Resolve aiupred_python: param > SETUP_DEPS file > empty (graceful skip)
+    # Resolve aiupred_python: explicit param > SETUP_DEPS file > empty (graceful skip)
     _aiupred_py="${aiupred_param}"
     [[ -z "\${_aiupred_py}" ]] && [[ -f aiupred_py.txt ]] && \\
         _aiupred_py="\$(cat aiupred_py.txt | tr -d '[:space:]')"

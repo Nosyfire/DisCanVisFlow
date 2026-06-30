@@ -174,21 +174,15 @@ def parse_interpro_pfam(interpro_gz: Path, keep: set[str] | None) -> list[dict]:
     """
     Stream protein2ipr.dat.gz (tab-separated, all species).
 
-    Columns (InterPro release ≥ 96):
-      0  protein_accession
-      1  md5
-      2  sequence_length
-      3  analysis           (Pfam, CDD, PANTHER, ...)
-      4  signature_accession (e.g. PF00001)
-      5  signature_description
-      6  start_location
-      7  stop_location
-      8  score
-      9  status             (T = true)
-      10 date
-      11 interpro_accession
-      12 interpro_description
-      (optional further columns)
+    Actual EBI FTP format (protein2ipr.dat, 6 columns):
+      0  UniProt_accession      e.g. P04049
+      1  InterPro_accession     e.g. IPR004839
+      2  InterPro_description   e.g. "Aminotransferase, class I..."
+      3  signature_accession    e.g. PF00155 (Pfam), TIGR01821 (TIGRFAM), ...
+      4  start_location         1-based integer
+      5  end_location           1-based integer
+
+    Pfam entries are identified by signature_accession starting with 'PF'.
 
     Returns list of {Accession, hmm_acc, hmm_name, start, end, type='Pfam'}.
     """
@@ -206,23 +200,23 @@ def parse_interpro_pfam(interpro_gz: Path, keep: set[str] | None) -> list[dict]:
             if '\t' not in raw:
                 continue
             parts = raw.rstrip('\n').split('\t')
-            if len(parts) < 8:
+            if len(parts) < 6:
                 continue
             acc     = parts[0]
-            db      = parts[3]
-            if db != 'Pfam':
+            sig_acc = parts[3]
+            if not sig_acc.startswith('PF'):
                 continue
             if keep and acc not in keep:
                 continue
             try:
-                start = int(parts[6])
-                end   = int(parts[7])
+                start = int(parts[4])
+                end   = int(parts[5])
             except ValueError:
                 continue
             rows.append({
                 'Accession': acc,
-                'hmm_acc':   parts[4],
-                'hmm_name':  parts[5],
+                'hmm_acc':   sig_acc,
+                'hmm_name':  parts[2],
                 'start':     start,
                 'end':       end,
                 'type':      'Pfam',

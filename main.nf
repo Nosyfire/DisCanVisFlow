@@ -732,11 +732,18 @@ After copying/downloading the files, rerun the same command with -resume.
         af_plddt_ch = Channel.value(no_file)
     }
 
+    // Pre-computed AlphaFoldTable.tsv from a previous run (Protein_ID|Plldtscores).
+    // Avoids re-fetching pLDDT via EBI API when --alphafold_precomputed_table is set.
+    def af_precomputed_ch = params.alphafold_precomputed_table
+        ? Channel.value( file(params.alphafold_precomputed_table, checkIfExists: false) )
+        : Channel.value(no_file)
+
     DISORDER_MAP(
         disorder_loc_ch,
         mobidb_disorder_input_ch,
         ANNOTATION_MAP.out.pfam.first(),
         af_plddt_ch.first(),
+        af_precomputed_ch.first(),
         setup_done_ch.first(),
         setup_aiupred_py_ch.first()
     )
