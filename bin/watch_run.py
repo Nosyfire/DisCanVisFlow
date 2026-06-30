@@ -366,6 +366,12 @@ def find_blat_dirs(work_dir: Path) -> list[dict]:
             psl = psl_files[0] if psl_files else None
             exit_file = sub / ".exitcode"
             cmd_out   = sub / ".command.out"
+            # Skip dirs where the PSL hasn't been touched for >2h and no exitcode —
+            # these are ghost dirs from previously killed runs, not real stalls.
+            if not exit_file.exists() and psl and psl.exists():
+                psl_age = time.time() - psl.stat().st_mtime
+                if psl_age > 7200:
+                    continue
             entry = {
                 "chunk": chunk_name, "fasta": fasta, "psl": psl,
                 "exit_file": exit_file, "cmd_out": cmd_out,
@@ -433,19 +439,34 @@ def print_status(trace_path: Path | None, nf_log: Path, work_dir: Path,
 
     # ── Gather task data ─────────────────────────────────────────────────────
     if trace_path and trace_path.exists():
-        # Primary: trace.tsv for completed/failed + work-dir scan for running
+        # Primary: trace.tsv for completed/failed tasks in THIS run
         completed_tasks = parse_trace(trace_path)
-        running_list    = find_running_in_workdir(work_dir)
         tasks = dict(completed_tasks)
-        # Merge running tasks (avoid double-counting if trace also has them as RUNNING)
-        running_names_in_trace = {t["name"] for t in tasks.values()
+
+        # Supplement: .nextflow.log has "Cached process >" lines for tasks
+        # served from previous-session cache — these won't appear in trace yet.
+        if nf_log.exists():
+            cached_pattern = re.compile(r"Cached process > ([^\n]+)")
+            cached_id = 100_000
+            for m in cached_pattern.finditer(nf_log.read_text(errors="replace")):
+                name = m.group(1).strip()
+                if not any(t["name"] == name for t in tasks.values()):
+                    tasks[str(cached_id)] = {
+                        "name": name, "status": "COMPLETED",
+                        "exit": "0", "phase": phase_of(name),
+                    }
+                    cached_id += 1
+
+        # Work-dir scan for currently running tasks
+        running_list = find_running_in_workdir(work_dir)
+        running_names_in_tasks = {t["name"] for t in tasks.values()
                                    if t["status"] == "RUNNING"}
         rid = 900_000
         for rt in running_list:
-            if rt["name"] not in running_names_in_trace:
+            if rt["name"] not in running_names_in_tasks:
                 tasks[str(rid)] = rt
                 rid += 1
-        source_label = f"trace: {trace_path}"
+        source_label = f"trace: {trace_path}  +  cached from log"
     else:
         # Fallback: .nextflow.log
         tasks = parse_nextflow_log(nf_log)
