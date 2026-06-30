@@ -139,7 +139,10 @@ def test_summary_overview_main_nonmain(tmp_path):
     assert "AIUPred-Binding" in s
     assert "PDB structures" in s and "PDBe API" in s
     # AIUPred-Binding only on the main isoform (GENE-201) → 1/1 main, 0/1 non-main
-    line = [ln for ln in s.splitlines() if "AIUPred-Binding" in ln][0]
+    # Search within the mapping overview section (the annotation sources section also
+    # has an AIUPred-Binding row with a date, which would cause a false match on [0]).
+    overview_section = s[s.find("## Mapping overview"):]
+    line = [ln for ln in overview_section.splitlines() if "AIUPred-Binding" in ln][0]
     assert "1 / 1" in line and "0 / 1" in line
     # --source override (rel-path keyed) is honoured for MaveDB
     assert "data/mavedb.tsv" in s

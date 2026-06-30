@@ -61,14 +61,14 @@ def _pfam_dr(pfam_acc="PF00001", pfam_name="7tm_1") -> str:
 
 
 def _make_interpro(path: Path, rows: list[tuple]) -> Path:
-    """Write minimal protein2ipr.dat.gz.
+    """Write minimal protein2ipr.dat.gz in the actual EBI 6-column format.
     rows = [(acc, pfam_acc, pfam_name, start, end), ...]
+    Columns: UniProt_acc  InterPro_acc  InterPro_desc  sig_acc  start  end
     """
     gz = path / "protein2ipr.dat.gz"
     with gzip.open(gz, 'wt', encoding='utf-8') as f:
         for acc, pfam_acc, pfam_name, start, end in rows:
-            # protein_acc md5 length analysis sig_acc sig_desc start end score status date ipr_acc ipr_desc
-            f.write(f"{acc}\tmd5\t100\tPfam\t{pfam_acc}\t{pfam_name}\t{start}\t{end}\t1e-5\tT\t01-01-2024\tIPR000001\tTest domain\n")
+            f.write(f"{acc}\tIPR000001\t{pfam_name}\t{pfam_acc}\t{start}\t{end}\n")
     return gz
 
 
