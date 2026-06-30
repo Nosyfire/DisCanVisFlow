@@ -5,14 +5,24 @@ bin/watch_run.py — Live progress monitor for a running DisCanVisFlow pipeline.
 Shows all pipeline phases with task-by-task status, scatter-chunk progress,
 BLAT chunk detail, and per-phase ETA estimates.
 
+Data sources (in priority order):
+  1. trace TSV  (results/<project>/reports/trace.tsv) — written by the REAL run,
+     never overwritten by stub/test runs → used for completed/failed tasks
+  2. work dir scan — detect currently-running tasks (dirs with .command.begin
+     but no .exitcode)
+  3. .nextflow.log — legacy fallback when no trace is found
+
 Usage:
-  python bin/watch_run.py                   # auto-detect, refresh every 30s
-  python bin/watch_run.py --interval 10     # refresh every 10s
-  python bin/watch_run.py --once            # print once and exit
+  python bin/watch_run.py                          # auto-detect trace, refresh every 30s
+  python bin/watch_run.py --project discanvis      # explicit project
+  python bin/watch_run.py --trace results/discanvis/reports/trace.tsv
+  python bin/watch_run.py --interval 10            # refresh every 10s
+  python bin/watch_run.py --once                   # print once and exit
   python bin/watch_run.py --work work/local
 """
 
 import argparse
+import csv
 import re
 import subprocess
 import sys
@@ -23,14 +33,14 @@ from pathlib import Path
 
 # ── Terminal helpers ──────────────────────────────────────────────────────────
 
-CLEAR = "\033[2J\033[H"
-BOLD  = "\033[1m"
-DIM   = "\033[2m"
-GREEN = "\033[32m"
-CYAN  = "\033[36m"
+CLEAR  = "\033[2J\033[H"
+BOLD   = "\033[1m"
+DIM    = "\033[2m"
+GREEN  = "\033[32m"
+CYAN   = "\033[36m"
 YELLOW = "\033[33m"
-RED   = "\033[31m"
-RESET = "\033[0m"
+RED    = "\033[31m"
+RESET  = "\033[0m"
 
 def bar(frac: float, width: int = 28) -> str:
     frac = max(0.0, min(1.0, frac))
@@ -50,7 +60,6 @@ def human_time(seconds: float) -> str:
     return f"{h}h {m:02d}m"
 
 def elapsed_since(path: Path) -> str:
-    """Return human-readable time since file was last modified."""
     try:
         s = time.time() - path.stat().st_mtime
         return human_time(s)
@@ -58,7 +67,6 @@ def elapsed_since(path: Path) -> str:
         return "?"
 
 # ── Phase definitions ─────────────────────────────────────────────────────────
-# Each phase = list of substrings that match task names belonging to that phase.
 
 PHASES = [
     ("Setup",          ["SUBSET_", "MAKEBLASTDB", "SPLIT_CDNA", "MERGE_UNIPROT",
@@ -76,8 +84,8 @@ PHASES = [
                         "SCANSITE_MAP", "PROTEINGYM_MAP", "MAVEDB_MAP",
                         "DEPMAP_MAP", "DBNSFP_MAP", "PATHOGENICITY_MAP",
                         "OMIM_MAP", "ALPHAMISSENSE_MAP", "ELM_SWITCHES_MAP",
-                        "FINCHES_MAP", "POSITION_BASED_MAP"]),
-    ("Finalize",       ["TRANSCRIPT_MAP", "MAPPING_REPORT"]),
+                        "FINCHES_MAP", "POSITION_BASED_MAP", "ISOFORM_ALIGN_MAP"]),
+    ("Finalize",       ["TRANSCRIPT_MAP", "HOMOLOGY_MANIFEST", "MAPPING_REPORT"]),
 ]
 
 def phase_of(name: str) -> str:
@@ -86,50 +94,169 @@ def phase_of(name: str) -> str:
             return phase_name
     return "Other"
 
-# ── Nextflow log parsing ──────────────────────────────────────────────────────
+# ── Trace TSV parsing (primary source) ───────────────────────────────────────
 
-def parse_nextflow_log(nf_log: Path):
+def find_trace(project: str | None, outdir: str) -> Path | None:
+    """Find the most recently modified trace.tsv under results/."""
+    candidates = []
+    if project:
+        p = Path(outdir) / project / "reports" / "trace.tsv"
+        if p.exists():
+            return p
+    # auto-detect: find all trace.tsv files and return newest
+    for p in Path(outdir).glob("*/reports/trace.tsv"):
+        candidates.append(p)
+    if not candidates:
+        return None
+    return max(candidates, key=lambda p: p.stat().st_mtime)
+
+def parse_trace(trace_path: Path) -> dict:
+    """Parse trace.tsv → dict of task_id → task info for COMPLETED/FAILED tasks."""
+    tasks = {}
+    if not trace_path or not trace_path.exists():
+        return tasks
+    with open(trace_path, newline="", errors="replace") as f:
+        reader = csv.DictReader(f, delimiter="\t")
+        for row in reader:
+            name   = row.get("name", "").strip()
+            status = row.get("status", "").strip()
+            tid    = row.get("task_id", name)
+            if not name:
+                continue
+            tasks[tid] = {
+                "name":     name,
+                "status":   status,
+                "exit":     row.get("exit", "?").strip(),
+                "phase":    phase_of(name),
+                "duration": row.get("realtime", "").strip(),
+            }
+    return tasks
+
+# ── Work-dir scan for RUNNING tasks ──────────────────────────────────────────
+
+def find_running_in_workdir(work_dir: Path) -> list[dict]:
+    """
+    Scan work dir for tasks that have started (.command.begin) but not finished
+    (.exitcode absent).  Returns list of {name, work_dir, elapsed_s}.
+    """
+    running = []
+    if not work_dir.exists():
+        return running
+    for top in work_dir.iterdir():
+        if not top.is_dir() or len(top.name) != 2:
+            continue
+        for sub in top.iterdir():
+            if not sub.is_dir():
+                continue
+            begin = sub / ".command.begin"
+            exitc = sub / ".exitcode"
+            cmd_sh = sub / ".command.sh"
+            if not begin.exists() or exitc.exists() or not cmd_sh.exists():
+                continue
+            # extract task name from .command.sh header comment: # NXF_TASK=NAME
+            name = _task_name_from_sh(cmd_sh)
+            if name is None:
+                continue
+            elapsed_s = time.time() - begin.stat().st_mtime
+            running.append({
+                "name":      name,
+                "status":    "RUNNING",
+                "exit":      "-",
+                "phase":     phase_of(name),
+                "elapsed_s": elapsed_s,
+                "work_dir":  sub,
+            })
+    return running
+
+_NAME_PATTERNS = [
+    re.compile(r"#\s*NXF_TASK\s*=\s*(.+)"),           # newer Nextflow
+    re.compile(r"nxf_main\(\)\s*\{.*?#\s*(.+?)\s*$",  # fallback
+               re.DOTALL | re.MULTILINE),
+]
+
+def _task_name_from_sh(cmd_sh: Path) -> str | None:
+    try:
+        # Read only first 60 lines for speed
+        lines = []
+        with open(cmd_sh, errors="replace") as f:
+            for i, line in enumerate(f):
+                if i >= 60:
+                    break
+                lines.append(line)
+        text = "".join(lines)
+    except OSError:
+        return None
+
+    # Pattern: the process tag line looks like: # TASK: COILEDCOILS_MAP (coiledcoils chunk_003)
+    m = re.search(r"#\s*TASK:\s*(.+)", text)
+    if m:
+        return m.group(1).strip()
+
+    # Nextflow writes the process name as a comment near the top
+    m = re.search(r"#\s*([\w_]+(?:\s+\([^)]+\))?)\s*$", text, re.MULTILINE)
+    if m:
+        candidate = m.group(1).strip()
+        if re.match(r"^[A-Z][A-Z0-9_]+", candidate):
+            return candidate
+
+    # Last resort: grep for the python script call to infer module name
+    script_map = {
+        "create_coiledcoils_worker":  "COILEDCOILS_MAP",
+        "create_disorder_worker":     "DISORDER_MAP",
+        "create_annotation_worker":   "ANNOTATION_MAP",
+        "create_transcript_map":      "TRANSCRIPT_MAP",
+        "create_genome_map":          "GENOME_MAP",
+        "create_mutation_map":        "MUTATION_MAP",
+        "create_conservation_worker": "CONSERVATION_MAP",
+        "create_pdb_worker":          "PDB_MAP",
+        "create_go_worker":           "GO_MAP",
+        "create_dbnsfp_map":          "DBNSFP_MAP",
+        "create_ppi_worker":          "PPI_MAP",
+        "create_blast_table":         "BLASTP",
+        "deepcoil":                   "COILEDCOILS_MAP",
+    }
+    for key, process_name in script_map.items():
+        if key in text:
+            # Try to get the chunk tag
+            m2 = re.search(r"(chunk_\d+)", text)
+            tag = f" ({m2.group(1)})" if m2 else ""
+            return f"{process_name}{tag}"
+    return None
+
+# ── Legacy .nextflow.log parsing (fallback) ───────────────────────────────────
+
+def parse_nextflow_log(nf_log: Path) -> dict:
+    """Parse .nextflow.log — used only when no trace.tsv is available."""
     if not nf_log.exists():
         return {}
     text = nf_log.read_text(errors="replace")
     tasks: dict[str, dict] = {}
 
-    # Format 1 (active tasks — all runs):
-    # TaskHandler[id: N; name: X (tag); status: RUNNING/COMPLETED/FAILED; exit: 0; ...]
     task_pattern = re.compile(
         r"TaskHandler\[id: (\d+); name: ([^;]+); status: (\w+); exit: ([^;]+);"
     )
     for m in task_pattern.finditer(text):
         tid, name, status, exit_code = m.groups()
-        name = name.strip()
         tasks[tid] = {
-            "name":   name,
-            "status": status,
-            "exit":   exit_code.strip(),
-            "phase":  phase_of(name),
+            "name": name.strip(), "status": status,
+            "exit": exit_code.strip(), "phase": phase_of(name.strip()),
         }
 
-    # Format 2 (cached tasks on -resume):
-    # INFO n.p.TaskProcessor - [ab/cdef12] Cached process > NAME (tag)
     cached_pattern = re.compile(r"Cached process > ([^\n]+)")
-    cached_id = 100_000  # synthetic IDs starting high to avoid collision
+    cached_id = 100_000
     for m in cached_pattern.finditer(text):
         name = m.group(1).strip()
-        already = any(t["name"] == name for t in tasks.values())
-        if not already:
+        if not any(t["name"] == name for t in tasks.values()):
             tasks[str(cached_id)] = {
                 "name": name, "status": "COMPLETED",
                 "exit": "0", "phase": phase_of(name),
             }
             cached_id += 1
 
-    # Format 3 (submitted but not yet done — shows as RUNNING):
-    # INFO nextflow.Session - [8e/713ac6] Submitted process > NAME (tag)
     submitted_pattern = re.compile(r"Submitted process > ([^\n]+)")
     submitted_id = 200_000
     for m in submitted_pattern.finditer(text):
         name = m.group(1).strip()
-        # Only add if not already seen as COMPLETED or in TaskHandler
         existing = next((t for t in tasks.values() if t["name"] == name), None)
         if existing is None:
             tasks[str(submitted_id)] = {
@@ -138,20 +265,78 @@ def parse_nextflow_log(nf_log: Path):
             }
             submitted_id += 1
         elif existing["status"] not in ("COMPLETED", "FAILED"):
-            # upgrade status to RUNNING if it's only been seen as submitted
             existing["status"] = "RUNNING"
-
     return tasks
 
+def chunk_progress_from_err(work_dir: Path) -> list[dict]:
+    """
+    Parse .command.err of running COILEDCOILS_MAP / DISORDER_MAP tasks for
+    DEEPCOIL_PROGRESS / AIUPRED_PROGRESS lines written by the workers.
+    Returns list of {chunk, done, total, batch, n_batches, elapsed_s}.
+    """
+    results = []
+    if not work_dir.exists():
+        return results
+    for top in work_dir.iterdir():
+        if not top.is_dir() or len(top.name) != 2:
+            continue
+        for sub in top.iterdir():
+            if not sub.is_dir():
+                continue
+            begin = sub / ".command.begin"
+            exitc = sub / ".exitcode"
+            cmd_sh = sub / ".command.sh"
+            err_f  = sub / ".command.err"
+            if not begin.exists() or exitc.exists() or not err_f.exists():
+                continue
+            # Only COILEDCOILS or DISORDER tasks
+            if not cmd_sh.exists():
+                continue
+            try:
+                sh_head = cmd_sh.read_text(errors="replace")[:300]
+            except OSError:
+                continue
+            is_coil   = "deepcoil" in sh_head or "coiledcoils" in sh_head.lower()
+            is_dis    = "create_disorder_worker" in sh_head
+            if not (is_coil or is_dis):
+                continue
+            chunk = re.search(r"chunk_(\d+)", sh_head)
+            chunk_id = chunk.group(0) if chunk else "?"
+            elapsed_s = time.time() - begin.stat().st_mtime
+            # Read last PROGRESS line from .command.err
+            try:
+                # Read last 4KB for speed
+                err_text = err_f.read_text(errors="replace")[-4096:]
+            except OSError:
+                continue
+            done = total = batch = n_batches = None
+            for line in reversed(err_text.splitlines()):
+                m = re.search(r"DEEPCOIL_PROGRESS (\d+)/(\d+) batch (\d+)/(\d+)", line)
+                if m:
+                    done, total, batch, n_batches = [int(x) for x in m.groups()]
+                    break
+                m = re.search(r"DEEPCOIL_INIT .* total=(\d+) batches=(\d+)", line)
+                if m:
+                    total, n_batches = int(m.group(1)), int(m.group(2))
+                    done, batch = 0, 0
+                    break
+            if total:
+                results.append({
+                    "chunk": chunk_id, "done": done or 0, "total": total,
+                    "batch": batch or 0, "n_batches": n_batches or "?",
+                    "elapsed_s": elapsed_s, "is_coil": is_coil,
+                })
+    return sorted(results, key=lambda x: x["chunk"])
+
+
 def start_time_from_log(run_log: Path):
-    """Return the MOST RECENT 'run START' timestamp — handles multiple restart entries."""
     if not run_log.exists():
         return None
     text = run_log.read_text(errors="replace")
     matches = re.findall(
         r"\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\].*run START", text
     )
-    for ts_str in reversed(matches):  # latest first
+    for ts_str in reversed(matches):
         try:
             return datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S")
         except ValueError:
@@ -242,12 +427,36 @@ def blat_status(info: dict) -> dict:
 
 # ── Main display ──────────────────────────────────────────────────────────────
 
-def print_status(nf_log: Path, work_dir: Path, run_log: Path, _start: list):
+def print_status(trace_path: Path | None, nf_log: Path, work_dir: Path,
+                 run_log: Path, _start: list, data_source: str):
     now = datetime.now()
-    tasks = parse_nextflow_log(nf_log)
 
+    # ── Gather task data ─────────────────────────────────────────────────────
+    if trace_path and trace_path.exists():
+        # Primary: trace.tsv for completed/failed + work-dir scan for running
+        completed_tasks = parse_trace(trace_path)
+        running_list    = find_running_in_workdir(work_dir)
+        tasks = dict(completed_tasks)
+        # Merge running tasks (avoid double-counting if trace also has them as RUNNING)
+        running_names_in_trace = {t["name"] for t in tasks.values()
+                                   if t["status"] == "RUNNING"}
+        rid = 900_000
+        for rt in running_list:
+            if rt["name"] not in running_names_in_trace:
+                tasks[str(rid)] = rt
+                rid += 1
+        source_label = f"trace: {trace_path}"
+    else:
+        # Fallback: .nextflow.log
+        tasks = parse_nextflow_log(nf_log)
+        source_label = f"log: {nf_log}  {DIM}(no trace found — stub runs may pollute this){RESET}"
+
+    # ── Start time ───────────────────────────────────────────────────────────
     if not _start:
+        # Try trace mtime as approximate start, or run_log
         st = start_time_from_log(run_log)
+        if st is None and trace_path and trace_path.exists():
+            st = datetime.fromtimestamp(trace_path.stat().st_mtime - 3600)
         if st:
             _start.append(st)
     start_time = _start[0] if _start else None
@@ -266,7 +475,10 @@ def print_status(nf_log: Path, work_dir: Path, run_log: Path, _start: list):
     print(f"\n{BOLD}▶ RUNNING NOW ({len(running_tasks)} tasks){RESET}")
     if running_tasks:
         for name, t in sorted(running_tasks.items()):
-            print(f"    {CYAN}●{RESET} {name}")
+            elapsed_str = ""
+            if "elapsed_s" in t:
+                elapsed_str = f"  {DIM}({human_time(t['elapsed_s'])}){RESET}"
+            print(f"    {CYAN}●{RESET} {name}{elapsed_str}")
     else:
         print(f"    {DIM}(none — pipeline idle, starting, or done){RESET}")
 
@@ -281,8 +493,6 @@ def print_status(nf_log: Path, work_dir: Path, run_log: Path, _start: list):
     print(f"  {'─'*60}")
 
     total_done = total_running = total_tasks = 0
-
-    # group tasks by phase
     by_phase: dict[str, dict] = defaultdict(lambda: {"done": 0, "running": 0, "failed": 0, "total": 0})
     for t in tasks.values():
         ph = t["phase"]
@@ -327,7 +537,6 @@ def print_status(nf_log: Path, work_dir: Path, run_log: Path, _start: list):
     print(f"  {'Total':<16}  {total_done:>4}/{total_tasks:<4}  {total_running:>4} run")
 
     # ── 3. Scatter module breakdown ───────────────────────────────────────────
-    # Group running/done tasks by base module name (strip parenthetical suffix)
     scatter_modules: dict[str, dict] = defaultdict(lambda: {"done": 0, "running": 0, "total": 0})
     scatter_keywords = [
         "GENOME_MAP", "DISORDER_MAP", "MUTATION_MAP", "TRANSCRIPT_MAP",
@@ -358,6 +567,23 @@ def print_status(nf_log: Path, work_dir: Path, run_log: Path, _start: list):
             icon = f"{GREEN}✔{RESET}" if n == tot else (f"{CYAN}▶{RESET}" if r else " ")
             print(f"  {icon} {kw:<22}  {n:>4}/{tot:<4}  {r:>4} run  [{b}] {frac*100:.0f}%")
 
+    # ── 3b. Per-chunk DeepCoil / Disorder progress ───────────────────────────
+    chunk_progs = chunk_progress_from_err(work_dir)
+    if chunk_progs:
+        print(f"\n{BOLD}DeepCoil / Disorder chunk detail{RESET}  "
+              f"{DIM}(per-protein progress from .command.err){RESET}")
+        print(f"  {'Chunk':<12} {'Proteins':>10}  {'Progress':<28}  {'Elapsed':>8}  Batch")
+        print(f"  {'─'*72}")
+        for cp in chunk_progs:
+            done, total = cp["done"], cp["total"]
+            frac = done / total if total else 0
+            b    = bar(frac, width=24)
+            elapsed_str = human_time(cp["elapsed_s"])
+            batch_str = f"{cp['batch']}/{cp['n_batches']}" if cp["batch"] else "init"
+            label = "coil" if cp["is_coil"] else "dis "
+            print(f"  {CYAN}▶{RESET} {cp['chunk']:<10} [{label}]  {done:>5}/{total:<5}  "
+                  f"[{b}] {frac*100:5.1f}%  {elapsed_str:>8}  batch {batch_str}")
+
     # ── 4. BLAT detail ────────────────────────────────────────────────────────
     blat_dirs = find_blat_dirs(work_dir)
     if blat_dirs:
@@ -369,7 +595,6 @@ def print_status(nf_log: Path, work_dir: Path, run_log: Path, _start: list):
               f"({len(blat_dirs)} chunks, {n_blat_done}/{len(blat_dirs)} done)")
 
         if not blat_complete:
-            # show only running/incomplete chunks to keep display short
             print(f"  {'Chunk':<14} {'Seqs':>5}  {'Progress':<30}  Status")
             print(f"  {'─'*58}")
             for st in blat_statuses:
@@ -406,9 +631,12 @@ def print_status(nf_log: Path, work_dir: Path, run_log: Path, _start: list):
     any_annotation = any(
         kw in n for n in running_names
         for kw in ("ANNOTATION_MAP", "DISORDER_MAP", "MUTATION_MAP",
-                   "DBNSFP_MAP", "PDB_MAP", "GO_MAP", "ALPHAMISSENSE_MAP")
+                   "DBNSFP_MAP", "PDB_MAP", "GO_MAP", "ALPHAMISSENSE_MAP",
+                   "COILEDCOILS_MAP")
     )
     any_final = any("TRANSCRIPT_MAP" in n or "MAPPING_REPORT" in n for n in running_names)
+
+    lo = hi = timedelta(0)
 
     if any_blast_blat:
         print(f"  Current : BLAST/BLAT phase")
@@ -424,14 +652,33 @@ def print_status(nf_log: Path, work_dir: Path, run_log: Path, _start: list):
         lo = timedelta(minutes=60+10)
         hi = timedelta(minutes=120+20)
     elif any_annotation:
-        # estimate from scatter progress
-        ann_done = scatter_modules.get("DISORDER_MAP", {}).get("done", 0)
-        ann_tot  = scatter_modules.get("DISORDER_MAP", {}).get("total", 20)
-        if ann_tot > 0 and elapsed > 300 and ann_done > 0:
-            rate = ann_done / elapsed  # tasks per second
-            remaining_tasks = ann_tot - ann_done
+        coil_done = scatter_modules.get("COILEDCOILS_MAP", {}).get("done", 0)
+        coil_tot  = scatter_modules.get("COILEDCOILS_MAP", {}).get("total", 0)
+        coil_run  = scatter_modules.get("COILEDCOILS_MAP", {}).get("running", 0)
+        dis_done  = scatter_modules.get("DISORDER_MAP", {}).get("done", 0)
+        dis_tot   = scatter_modules.get("DISORDER_MAP", {}).get("total", 0)
+
+        if coil_tot > 0 and coil_done < coil_tot:
+            # COILEDCOILS is the bottleneck — estimate from deepcoil timing
+            # Each chunk ~3h / 20 chunks; but running in parallel
+            remaining_chunks = coil_tot - coil_done
+            # Use elapsed time of longest-running chunk as proxy
+            long_run = max((t.get("elapsed_s", 0) for t in running_tasks.values()), default=0)
+            # DeepCoil on full proteome chunk ≈ 3-4h per chunk
+            est_chunk_s = max(long_run, 7200)   # at least 2h remaining estimate
+            print(f"  Current : COILEDCOILS_MAP scatter ({coil_done}/{coil_tot} done, {coil_run} running)")
+            print(f"  Chunks running for: {human_time(long_run)}")
+            print(f"  DeepCoil is CPU-only LSTM — ~3-4h per chunk on 64-CPU server")
+            print(f"  Remaining chunks: {remaining_chunks}  (running {coil_run} in parallel)")
+            # When all coil chunks finish, DISORDER + TRANSCRIPT take ~30 min
+            print(f"  After coiledcoils: DISORDER_MAP + TRANSCRIPT ~30 min")
+            lo = timedelta(seconds=est_chunk_s * 0.5)
+            hi = timedelta(seconds=est_chunk_s * 1.5 + 1800)
+        elif dis_tot > 0 and elapsed > 300 and dis_done > 0:
+            rate = dis_done / elapsed
+            remaining_tasks = dis_tot - dis_done
             est_s = remaining_tasks / rate if rate > 0 else 3600
-            print(f"  Current : Annotation scatter ({ann_done}/{ann_tot} DISORDER chunks done)")
+            print(f"  Current : Annotation scatter ({dis_done}/{dis_tot} DISORDER chunks done)")
             print(f"  Est remaining annotation: ~{human_time(est_s)}")
             print(f"  Final TRANSCRIPT/REPORT: ~10–20 min")
             lo = timedelta(seconds=est_s + 600)
@@ -445,8 +692,7 @@ def print_status(nf_log: Path, work_dir: Path, run_log: Path, _start: list):
         lo = timedelta(minutes=5)
         hi = timedelta(minutes=20)
     else:
-        lo = hi = timedelta(0)
-        print(f"  Pipeline appears idle — check log for errors")
+        print(f"  Pipeline appears idle — check log for errors or all done")
 
     if lo.total_seconds() > 0:
         eta_lo = now + lo
@@ -455,17 +701,36 @@ def print_status(nf_log: Path, work_dir: Path, run_log: Path, _start: list):
 
     print()
     print("═" * 72)
-    print(f"{DIM}nf log: {nf_log}  |  Ctrl+C to stop{RESET}")
+    print(f"{DIM}{source_label}  |  Ctrl+C to stop{RESET}")
 
 
 def main():
     ap = argparse.ArgumentParser(description="Watch DisCanVisFlow pipeline progress")
-    ap.add_argument("--log",      default=".nextflow.log")
+    ap.add_argument("--project",  default=None,
+                    help="Project name (e.g. discanvis). Auto-detected from results/ if omitted.")
+    ap.add_argument("--outdir",   default="results",
+                    help="Output directory root (default: results)")
+    ap.add_argument("--trace",    default=None,
+                    help="Explicit path to trace.tsv. Overrides --project/--outdir auto-detect.")
+    ap.add_argument("--log",      default=".nextflow.log",
+                    help="Nextflow log (fallback when no trace found)")
     ap.add_argument("--run_log",  default="logs/discanvis_full_run.log")
     ap.add_argument("--work",     default="work/local")
     ap.add_argument("--interval", type=int, default=30)
     ap.add_argument("--once",     action="store_true")
     args = ap.parse_args()
+
+    # Resolve trace path
+    if args.trace:
+        trace_path = Path(args.trace)
+    else:
+        trace_path = find_trace(args.project, args.outdir)
+
+    if trace_path and trace_path.exists():
+        data_source = f"trace: {trace_path}"
+    else:
+        data_source = f"log (fallback): {args.log}"
+        trace_path  = None
 
     nf_log   = Path(args.log)
     run_log  = Path(args.run_log)
@@ -473,14 +738,14 @@ def main():
     _start: list = []
 
     if args.once:
-        print_status(nf_log, work_dir, run_log, _start)
+        print_status(trace_path, nf_log, work_dir, run_log, _start, data_source)
         return
 
-    print(f"Monitoring {nf_log} | work: {work_dir} | "
+    print(f"Monitoring {data_source} | work: {work_dir} | "
           f"refresh: {args.interval}s | Ctrl+C to stop")
     try:
         while True:
-            print_status(nf_log, work_dir, run_log, _start)
+            print_status(trace_path, nf_log, work_dir, run_log, _start, data_source)
             time.sleep(args.interval)
     except KeyboardInterrupt:
         print("\nMonitoring stopped.")

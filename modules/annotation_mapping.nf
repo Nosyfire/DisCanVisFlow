@@ -935,6 +935,7 @@ process COILEDCOILS_MAP {
     create_coiledcoils_worker.py \\
         --loc_chrom       ${loc_chrom} \\
         --deepcoil_python "\${_deepcoil_py:-python}" \\
+        --n_cpu           ${task.cpus} \\
         --output_dir      .
     """
 
