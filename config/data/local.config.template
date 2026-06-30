@@ -1,0 +1,102 @@
+/*
+ * config/data/local.config.template — machine-specific reference paths.
+ *
+ * SETUP:
+ *   cp config/data/local.config.template config/data/local.config
+ *   # Edit local.config with your actual file paths.
+ *
+ * local.config is in .gitignore — never commit it. Each machine maintains its own.
+ * For a portable run without local file paths, use --data discanvis_data instead.
+ */
+
+// ── Execution ─────────────────────────────────────────────────────────────────
+workDir = 'work/local'
+
+process {
+    withLabel: 'process_low'    { cpus = 2;  memory = '8 GB';   time = '2 h'    }
+    withLabel: 'process_medium' { cpus = 6;  memory = '16 GB';  time = '4 h'    }
+    withLabel: 'process_high'   { cpus = 8;  memory = '32 GB';  time = '8 h'    }
+}
+
+params {
+    // ── Reference FASTAs / GTF ───────────────────────────────────────────────
+    // Download these once with --data discanvis_data, then copy to local paths.
+    // GENCODE v44 pinned for coordinate consistency with existing maps.
+    uniprot_fasta         = '/PATH/TO/UP000005640_9606.fasta'
+    gencode_fasta         = '/PATH/TO/gencode.v44.pc_translations.fa'
+    gencode_gtf           = '/PATH/TO/gencode.v44.chr_patch_hapl_scaff.annotation.gtf.gz'
+    gencode_transcripts   = '/PATH/TO/gencode.v44.pc_transcripts.fa'
+    gencode_refseq        = '/PATH/TO/gencode.v44.metadata.RefSeq'
+
+    // Optional: curated UniProt isoforms for all_isoform_mapping mode
+    uniprot_isoform_fasta = null
+    // uniprot_isoform_fasta = '/PATH/TO/UP000005640_9606_additional.fasta'
+
+    // ── Genome (required for mutation/polymorphism/exon mapping) ─────────────
+    hg38_2bit = '/PATH/TO/hg38.2bit'
+    // Or: set fetch_hg38_2bit = true in the project config to auto-download.
+
+    // ── Disorder / CoiledCoils ───────────────────────────────────────────────
+    // ext_programs: parent directory containing iupred3/, AIUPred/, aiupred-caid3/
+    ext_programs    = '/PATH/TO/External_Programs'
+    aiupred_python  = '/PATH/TO/envs/aiupred/bin/python'      // conda env with scipy + torch
+    deepcoil_python = '/PATH/TO/envs/discanvis_deepcoil/bin/python'
+
+    // ── UCSC tools ───────────────────────────────────────────────────────────
+    // Required for phastCons conservation. Install via:
+    //   curl -fsSL https://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/bigWigToBedGraph \
+    //     -o "$CONDA_PREFIX/bin/bigWigToBedGraph" && chmod +x ...
+    bigwigtobedgraph = 'bigWigToBedGraph'   // if in PATH, or set full path
+
+    // ── PDB — use SIFTS bulk join (much faster than per-protein PDBe REST) ──
+    pdb_bulk  = true
+    sifts_tsv = null
+
+    // ── PPI (IntAct / BioGRID / HIPPIE) ─────────────────────────────────────
+    // null → pipeline downloads and preprocesses raw MiTab from EBI/BioGRID/HIPPIE
+    // (cached in references/ppi/processed/ via storeDir).
+    ppi_intact  = null
+    ppi_biogrid = null
+    ppi_hippie  = null
+
+    // ── Conservation (optional, locally pre-computed) ─────────────────────────
+    gopher_conservation_table = null   // '/PATH/TO/conservation_table.tsv'
+    phastcons_dir             = null   // '/PATH/TO/phastcons/'  (chr*.bw files)
+
+    // ── Mutations (ClinVar / TCGA / cBioPortal) ──────────────────────────────
+    clinvar_vcf    = null   // null → auto-download via FETCH_CLINVAR
+    tcga_maf       = null   // '/PATH/TO/TCGA_hg38.maf'
+    cbioportal_maf = null   // '/PATH/TO/Cbioportal_hg38.maf'
+
+    // ── Disease ontology ─────────────────────────────────────────────────────
+    mondo_obo           = null   // null → FETCH_MONDO (auto-download)
+    clinvar_disease_tsv = null
+    omim_tsv            = null
+    omim_mutations_tsv  = null
+
+    // ── AlphaMissense / MaveDB / ProteinGym ──────────────────────────────────
+    alphamissense_gz = null   // null → FETCH_ALPHAMISSENSE (~1.1 GB)
+    mavedb_tsv       = null
+    proteingym_tsv   = null
+
+    // ── DepMap somatic mutations ──────────────────────────────────────────────
+    depmap_tsv     = null   // null → FETCH_DEPMAP
+    depmap_raw_csv = null
+
+    // ── dbNSFP (two mutually exclusive modes) ────────────────────────────────
+    // Option 1: Raw chr*.gz → DBNSFP_MAP (slower, always current)
+    dbnsfp_raw_dir = null   // '/PATH/TO/dbNSFP4.8a/'
+    // Option 2: Pre-mapped Protein_ID-keyed TSV → PATHOGENICITY_MAP (fast)
+    dbnsfp_tsv     = null   // '/PATH/TO/mapped_filtered_mutations.tsv'
+
+    // ── Polymorphisms (dbSNP bigBed) ──────────────────────────────────────────
+    // Required for Module 5g. Download: fetch_dbsnp = true
+    dbsnp_bb  = null   // '/PATH/TO/dbSnp155Common.bb'
+    ucsc_bin  = null   // '/PATH/TO/UCSC_utils_64'
+
+    // ── PEM Core Motifs ───────────────────────────────────────────────────────
+    pem_dataset  = null   // '/PATH/TO/predicted_elm_dataset.tsv'
+
+    // ── ScanSite ──────────────────────────────────────────────────────────────
+    scansite_tsv = null   // null → live API (set skip_scansite=true for full-proteome runs)
+}
