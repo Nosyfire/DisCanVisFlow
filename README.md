@@ -109,8 +109,8 @@ This clones AIUPred from GitHub, creates `discanvis_aiupred` and `discanvis_deep
 | **AIUPred disorder** | For AIUPred scores | Cloned by `setup_external_programs.sh` → `External_Programs/aiupred-caid3/` |
 | **AIUPred-Binding** | For binding-region scores | Cloned by `setup_external_programs.sh` → `External_Programs/AIUPred/` |
 | **DeepCoil** | For coiled-coil predictions | Set `deepcoil_python` in local.config; skip with `--skip_coiledcoils true` on CUDA 12+ hardware |
-| **bigBedToBed** | For polymorphism (dbSNP bigBed) | `curl -fsSL https://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/bigBedToBed -o $CONDA_PREFIX/bin/bigBedToBed && chmod +x ...` |
-| **bigWigToBedGraph** | For phastCons conservation | Set `bigwigtobedgraph` param in local.config or ensure it is in PATH |
+| **bigBedToBed** | For polymorphism (dbSNP bigBed) | Installed via `bioconda::ucsc-bigbedtobed` in `environment.yml` — available automatically |
+| **bigWigToBedGraph** | For phastCons conservation | Installed via `bioconda::ucsc-bigwigtobedgraph` in `environment.yml` — available automatically |
 
 If a disorder predictor is unavailable, the scores for that predictor will be empty (the pipeline does not crash). Set `--skip_iupred true`, `--skip_aiupred true`, or `--skip_coiledcoils true` to explicitly skip.
 
@@ -124,9 +124,10 @@ params {
     ext_programs    = '/path/to/External_Programs'
     aiupred_python  = '/path/to/envs/aiupred/bin/python'     // has scipy + torch
     deepcoil_python = '/path/to/envs/discanvis_deepcoil/bin/python'
-    bigwigtobedgraph = '/path/to/UCSC_utils/bigWigToBedGraph'
 }
 ```
+
+`bigWigToBedGraph` is found automatically via the conda env (installed as `ucsc-bigwigtobedgraph` from bioconda). No path override needed.
 
 With `--data discanvis_data`, the `SETUP_DEPS` process auto-detects and writes the Python paths.
 
@@ -443,11 +444,12 @@ nextflow run main.nf ... -resume
 
 ### conservation_phastcons.tsv is empty
 
-**Cause**: `bigWigToBedGraph` not found.
-**Fix**: Set the full path in `local.config`:
-```groovy
-bigwigtobedgraph = '/path/to/UCSC_utils_64/bigWigToBedGraph'
+**Cause**: `bigWigToBedGraph` not in PATH.
+**Fix**: Install from bioconda (already in `environment.yml`):
+```bash
+conda install -n discanvis -c bioconda ucsc-bigwigtobedgraph
 ```
+Or if not using conda, set the full path in `local.config`: `bigwigtobedgraph = '/path/to/bigWigToBedGraph'`.
 
 ### Nextflow caches a task with wrong results
 

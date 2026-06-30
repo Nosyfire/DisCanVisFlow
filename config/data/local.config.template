@@ -43,10 +43,10 @@ params {
     deepcoil_python = '/PATH/TO/envs/discanvis_deepcoil/bin/python'
 
     // ── UCSC tools ───────────────────────────────────────────────────────────
-    // Required for phastCons conservation. Install via:
-    //   curl -fsSL https://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/bigWigToBedGraph \
-    //     -o "$CONDA_PREFIX/bin/bigWigToBedGraph" && chmod +x ...
-    bigwigtobedgraph = 'bigWigToBedGraph'   // if in PATH, or set full path
+    // bigWigToBedGraph (required for phastCons) is installed via bioconda in the
+    // discanvis conda env (ucsc-bigwigtobedgraph). No path override needed on a
+    // clean install. Only set this param if using a non-conda deployment:
+    // bigwigtobedgraph = '/path/to/bigWigToBedGraph'
 
     // ── PDB — use SIFTS bulk join (much faster than per-protein PDBe REST) ──
     pdb_bulk  = true
