@@ -114,6 +114,57 @@ pytest tests/test_create_transcript_map_worker.py::TestBoundsCheck -v
 
 Tests call `bin/*.py` scripts as subprocesses with dummy input. No Nextflow required.
 
+## IDP Dataset Requests
+
+When someone asks for IDP (intrinsically disordered protein) data, disorder annotations, or an annotated feature set for one or more proteins, follow this workflow:
+
+### Step 1 — Check for existing full-proteome run
+```bash
+ls results/discanvis/final/disorder/ | head -3
+```
+If `CombinedDisorderNew.tsv` appears, extraction takes seconds. Skip straight to Step 2.
+
+### Step 2 — Extract or run
+
+**Existing run → extract (preferred):**
+```bash
+# Single gene
+conda run -n discanvis python bin/extract_gene_from_results.py \
+    --source results/discanvis --gene RAF1 --out results/idp_RAF1
+
+# Gene list (comma-separated or from file)
+conda run -n discanvis python bin/extract_gene_from_results.py \
+    --source results/discanvis --gene RAF1,TP53,BRAF --out results/idp_custom
+
+conda run -n discanvis python bin/extract_gene_from_results.py \
+    --source results/discanvis --gene_list_file my_genes.txt --out results/idp_custom
+```
+
+**No existing run → pipeline:**
+```bash
+conda activate discanvis
+# Single gene (~4–10 min on server)
+nextflow run main.nf --project test_one_protein --data local --machine hard \
+    --target_gene RAF1 -resume
+# Gene list
+nextflow run main.nf --project discanvis --data local --machine hard \
+    --gene_list_file my_genes.txt -resume
+# Full proteome (~24 h)
+nextflow run main.nf --project discanvis --data local --machine hard -resume
+```
+
+### Step 3 — Propose, confirm, run
+Show the exact command, ask "Shall I run this?", wait for confirmation, then execute.
+
+### IDP-relevant outputs (all in `results/<project>/final/`)
+| Directory | Contents |
+|-----------|----------|
+| `disorder/` | IUPred3, ANCHOR2, AIUPred, AlphaFold pLDDT, MobiDB, CombinedDisorder |
+| `annotations/` | ELM, DIBS, MFIB, PhasePro, PTM, Pfam, PEM, GO, coiled-coils, PPI |
+| `sequence/` | Isoform table with sequences + genomic coordinates |
+| `position/` | RSA scores, position-based annotations |
+| `pdb/` | PDB coverage + unobserved/disordered regions |
+
 ## Agentic Behavior & Autonomous TDD Protocol
 
 You act as a fully autonomous developer. When assigned a task:
