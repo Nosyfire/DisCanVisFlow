@@ -1,0 +1,8 @@
+{
+  "name": "discanvis-tools",
+  "description": "Skills for the DisCanVisFlow pipeline: generating, annotating, and mapping IDP and protein datasets.",
+  "author": {
+    "name": "Norbi Deutsch",
+    "email": "deutsch.norbi.kutatas@gmail.com"
+  }
+}
