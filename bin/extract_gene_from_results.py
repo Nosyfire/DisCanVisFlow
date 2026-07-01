@@ -33,6 +33,9 @@ import logging
 import sys
 from pathlib import Path
 
+# Some annotation TSVs have fields >128KB (e.g. long coiled-coil score arrays)
+csv.field_size_limit(min(sys.maxsize, 2**31 - 1))
+
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s [%(levelname)s] %(message)s",
                     stream=sys.stderr)
