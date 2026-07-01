@@ -6,7 +6,7 @@
 |-------|-------|
 | Gene | RAF1 (single-gene mode, `all_isoform_mapping`) |
 | Project | `test_one_protein` |
-| Data | `local_refs` (all references pre-existing, zero downloads) |
+| Data | `local` (all references pre-existing, zero downloads) |
 | Machine | `hard` — 64 CPUs, 256 GB RAM cap, queueSize=24 |
 | Server | `gpu0.dlab.elte.hu` — 128 physical cores, 1.8 TB RAM |
 | Nextflow | 26.04.0 |

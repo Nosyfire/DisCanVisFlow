@@ -162,7 +162,7 @@ This generates:
 | Project | Method | Output |
 |---------|--------|--------|
 | `vep_benchmarking` | `rsync` full copy | `results/vep_benchmarking/` |
-| `cellular_vulnerability` | 797-gene extraction | `results/cellular_vulnerability/` |
+| `cellular_vulnerability` | Selective full-proteome copy: annotations, sequence, drivers, dbnsfp, combined disorder, alphamissense, DepMap mutations | `results/cellular_vulnerability/` |
 | `test_subset` | 5-gene extraction (TP53, RAF1, BRAF, KRAS, EGFR) | `results/test_subset/` |
 | `raf1_example` | Single-gene extraction | `results/raf1_example/` |
 
@@ -175,11 +175,11 @@ python bin/extract_gene_from_results.py \
     --gene   RAF1,BRAF,KRAS \
     --out    results/kinase_subset
 
-# From gene list file
+# From gene list file (custom subset example)
 python bin/extract_gene_from_results.py \
     --source results/discanvis \
-    --gene_list_file config/gene_lists/cellular_vulnerability.txt \
-    --out    results/cellular_vulnerability
+    --gene_list_file config/gene_lists/my_genes.txt \
+    --out    results/my_gene_subset
 ```
 
 ### When to re-run the pipeline vs. re-derive
@@ -240,8 +240,8 @@ Note: `--clinvar_vcf`, `--mutation_maf`, and `--mutation_vcf` are mutually exclu
 ### Gene list from file
 
 ```bash
-nextflow run main.nf --project cellular_vulnerability --data discanvis_data --machine laptop \
-    --gene_list_file config/gene_lists/cellular_vulnerability.txt -resume
+nextflow run main.nf --project discanvis --data local --machine hard \
+    --gene_list_file config/gene_lists/my_genes.txt -resume
 ```
 
 ### SLURM cluster

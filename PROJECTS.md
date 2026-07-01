@@ -75,7 +75,7 @@ nextflow run main.nf --project cellular_vulnerability --machine laptop --ram '4 
 | Data | Meaning |
 |------|---------|
 | `discanvis_data` | Portable reference cache under `references/`; downloads open references when possible |
-| `local` | Machine-specific local paths from `config/data/local_refs.config` |
+| `local` | Machine-specific local paths from `config/data/local.config` |
 
 ## Notes
 

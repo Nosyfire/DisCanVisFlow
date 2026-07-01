@@ -138,10 +138,10 @@ The `conservationscores` column contains a comma-separated list of floats, one p
 
 | File | Location | Description |
 |------|----------|-------------|
-| `conservation_multiple_level.tsv` | `unmapped/conservation/` | GOPHER scores, one row per Protein_ID × level |
-| `conservation_phastcons.tsv` | `unmapped/conservation/` | phastCons scores, one row per Protein_ID |
+| `conservation_multiple_level.tsv` | `final/conservation/` | GOPHER scores, one row per Protein_ID × level |
+| `conservation_phastcons.tsv` | `final/conservation/` | phastCons scores, one row per Protein_ID |
 
-These files are in the `unmapped/` directory because they are already keyed by `Protein_ID` (GENCODE transcript name) and do not require the `TRANSCRIPT_MAP` transfer step.
+These files are already keyed by `Protein_ID` (GENCODE transcript name) and do not require the `TRANSCRIPT_MAP` transfer step; they land directly in `final/conservation/`.
 
 ### Django models
 
