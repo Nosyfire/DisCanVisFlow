@@ -37,10 +37,34 @@ mkdir -p results/vep_benchmarking
 rsync -a --info=progress2 "$SOURCE/" results/vep_benchmarking/
 log "  Done: results/vep_benchmarking/"
 
-# ── 2. cellular_vulnerability — full-proteome rsync (same scope as discanvis) ─
-log "=== cellular_vulnerability: full-proteome rsync from $SOURCE ==="
-mkdir -p results/cellular_vulnerability
-rsync -a --info=progress2 "$SOURCE/" results/cellular_vulnerability/
+# ── 2. cellular_vulnerability — selective copy (full proteome, subset of data types) ─
+# Includes: annotations, sequence, drivers, dbnsfp, alphamissense,
+#           combined disorder only, DepMap mutations, intermediate, mapping_reports.
+# Excludes: genome, conservation, pdb, position, disease, IUPred/ANCHOR/AIUPred
+#           disorder scores, ClinVar/TCGA/cBioPortal mutations, mavedb, proteingym.
+log "=== cellular_vulnerability: selective copy from $SOURCE ==="
+DST=results/cellular_vulnerability
+rm -rf "$DST"
+mkdir -p "$DST/final"
+
+for d in annotations sequence drivers dbnsfp; do
+    mkdir -p "$DST/final/$d"
+    rsync -a "$SOURCE/final/$d/" "$DST/final/$d/"
+done
+
+mkdir -p "$DST/final/disorder"
+cp "$SOURCE/final/disorder/CombinedDisorderNew.tsv"     "$DST/final/disorder/"
+cp "$SOURCE/final/disorder/CombinedDisorderNew_Pos.tsv" "$DST/final/disorder/"
+
+mkdir -p "$DST/final/pathogenicity"
+cp "$SOURCE/final/pathogenicity/alphamissense.tsv" "$DST/final/pathogenicity/"
+
+mkdir -p "$DST/final/mutations/DepMap"
+rsync -a "$SOURCE/final/mutations/DepMap/" "$DST/final/mutations/DepMap/"
+
+rsync -a "$SOURCE/intermediate/" "$DST/intermediate/"
+rsync -a "$SOURCE/final/mapping_reports/" "$DST/final/mapping_reports/" 2>/dev/null || true
+
 log "  Done: results/cellular_vulnerability/"
 
 # ── 3. test_subset — 5-gene extraction ────────────────────────────────────────
