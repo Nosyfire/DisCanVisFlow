@@ -1,0 +1,10 @@
+{
+  "name": "discanvis-tools",
+  "version": "1.0.0",
+  "description": "DisCanVisFlow pipeline skills for IDP and protein dataset generation",
+  "pi": {
+    "skills": [
+      "./skills"
+    ]
+  }
+}
