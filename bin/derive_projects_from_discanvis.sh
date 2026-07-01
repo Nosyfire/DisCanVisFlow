@@ -37,12 +37,10 @@ mkdir -p results/vep_benchmarking
 rsync -a --info=progress2 "$SOURCE/" results/vep_benchmarking/
 log "  Done: results/vep_benchmarking/"
 
-# ── 2. cellular_vulnerability — 797-gene extraction ───────────────────────────
-log "=== cellular_vulnerability: extracting ${GENE_LIST} from $SOURCE ==="
-conda run -n discanvis python bin/extract_gene_from_results.py \
-    --source "$SOURCE" \
-    --gene_list_file "$GENE_LIST" \
-    --out results/cellular_vulnerability
+# ── 2. cellular_vulnerability — full-proteome rsync (same scope as discanvis) ─
+log "=== cellular_vulnerability: full-proteome rsync from $SOURCE ==="
+mkdir -p results/cellular_vulnerability
+rsync -a --info=progress2 "$SOURCE/" results/cellular_vulnerability/
 log "  Done: results/cellular_vulnerability/"
 
 # ── 3. test_subset — 5-gene extraction ────────────────────────────────────────
