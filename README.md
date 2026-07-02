@@ -47,7 +47,7 @@ conda activate discanvis
 **Full annotation run — all tracks:**
 
 ```bash
-nextflow run main.nf \
+nextflow run Nosyfire/DisCanVisFlow \
     --project test_one_protein \
     --data discanvis_data \
     --machine hard \
@@ -61,7 +61,7 @@ Use `--modules` to name exactly which annotation groups to run. Everything else 
 The example below runs RAF1 with cBioPortal + ClinVar mutations, AIUPred disorder + binding prediction, and ELM motifs:
 
 ```bash
-nextflow run main.nf \
+nextflow run Nosyfire/DisCanVisFlow \
     --project test_one_protein \
     --data discanvis_data \
     --machine hard \
@@ -85,7 +85,7 @@ ELM motifs (`annotations/elm.tsv`) are always produced as part of the annotation
 ### 3. Validate the DAG without running
 
 ```bash
-nextflow run main.nf --project test_one_protein --data local --machine laptop --target_gene RAF1 -stub
+nextflow run Nosyfire/DisCanVisFlow --project test_one_protein --data local --machine laptop --target_gene RAF1 -stub
 ```
 
 ---
