@@ -250,16 +250,18 @@ PYEOF
 
 // ──────────────────────────────────────────────────────────────────────────
 // PARSE_UNIPROT_DAT — extract feature TSVs from the Swiss-Prot flat file +
-// InterPro protein2ipr file.  Runs once per dat.gz (storeDir-cached).
+// InterPro protein2ipr file.  Runs once per accession set.
 // Outputs consumed by ANNOTATION_MAP in place of per-protein REST API calls.
+// Only invoked when flat-file mode is active (see main.nf bulk-mode selection).
 // ──────────────────────────────────────────────────────────────────────────
 process PARSE_UNIPROT_DAT {
     tag  { "parse_uniprot_dat" }
     label 'process_low'
-    // No storeDir: output varies by the accession set in loc_chrom (RAF1-only vs full proteome).
-    // storeDir would cache a single-gene result and reuse it for a full-proteome run.
-    // The heavy dat.gz downloads are storeDir-cached separately in FETCH_UNIPROT_SPROT_DAT
-    // and FETCH_INTERPRO_PFAM; this parse step is fast enough to re-run per accession set.
+    // No storeDir: output varies by which accessions are in loc_chrom (RAF1-only
+    // vs full proteome).  A fixed storeDir path would reuse a single-gene result
+    // for a full-proteome run.  The dat.gz downloads ARE storeDir-cached upstream
+    // (FETCH_UNIPROT_SPROT_DAT / FETCH_INTERPRO_PFAM), so re-parsing is just a
+    // fast streaming filter over already-local files.
 
     input:
     path uniprot_dat          // uniprot_sprot.dat.gz

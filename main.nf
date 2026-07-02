@@ -626,16 +626,29 @@ After copying/downloading the files, rerun the same command with -resume.
     phasepro_ch = params.phasepro_tsv ? Channel.value( file(params.phasepro_tsv, checkIfExists: true) ) : Channel.value( no_file )
 
     // ── Bulk FTP pre-parse: UniProt features + Pfam domains ─────────────────
-    // Replace ~37k per-protein UniProt REST + InterPro REST calls in ANNOTATION_MAP
-    // with a single streaming parse of two FTP flat files (storeDir-cached).
-    // When params.uniprot_dat_gz / interpro_pfam_dat_gz are set, use local files;
-    // otherwise auto-download from UniProt/EBI FTP (params.fetch_uniprot_dat true).
+    // Two modes, selected automatically:
+    //   A) Flat-file mode  — FETCH_UNIPROT_SPROT_DAT downloads the full Swiss-Prot
+    //      dat.gz once (storeDir-cached), then PARSE_UNIPROT_DAT slices the
+    //      relevant accessions.  Used when the dat.gz is already on disk OR when
+    //      running a large / full-proteome run (no --target_gene).
+    //   B) Per-protein API — ANNOTATION_MAP falls back to per-protein UniProt REST
+    //      calls when both bulk files are NO_FILE.  Used for single-gene runs
+    //      (--target_gene set) where the dat.gz has not yet been downloaded — avoids
+    //      pulling a 700 MB file for one protein.
+    //
+    // Precedence: explicit param path > already-cached file > auto-decide by run size.
+    def _cached_uni = file("${params.ref_dir}/uniprot/uniprot_sprot.dat.gz")
+    def _cached_ipr = file("${params.ref_dir}/interpro/protein2ipr.dat.gz")
+    // Use flat-file mode if: local path given, OR file already cached, OR large run
+    def _use_bulk_uni = params.uniprot_dat_gz      || _cached_uni.exists() || (params.fetch_uniprot_dat  != false && !params.target_gene)
+    def _use_bulk_ipr = params.interpro_pfam_dat_gz || _cached_ipr.exists() || (params.fetch_interpro_pfam != false && !params.target_gene)
+
     def _uni_dat_file = params.uniprot_dat_gz
         ? Channel.value( file(params.uniprot_dat_gz) )
-        : ( params.fetch_uniprot_dat != false ? FETCH_UNIPROT_SPROT_DAT().dat : Channel.value(no_file) )
+        : ( _use_bulk_uni ? FETCH_UNIPROT_SPROT_DAT().dat : Channel.value(no_file) )
     def _ipr_dat_file = params.interpro_pfam_dat_gz
         ? Channel.value( file(params.interpro_pfam_dat_gz) )
-        : ( params.fetch_interpro_pfam != false ? FETCH_INTERPRO_PFAM().dat : Channel.value(no_file) )
+        : ( _use_bulk_ipr ? FETCH_INTERPRO_PFAM().dat : Channel.value(no_file) )
 
     def uniprot_features_ch
     def pfam_bulk_ch
