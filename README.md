@@ -52,7 +52,7 @@ conda activate discanvis
 nextflow run Nosyfire/DisCanVisFlow -latest \
     --project test_one_protein \
     --data discanvis_data \
-    --machine hard \
+    --machine medium \
     --target_gene RAF1 \
     -resume
 ```
@@ -66,7 +66,7 @@ The example below runs RAF1 with cBioPortal + ClinVar mutations, AIUPred disorde
 nextflow run Nosyfire/DisCanVisFlow -latest \
     --project test_one_protein \
     --data discanvis_data \
-    --machine hard \
+    --machine medium \
     --target_gene RAF1 \
     --modules mutations,disorder \
     --fetch_cbioportal true \
@@ -81,6 +81,17 @@ nextflow run Nosyfire/DisCanVisFlow -latest \
 | `--skip_iupred true` | Within the disorder module, run AIUPred only — skip IUPred3/ANCHOR2 |
 
 To use a specific cBioPortal study bundle instead of the API, add `--cbioportal_study <datahub_id>` (e.g. `tcga_pan_can_atlas_2018`). Study-bundle mode is better for full-proteome runs where fetching per-gene via API would be slow.
+
+**Choosing `--machine`:**
+
+| `--machine` | RAM needed | `blat_chunks` | Use when |
+|-------------|-----------|--------------|---------|
+| `laptop` | ~5 GB | 1 | 8 GB laptop, WSL, very limited memory |
+| `medium` | ~64 GB | 8 | Workstation, cluster node, fresh server |
+| `hard` | ~256 GB | 32 | Dedicated 64-CPU server with 256 GB+ RAM |
+| `slurm` | cluster | 32 | SLURM HPC cluster |
+
+`--project test_one_protein` always overrides to `blat_chunks=1` and `scatter_chunks=1` regardless of `--machine` — a single gene has ~10 transcripts so chunking wastes memory.
 
 ELM motifs (`annotations/elm.tsv`) are always produced as part of the annotation backbone regardless of `--modules`.
 
