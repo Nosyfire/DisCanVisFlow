@@ -17,14 +17,18 @@ CHUNK = 500  # max profile IDs per POST request
 
 
 def get_entrez_ids(genes: list[str]) -> dict[str, int]:
-    ids = {}
-    for gene in genes:
-        r = requests.get(f"{BASE}/genes/{gene}", timeout=30)
-        if r.ok:
-            ids[gene] = r.json()["entrezGeneId"]
-        else:
-            print(f"WARN: gene '{gene}' not found in cBioPortal ({r.status_code})", file=sys.stderr)
-    return ids
+    r = requests.post(
+        f"{BASE}/genes/fetch",
+        json=genes,
+        params={"geneIdType": "HUGO_GENE_SYMBOL", "projection": "SUMMARY"},
+        timeout=60,
+    )
+    r.raise_for_status()
+    found = {g["hugoGeneSymbol"]: g["entrezGeneId"] for g in r.json()}
+    missing = set(genes) - set(found)
+    if missing:
+        print(f"WARN: genes not found in cBioPortal: {', '.join(missing)}", file=sys.stderr)
+    return found
 
 
 def get_mutation_profile_ids() -> list[str]:
@@ -95,6 +99,16 @@ def write_maf(mutations: list[dict], entrez_map: dict[str, int], out_path: str) 
             })
 
 
+def write_empty_maf(out_path: str) -> None:
+    cols = [
+        "Hugo_Symbol", "Entrez_Gene_Id", "Variant_Classification",
+        "Tumor_Sample_Barcode", "HGVSp_Short", "Chromosome",
+        "Start_Position", "End_Position", "Reference_Allele", "Tumor_Seq_Allele2",
+    ]
+    with open(out_path, "w", newline="") as fh:
+        fh.write("\t".join(cols) + "\n")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--genes", help="Comma-separated HGNC gene symbols (e.g. RAF1,BRAF)")
@@ -112,19 +126,33 @@ def main() -> None:
 
     print(f"Genes: {', '.join(genes)}", file=sys.stderr)
 
-    entrez_map = get_entrez_ids(genes)
+    try:
+        entrez_map = get_entrez_ids(genes)
+    except requests.exceptions.RequestException as e:
+        print(f"WARN: cBioPortal unreachable ({e}). Writing empty MAF.", file=sys.stderr)
+        write_empty_maf(args.out)
+        return
+
     if not entrez_map:
-        sys.exit("ERROR: none of the requested genes found in cBioPortal")
+        print("WARN: none of the requested genes found in cBioPortal. Writing empty MAF.", file=sys.stderr)
+        write_empty_maf(args.out)
+        return
+
     entrez_ids = list(entrez_map.values())
     print(f"Entrez IDs: {entrez_map}", file=sys.stderr)
 
-    print("Fetching mutation profile IDs from all public studies...", file=sys.stderr)
-    profile_ids = get_mutation_profile_ids()
-    print(f"  {len(profile_ids)} mutation profiles found", file=sys.stderr)
+    try:
+        print("Fetching mutation profile IDs from all public studies...", file=sys.stderr)
+        profile_ids = get_mutation_profile_ids()
+        print(f"  {len(profile_ids)} mutation profiles found", file=sys.stderr)
 
-    print("Fetching mutations (this may take a minute)...", file=sys.stderr)
-    mutations = fetch_mutations(entrez_ids, profile_ids)
-    print(f"  {len(mutations)} mutations retrieved", file=sys.stderr)
+        print("Fetching mutations (this may take a minute)...", file=sys.stderr)
+        mutations = fetch_mutations(entrez_ids, profile_ids)
+        print(f"  {len(mutations)} mutations retrieved", file=sys.stderr)
+    except requests.exceptions.RequestException as e:
+        print(f"WARN: cBioPortal API error during mutation fetch ({e}). Writing empty MAF.", file=sys.stderr)
+        write_empty_maf(args.out)
+        return
 
     write_maf(mutations, entrez_map, args.out)
     print(f"Written to {args.out}", file=sys.stderr)

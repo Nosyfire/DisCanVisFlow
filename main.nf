@@ -746,9 +746,11 @@ After copying/downloading the files, rerun the same command with -resume.
     def setup_deepcoil_py_ch
     if ( params.auto_setup ) {
         def _setup = SETUP_DEPS()
-        setup_done_ch        = _setup.done
-        setup_aiupred_py_ch  = _setup.aiupred_python
-        setup_deepcoil_py_ch = _setup.deepcoil_python
+        // .first() converts the single-element queue channel to a value channel so it
+        // broadcasts correctly to DISORDER_MAP/COILEDCOILS_MAP scatter chunks.
+        setup_done_ch        = _setup.done.first()
+        setup_aiupred_py_ch  = _setup.aiupred_python.first()
+        setup_deepcoil_py_ch = _setup.deepcoil_python.first()
     } else {
         setup_done_ch        = Channel.value(no_file)
         setup_aiupred_py_ch  = Channel.value(no_file)
@@ -789,11 +791,13 @@ After copying/downloading the files, rerun the same command with -resume.
             def af_tar_ch = params.alphafold_tar
                 ? Channel.value( file(params.alphafold_tar) )
                 : FETCH_ALPHAFOLD_BULK().tar   // storeDir returns cached tar; PARSE also storeDir-cached
-            af_plddt_ch = PARSE_ALPHAFOLD_PLDDT( af_tar_ch ).plddt
+            // .first() converts the single-emit queue channel to a value channel for scatter broadcast
+            af_plddt_ch = PARSE_ALPHAFOLD_PLDDT( af_tar_ch ).plddt.first()
         } else {
             af_plddt_ch = Channel.value(no_file)
         }
 
+        // af_precomputed_ch is always a value channel — no .first() needed
         def af_precomputed_ch = params.alphafold_precomputed_table
             ? Channel.value( file(params.alphafold_precomputed_table, checkIfExists: false) )
             : Channel.value(no_file)
@@ -802,10 +806,10 @@ After copying/downloading the files, rerun the same command with -resume.
             disorder_loc_ch,
             mobidb_disorder_input_ch,
             ANNOTATION_MAP.out.pfam.first(),
-            af_plddt_ch.first(),
-            af_precomputed_ch.first(),
-            setup_done_ch.first(),
-            setup_aiupred_py_ch.first()
+            af_plddt_ch,
+            af_precomputed_ch,
+            setup_done_ch,
+            setup_aiupred_py_ch
         )
 
         def _dis_pub = params.gene_dir ? "${params.outdir}/${params.gene_dir}/final/disorder"
@@ -899,7 +903,7 @@ After copying/downloading the files, rerun the same command with -resume.
             dbsnp_bb_f,
             dbsnp_maf_f,
             gnomad_maf_f,
-            setup_done_ch.first()
+            setup_done_ch
         )
         POLYMORPHISM_MAP.out.polymorphism.view { f ->
             "\n✔  Polymorphism (all + allele frequency): ${f}\n"
@@ -936,7 +940,7 @@ After copying/downloading the files, rerun the same command with -resume.
     if ( (mods == null || mods.contains('coiledcoils')) && !params.skip_coiledcoils ) {
         def cc_loc_ch = ( scatter_n > 1 ) ? split_chunks.flatten()
                                           : SEQUENCE_PROCESS.out.loc_chrom_seq
-        COILEDCOILS_MAP( cc_loc_ch, setup_done_ch.first(), setup_deepcoil_py_ch.first() )
+        COILEDCOILS_MAP( cc_loc_ch, setup_done_ch, setup_deepcoil_py_ch )
         def _cc_pub = params.gene_dir ? "${params.outdir}/${params.gene_dir}/final/annotations"
                                       : "${params.outdir}/final/annotations"
         coiled_coils_ch = ( scatter_n > 1
