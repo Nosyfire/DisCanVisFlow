@@ -57,7 +57,7 @@ nextflow run main.nf --project discanvis --data local --machine slurm -resume
 # Include only specific annotation modules (preferred over stacking --skip flags)
 # Example: RAF1 with cBioPortal + ClinVar mutations + AIUPred disorder/binding + ELM
 nextflow run main.nf --project test_one_protein --data local --machine hard --target_gene RAF1 \
-    --modules mutations,disorder --fetch_cbioportal true --cbioportal_study msk_impact_2017 --skip_iupred true -resume
+    --modules mutations,disorder --fetch_cbioportal true --skip_iupred true -resume
 # Available module names: mutations, disorder, mobidb, pdb, go, polymorphism, pem,
 # coiledcoils, ppi, conservation, scansite, clinvar_disease, omim, cancer_drivers,
 # alphamissense, depmap, mavedb, proteingym, dbnsfp, finches

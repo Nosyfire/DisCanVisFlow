@@ -729,31 +729,59 @@ process FETCH_OMIM {
 }
 
 // ──────────────────────────────────────────────────────────────────────────
-// FETCH_CBIOPORTAL — public cBioPortal study bundle from the datahub. Supply
-// the study id via --cbioportal_study (e.g. 'msk_impact_2017') or a full URL
-// via --cbioportal_url. Extracts data_mutations.txt (MAF) for MUTATION_MAP.
+// FETCH_CBIOPORTAL — somatic mutations from cBioPortal.
+//
+// Two modes (auto-selected):
+//   API mode (default, no study needed):
+//     --fetch_cbioportal true
+//     Queries the cBioPortal REST API across all public studies for the
+//     target gene(s). No account or study ID required.
+//
+//   Study-bundle mode (explicit cohort):
+//     --fetch_cbioportal true --cbioportal_study <datahub_id>
+//     --fetch_cbioportal true --cbioportal_url   <direct_tar_gz_url>
+//     Downloads and extracts the full study MAF from the cBioPortal datahub.
+//     Use when you need a specific cohort (e.g. msk_impact_2017).
 // ──────────────────────────────────────────────────────────────────────────
 process FETCH_CBIOPORTAL {
     label 'process_low'
-    storeDir { workflow.stubRun ? "${params.ref_dir}/_stub/cbioportal" : "${params.ref_dir}/cbioportal" }
+    storeDir {
+        def suffix = params.cbioportal_study
+            ? params.cbioportal_study
+            : (params.target_gene ? "api_${params.target_gene}" : "api_all")
+        workflow.stubRun ? "${params.ref_dir}/_stub/cbioportal"
+                         : "${params.ref_dir}/cbioportal/${suffix}"
+    }
     output:
     path 'cbioportal_mutations.maf', emit: maf
     script:
-    if( !params.cbioportal_study && !params.cbioportal_url )
-        error "FETCH_CBIOPORTAL needs --cbioportal_study (datahub id) or --cbioportal_url."
-    def url = params.cbioportal_url ?: "https://cbioportal-datahub.s3.amazonaws.com/${params.cbioportal_study}.tar.gz"
-    """
-    echo "Downloading cBioPortal study bundle..."
-    curl -fsSL '${url}' -o study.tar.gz
-    mkdir -p study
-    tar -xzf study.tar.gz -C study
-    rm -f study.tar.gz
-    # locate the mutations MAF (data_mutations.txt or data_mutations_extended.txt)
-    src=\$(find study -type f \\( -name 'data_mutations.txt' -o -name 'data_mutations_extended.txt' \\) | head -1)
-    test -n "\$src" || { echo "no data_mutations file in study" >&2; exit 1; }
-    cp "\$src" cbioportal_mutations.maf
-    echo "MAF: \$(wc -l < cbioportal_mutations.maf) lines from \$src."
-    """
+    if ( params.cbioportal_study || params.cbioportal_url ) {
+        // ── Study-bundle mode ───────────────────────────────────────────
+        def url = params.cbioportal_url ?: "https://cbioportal-datahub.s3.amazonaws.com/${params.cbioportal_study}.tar.gz"
+        """
+        echo "Downloading cBioPortal study bundle: ${url}"
+        curl -fsSL '${url}' -o study.tar.gz
+        mkdir -p study
+        tar -xzf study.tar.gz -C study
+        rm -f study.tar.gz
+        src=\$(find study -type f \\( -name 'data_mutations.txt' -o -name 'data_mutations_extended.txt' \\) | head -1)
+        test -n "\$src" || { echo "no data_mutations file in study" >&2; exit 1; }
+        cp "\$src" cbioportal_mutations.maf
+        echo "MAF: \$(wc -l < cbioportal_mutations.maf) lines from \$src."
+        """
+    } else {
+        // ── API mode — no study ID needed ──────────────────────────────
+        def gene_arg = params.target_gene
+            ? "--genes '${params.target_gene}'"
+            : (params.gene_list_file ? "--gene_list_file '${params.gene_list_file}'" : "")
+        if ( !gene_arg )
+            error "FETCH_CBIOPORTAL API mode: provide --target_gene, --gene_list_file, or --cbioportal_study."
+        """
+        python ${projectDir}/bin/fetch_cbioportal_worker.py \\
+            ${gene_arg} \\
+            --out cbioportal_mutations.maf
+        """
+    }
     stub:
     """ printf 'Hugo_Symbol\\tHGVSp_Short\\tTumor_Sample_Barcode\\n' > cbioportal_mutations.maf """
 }

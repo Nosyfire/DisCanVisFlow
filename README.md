@@ -68,7 +68,6 @@ nextflow run Nosyfire/DisCanVisFlow \
     --target_gene RAF1 \
     --modules mutations,disorder \
     --fetch_cbioportal true \
-    --cbioportal_study msk_impact_2017 \
     --skip_iupred true \
     -resume
 ```
@@ -76,9 +75,10 @@ nextflow run Nosyfire/DisCanVisFlow \
 | Flag | Effect |
 |------|--------|
 | `--modules mutations,disorder` | Run only mutation mapping + disorder prediction; skip PDB, conservation, GO, PPI, etc. |
-| `--fetch_cbioportal true` | Pull cBioPortal somatic MAF in addition to ClinVar (default mutation source) |
-| `--cbioportal_study msk_impact_2017` | Which cBioPortal study to download (datahub ID, e.g. `msk_impact_2017`, `tcga_pan_can_atlas_2018`) |
+| `--fetch_cbioportal true` | Fetch RAF1 somatic mutations from cBioPortal across all public studies via REST API — no study ID required |
 | `--skip_iupred true` | Within the disorder module, run AIUPred only — skip IUPred3/ANCHOR2 |
+
+To use a specific cBioPortal study bundle instead of the API, add `--cbioportal_study <datahub_id>` (e.g. `tcga_pan_can_atlas_2018`). Study-bundle mode is better for full-proteome runs where fetching per-gene via API would be slow.
 
 ELM motifs (`annotations/elm.tsv`) are always produced as part of the annotation backbone regardless of `--modules`.
 
@@ -242,9 +242,10 @@ Available module names: `mutations`, `disorder`, `mobidb`, `pdb`, `go`, `polymor
 
 ```bash
 # cBioPortal + ClinVar mutations + AIUPred disorder/binding + ELM (for RAF1)
+# --fetch_cbioportal without --cbioportal_study uses the public API (no study ID needed)
 nextflow run main.nf --project test_one_protein --data local --machine hard --target_gene RAF1 \
     --modules mutations,disorder \
-    --fetch_cbioportal true --cbioportal_study msk_impact_2017 \
+    --fetch_cbioportal true \
     --skip_iupred true \
     -resume
 

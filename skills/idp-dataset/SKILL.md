@@ -139,7 +139,7 @@ nextflow run main.nf \
 nextflow run main.nf --project test_one_protein --data local --machine hard \
     --target_gene RAF1 \
     --modules mutations,disorder \
-    --fetch_cbioportal true --cbioportal_study msk_impact_2017 \
+    --fetch_cbioportal true \
     --skip_iupred true \
     -resume
 ```
