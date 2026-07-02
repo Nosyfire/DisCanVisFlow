@@ -1,17 +1,18 @@
 # DisCanVis pipeline — Docker image
 #
 # Contains:
-#   Python 3.11 + pandas, biopython, numpy, tqdm
+#   Python 3.11 + pandas, biopython, numpy, tqdm, requests, pytest
 #   BLAST+ 2.13.0  (blastp, tblastn, makeblastdb, bl2seq)
 #   BLAT + pslCDnaFilter + twoBitToFa  (UCSC genome tools)
 #
 # Build:
 #   docker build -t discanvis-pipeline:latest .
 #
-# Test:
-#   docker run --rm discanvis-pipeline:latest blastp -version
-#   docker run --rm discanvis-pipeline:latest blat
-#   docker run --rm discanvis-pipeline:latest python3 -c "import pandas, Bio; print('OK')"
+# Test (workers + tools):
+#   docker run --rm -v $(pwd):/pipeline discanvis-pipeline:latest pytest tests/ -v
+#
+# Stub DAG validation:
+#   nextflow run main.nf --project test_one_protein --target_gene RAF1 --env docker -stub
 
 FROM ubuntu:22.04
 
@@ -39,7 +40,9 @@ RUN pip3 install --no-cache-dir \
         pandas>=1.5 \
         biopython>=1.81 \
         numpy>=1.24 \
-        tqdm>=4.64
+        tqdm>=4.64 \
+        requests>=2.28 \
+        pytest>=7.0
 
 # ── BLAST+ 2.13.0 ─────────────────────────────────────────────────────────────
 RUN wget -q https://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/2.13.0/ncbi-blast-2.13.0+-x64-linux.tar.gz \
@@ -68,4 +71,4 @@ WORKDIR /pipeline
 # ── Sanity check (printed at build time, not cached) ─────────────────────────
 RUN blastp -version \
     && blat 2>&1 | head -1 || true \
-    && python3 -c "import pandas, Bio, numpy, tqdm; print('Python packages OK')"
+    && python3 -c "import pandas, Bio, numpy, tqdm, requests, pytest; print('Python packages OK')"

@@ -42,74 +42,47 @@ conda env create -f environment.yml
 conda activate discanvis
 ```
 
-### 2. Run a single-gene test (fastest, ~4 min on 64-CPU server)
+### 2. Run a single-gene test
 
-> **Note:** Nextflow caches pipeline revisions locally. Use `-latest` to always pull the current version from GitHub — recommended on fresh machines and after updates.
-
-**Full annotation run — all tracks:**
+> **Tip:** Nextflow caches pipeline revisions locally. Add `-latest` after updates or on a fresh machine.
 
 ```bash
+# All annotation tracks — downloads all references automatically on first run
 nextflow run Nosyfire/DisCanVisFlow -latest \
     --project test_one_protein \
-    --data discanvis_data \
     --machine medium \
     --target_gene RAF1 \
     -resume
-```
 
-**Focused run — include only specific annotations (`--modules`):**
-
-Use `--modules` to name exactly which annotation groups to run. Everything else is skipped.
-The example below runs RAF1 with cBioPortal + ClinVar mutations, AIUPred disorder + binding prediction, and ELM motifs:
-
-```bash
+# Focused: ClinVar + cBioPortal mutations, AIUPred disorder, ELM only
 nextflow run Nosyfire/DisCanVisFlow -latest \
     --project test_one_protein \
-    --data discanvis_data \
     --machine medium \
     --target_gene RAF1 \
     --modules mutations,disorder \
-    --fetch_cbioportal true \
     --skip_iupred true \
     -resume
 ```
 
-| Flag | Effect |
-|------|--------|
-| `--modules mutations,disorder` | Run only mutation mapping + disorder prediction; skip PDB, conservation, GO, PPI, etc. |
-| `--fetch_cbioportal true` | Fetch RAF1 somatic mutations from cBioPortal across all public studies via REST API — no study ID required |
-| `--skip_iupred true` | Within the disorder module, run AIUPred only — skip IUPred3/ANCHOR2 |
-
-To use a specific cBioPortal study bundle instead of the API, add `--cbioportal_study <datahub_id>` (e.g. `tcga_pan_can_atlas_2018`). Study-bundle mode is better for full-proteome runs where fetching per-gene via API would be slow.
-
-**Choosing `--machine`:**
-
-| `--machine` | RAM needed | `blat_chunks` | Use when |
-|-------------|-----------|--------------|---------|
-| `laptop` | ~5 GB | 1 | 8 GB laptop, WSL, very limited memory |
-| `medium` | ~64 GB | 8 | Workstation, cluster node, fresh server |
-| `hard` | ~256 GB | 32 | Dedicated 64-CPU server with 256 GB+ RAM |
-| `slurm` | cluster | 32 | SLURM HPC cluster |
-
-`--project test_one_protein` always overrides to `blat_chunks=1` and `scatter_chunks=1` regardless of `--machine` — a single gene has ~10 transcripts so chunking wastes memory.
-
-ELM motifs (`annotations/elm.tsv`) are always produced as part of the annotation backbone regardless of `--modules`.
-
-`--data discanvis_data` downloads all references automatically (UniProt/GENCODE/ClinVar/GO/etc.) and caches them in `references/` for all future runs.
+That's it — no `--data` or `--fetch_cbioportal` needed. See [Configuration guide](docs/configuration_guide.md) for what they mean and when to change them.
 
 ### 3. Validate the DAG without running
 
 ```bash
-nextflow run Nosyfire/DisCanVisFlow --project test_one_protein --data local --machine laptop --target_gene RAF1 -stub
+nextflow run Nosyfire/DisCanVisFlow -latest --project test_one_protein --target_gene RAF1 -stub
 ```
 
 ---
 
 ## New machine setup
 
-### Option A — Portable (`--data discanvis_data`)
+> See [docs/configuration_guide.md](docs/configuration_guide.md) for a full explanation of all flags (`--data`, `--machine`, `--modules`, `--fetch_cbioportal`, skip flags) and per-process resource benchmarks.
 
-No config editing needed. All open-access references download on first run and are re-used via `storeDir` in `references/`. Disorder predictors and external programs must still be set up (see below).
+### Option A — Portable (default, no config needed)
+
+References download automatically on first run and are re-used via `storeDir` in `references/`.
+No config editing required — just pick the right `--machine` for your hardware. Disorder
+predictors and external programs must still be set up (see below).
 
 ```bash
 nextflow run main.nf --project discanvis --data discanvis_data --machine hard -resume
