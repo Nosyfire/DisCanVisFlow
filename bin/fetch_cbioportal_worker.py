@@ -128,7 +128,7 @@ def main() -> None:
 
     try:
         entrez_map = get_entrez_ids(genes)
-    except requests.exceptions.RequestException as e:
+    except (requests.exceptions.RequestException, ValueError) as e:
         print(f"WARN: cBioPortal unreachable ({e}). Writing empty MAF.", file=sys.stderr)
         write_empty_maf(args.out)
         return
@@ -149,7 +149,7 @@ def main() -> None:
         print("Fetching mutations (this may take a minute)...", file=sys.stderr)
         mutations = fetch_mutations(entrez_ids, profile_ids)
         print(f"  {len(mutations)} mutations retrieved", file=sys.stderr)
-    except requests.exceptions.RequestException as e:
+    except (requests.exceptions.RequestException, ValueError) as e:
         print(f"WARN: cBioPortal API error during mutation fetch ({e}). Writing empty MAF.", file=sys.stderr)
         write_empty_maf(args.out)
         return
