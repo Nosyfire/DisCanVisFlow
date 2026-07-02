@@ -54,9 +54,18 @@ nextflow run main.nf --project discanvis --data local --machine hard -resume
 # Full proteome on SLURM cluster
 nextflow run main.nf --project discanvis --data local --machine slurm -resume
 
-# Skip individual disorder predictors
+# Include only specific annotation modules (preferred over stacking --skip flags)
+# Example: RAF1 with cBioPortal + ClinVar mutations + AIUPred disorder/binding + ELM
 nextflow run main.nf --project test_one_protein --data local --machine hard --target_gene RAF1 \
-    --skip_alphafold true --skip_iupred true --skip_aiupred true -resume
+    --modules mutations,disorder --fetch_cbioportal true --skip_iupred true -resume
+# Available module names: mutations, disorder, mobidb, pdb, go, polymorphism, pem,
+# coiledcoils, ppi, conservation, scansite, clinvar_disease, omim, cancer_drivers,
+# alphamissense, depmap, mavedb, proteingym, dbnsfp, finches
+# ELM + Pfam + DIBS/MFIB/PhasePro/PTM always run as backbone regardless of --modules
+
+# Skip individual predictors within a module
+nextflow run main.nf --project test_one_protein --data local --machine hard --target_gene RAF1 \
+    --skip_alphafold true --skip_iupred true -resume
 
 # Supply local ClinVar VCF instead of auto-download
 nextflow run main.nf --project test_one_protein --data local --machine hard --target_gene RAF1 \

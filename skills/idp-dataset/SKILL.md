@@ -132,12 +132,30 @@ nextflow run main.nf \
     -resume
 ```
 
-Optional speed-up flags (add to any command):
+**Include only specific annotation groups** with `--modules` (preferred over stacking `--skip_X` flags):
+
+```bash
+# Disorder + mutations only (skip PDB, conservation, GO, PPI, etc.)
+nextflow run main.nf --project test_one_protein --data local --machine hard \
+    --target_gene RAF1 \
+    --modules mutations,disorder \
+    --fetch_cbioportal true \
+    --skip_iupred true \
+    -resume
 ```
-    --skip_polymorphism true     # dbSNP SNPs — skip for pure IDP analysis
-    --skip_conservation true     # Phylogenetic conservation — optional
-    --skip_mavedb true           # MaveDB DMS scores — optional
-    --skip_proteingym true       # ProteinGym — optional
+
+Available module names: `mutations`, `disorder`, `mobidb`, `pdb`, `go`, `polymorphism`,
+`pem`, `coiledcoils`, `ppi`, `conservation`, `scansite`, `clinvar_disease`, `omim`,
+`cancer_drivers`, `alphamissense`, `depmap`, `mavedb`, `proteingym`, `dbnsfp`, `finches`
+
+ELM + Pfam + DIBS/MFIB/PhasePro/PTM are backbone annotations — always produced regardless of `--modules`.
+
+To skip individual predictors *within* a module (e.g. skip IUPred3 but keep AIUPred within `disorder`):
+```
+    --skip_iupred true
+    --skip_alphafold true
+    --skip_polymorphism true     # within polymorphism module
+    --skip_conservation true     # within conservation module
 ```
 
 ### Step 4: Machine / data flags

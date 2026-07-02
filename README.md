@@ -35,14 +35,16 @@ All outputs use `Protein_ID` (GENCODE transcript name, e.g. `RAF1-201`) as the p
 ### 1. Clone and create conda environment
 
 ```bash
-git clone <repo-url>
-cd nextflow_discanvis
+git clone https://github.com/Nosyfire/DisCanVisFlow
+cd DisCanVisFlow
 
 conda env create -f environment.yml
 conda activate discanvis
 ```
 
 ### 2. Run a single-gene test (fastest, ~4 min on 64-CPU server)
+
+**Full annotation run — all tracks:**
 
 ```bash
 nextflow run main.nf \
@@ -52,6 +54,31 @@ nextflow run main.nf \
     --target_gene RAF1 \
     -resume
 ```
+
+**Focused run — include only specific annotations (`--modules`):**
+
+Use `--modules` to name exactly which annotation groups to run. Everything else is skipped.
+The example below runs RAF1 with cBioPortal + ClinVar mutations, AIUPred disorder + binding prediction, and ELM motifs:
+
+```bash
+nextflow run main.nf \
+    --project test_one_protein \
+    --data discanvis_data \
+    --machine hard \
+    --target_gene RAF1 \
+    --modules mutations,disorder \
+    --fetch_cbioportal true \
+    --skip_iupred true \
+    -resume
+```
+
+| Flag | Effect |
+|------|--------|
+| `--modules mutations,disorder` | Run only mutation mapping + disorder prediction; skip PDB, conservation, GO, PPI, etc. |
+| `--fetch_cbioportal true` | Pull cBioPortal somatic MAF in addition to ClinVar (default mutation source) |
+| `--skip_iupred true` | Within the disorder module, run AIUPred only — skip IUPred3/ANCHOR2 |
+
+ELM motifs (`annotations/elm.tsv`) are always produced as part of the annotation backbone regardless of `--modules`.
 
 `--data discanvis_data` downloads all references automatically (UniProt/GENCODE/ClinVar/GO/etc.) and caches them in `references/` for all future runs.
 
@@ -201,11 +228,40 @@ python bin/extract_gene_from_results.py \
 nextflow run main.nf --project test_one_protein --data local --machine hard --target_gene RAF1 -resume
 ```
 
-### Skip specific predictors
+### Include only specific annotation modules (`--modules`)
+
+Use `--modules` with a comma-separated list of module names to run only what you need.
+When `--modules` is set, the backbone (BLAST, ID mapping, sequence processing, ANNOTATION_MAP)
+always runs; only the named optional modules are added on top.
+
+Available module names: `mutations`, `disorder`, `mobidb`, `pdb`, `go`, `polymorphism`,
+`pem`, `coiledcoils`, `ppi`, `conservation`, `scansite`, `clinvar_disease`, `omim`,
+`cancer_drivers`, `alphamissense`, `depmap`, `mavedb`, `proteingym`, `dbnsfp`, `finches`
+
+```bash
+# cBioPortal + ClinVar mutations + AIUPred disorder/binding + ELM (for RAF1)
+nextflow run main.nf --project test_one_protein --data local --machine hard --target_gene RAF1 \
+    --modules mutations,disorder \
+    --fetch_cbioportal true \
+    --skip_iupred true \
+    -resume
+
+# Disorder + PDB unobserved regions only
+nextflow run main.nf --project test_one_protein --data local --machine hard --target_gene TP53 \
+    --modules disorder,pdb \
+    -resume
+
+# Mutations + GO terms + PPI
+nextflow run main.nf --project test_one_protein --data local --machine hard --target_gene EGFR \
+    --modules mutations,go,ppi \
+    -resume
+```
+
+To skip individual predictors *within* a module (e.g. skip IUPred3 but keep AIUPred):
 
 ```bash
 nextflow run main.nf --project test_one_protein --data local --machine hard --target_gene RAF1 \
-    --skip_alphafold true --skip_iupred true --skip_aiupred true -resume
+    --skip_alphafold true --skip_iupred true -resume
 ```
 
 ### Re-run disorder only (with pre-computed pLDDT from a prior run)
