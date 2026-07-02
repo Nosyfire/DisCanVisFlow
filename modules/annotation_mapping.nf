@@ -256,8 +256,10 @@ PYEOF
 process PARSE_UNIPROT_DAT {
     tag  { "parse_uniprot_dat" }
     label 'process_low'
-    storeDir { workflow.stubRun ? "${params.ref_dir}/_stub/uniprot_parsed"
-                                : "${params.ref_dir}/uniprot_parsed" }
+    // No storeDir: output varies by the accession set in loc_chrom (RAF1-only vs full proteome).
+    // storeDir would cache a single-gene result and reuse it for a full-proteome run.
+    // The heavy dat.gz downloads are storeDir-cached separately in FETCH_UNIPROT_SPROT_DAT
+    // and FETCH_INTERPRO_PFAM; this parse step is fast enough to re-run per accession set.
 
     input:
     path uniprot_dat          // uniprot_sprot.dat.gz

@@ -444,7 +444,8 @@ config/
 │   └── test_subset.config          Multi-gene regression (5 genes)
 ├── machines/
 │   ├── hard.config                 Large server (64+ CPUs, 1+ TB RAM)
-│   ├── medium.config               Workstation
+│   ├── medium.config               Workstation (64 GB / 16 CPUs)
+│   ├── low.config                  Low-RAM node (32 GB / 6 CPUs)
 │   ├── laptop.config               Memory-safe, 8 GB limit
 │   └── slurm.config                SLURM cluster
 ├── data/

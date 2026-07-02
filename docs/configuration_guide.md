@@ -72,12 +72,13 @@ nextflow run main.nf --project discanvis --machine hard --data local -resume
 Matches your hardware. Affects parallelism (`blat_chunks`, `scatter_chunks`, `queueSize`)
 and per-process memory limits. **Default: `laptop`** (safe but slow).
 
-| `--machine` | Total RAM declared | Parallel BLAT jobs | Queue depth | Use when |
-|-------------|-------------------|--------------------|-------------|---------|
-| `laptop` | 5 GB | 1 | 1 | 8 GB RAM laptop, WSL, very constrained |
-| `medium` | 64 GB | 8 | 8 | Workstation, cluster node, fresh server |
-| `hard` | 256 GB | 32 | 24 | Dedicated server with 256 GB+ RAM (e.g. gpu0) |
-| `slurm` | cluster-managed | 32 | unlimited | SLURM HPC cluster |
+| `--machine` | Total RAM declared | CPUs | Parallel BLAT jobs | Use when |
+|-------------|-------------------|------|--------------------|---------|
+| `laptop` | 5 GB | 2 | 1 | 8 GB RAM laptop, WSL, very constrained |
+| `low` | 32 GB | 6 | 4 | 32 GB cluster node or low-RAM workstation |
+| `medium` | 64 GB | 16 | 8 | Workstation, cluster node with 64 GB+ |
+| `hard` | 256 GB | 64 | 32 | Dedicated server with 256 GB+ RAM (e.g. gpu0) |
+| `slurm` | cluster-managed | — | 32 | SLURM HPC cluster |
 
 BLAT loads the hg38.2bit genome file (~4 GB) per process. With `--machine hard`,
 32 parallel BLAT jobs = ~128 GB RAM. On a machine without that, use `medium` or `laptop`.
