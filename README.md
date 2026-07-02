@@ -44,10 +44,12 @@ conda activate discanvis
 
 ### 2. Run a single-gene test (fastest, ~4 min on 64-CPU server)
 
+> **Note:** Nextflow caches pipeline revisions locally. Use `-latest` to always pull the current version from GitHub — recommended on fresh machines and after updates.
+
 **Full annotation run — all tracks:**
 
 ```bash
-nextflow run Nosyfire/DisCanVisFlow \
+nextflow run Nosyfire/DisCanVisFlow -latest \
     --project test_one_protein \
     --data discanvis_data \
     --machine hard \
@@ -61,7 +63,7 @@ Use `--modules` to name exactly which annotation groups to run. Everything else 
 The example below runs RAF1 with cBioPortal + ClinVar mutations, AIUPred disorder + binding prediction, and ELM motifs:
 
 ```bash
-nextflow run Nosyfire/DisCanVisFlow \
+nextflow run Nosyfire/DisCanVisFlow -latest \
     --project test_one_protein \
     --data discanvis_data \
     --machine hard \
