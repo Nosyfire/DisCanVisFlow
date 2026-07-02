@@ -41,6 +41,18 @@ echo
 
 mkdir -p "${TARGET_DIR}"
 
+# --- Serialise concurrent invocations (e.g. two Nextflow runs on a fresh machine) ---
+# flock(1) is standard on Linux; the lock is released automatically when the
+# process exits (success or error).
+LOCK_FILE="${TARGET_DIR}/.setup.lock"
+exec 200>"${LOCK_FILE}"
+if ! flock -x -w 600 200; then
+    echo "[WARN]  Could not acquire setup lock after 600 s — another setup is still running."
+    echo "        If this is stale, remove ${LOCK_FILE} and retry."
+    exit 1
+fi
+echo "[lock]  Acquired exclusive setup lock (${LOCK_FILE})"
+
 # --- Repo URLs ---------------------------------------------------------------
 # Official public AIUPred repository (verified June 2026):
 #   https://github.com/doszilab/AIUPred
