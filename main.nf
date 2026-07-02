@@ -217,7 +217,12 @@ DepMap mutations
         }
     }
 
-    def genome_enabled = (mods == null || mods.contains('genome')) && ((params.hg38_2bit || params.fetch_hg38_2bit) as boolean)
+    // Auto-detect hg38.2bit from storeDir cache so genome/mutation mapping runs
+    // automatically on machines where it was previously downloaded, without requiring
+    // --hg38_2bit or --fetch_hg38_2bit to be set explicitly.
+    def _cached_hg38 = file("${params.ref_dir}/hg38/hg38.2bit")
+    def genome_enabled = (mods == null || mods.contains('genome')) &&
+        ((params.hg38_2bit || params.fetch_hg38_2bit || _cached_hg38.exists()) as boolean)
 
     if ( (mods == null || mods.contains('dbnsfp')) && !params.skip_pathogenicity && !params.fetch_dbnsfp &&
          !params.dbnsfp_raw_dir && !params.dbnsfp_tsv ) {
@@ -652,8 +657,13 @@ After copying/downloading the files, rerun the same command with -resume.
 
     def uniprot_features_ch
     def pfam_bulk_ch
-    if ( params.skip_uniprot_api && params.skip_pfam_api ) {
-        // Both APIs disabled and no bulk file requested — pass NO_FILE
+    // Skip PARSE_UNIPROT_DAT entirely when both inputs are NO_FILE (per-protein API mode,
+    // or both APIs explicitly disabled).  Passing two files both named 'NO_FILE' to a
+    // process causes a Nextflow staging collision.
+    if ( !_use_bulk_uni && !_use_bulk_ipr ) {
+        uniprot_features_ch = Channel.value(no_file)
+        pfam_bulk_ch        = Channel.value(no_file)
+    } else if ( params.skip_uniprot_api && params.skip_pfam_api ) {
         uniprot_features_ch = Channel.value(no_file)
         pfam_bulk_ch        = Channel.value(no_file)
     } else {
@@ -767,11 +777,18 @@ After copying/downloading the files, rerun the same command with -resume.
                                                 : SEQUENCE_PROCESS.out.loc_chrom_seq
 
         def af_plddt_ch
-        def _have_af_bulk = !params.skip_alphafold && (params.alphafold_tar || params.fetch_alphafold_bulk)
+        // Auto-detect AlphaFold tar or parsed pLDDT from storeDir cache.
+        // Parsed TSV (references/alphafold_parsed/) takes priority — avoids re-parsing the 5 GB tar.
+        // Falls back to per-protein EBI API in DISORDER_MAP when nothing is cached.
+        def _cached_af_tar   = file("${params.ref_dir}/alphafold/UP000005640_9606_HUMAN_v6.tar")
+        def _cached_af_plddt = file("${params.ref_dir}/alphafold_parsed/alphafold_plddt.tsv")
+        def _have_af_bulk = !params.skip_alphafold &&
+            (params.alphafold_tar || params.fetch_alphafold_bulk ||
+             _cached_af_tar.exists() || _cached_af_plddt.exists())
         if ( _have_af_bulk ) {
             def af_tar_ch = params.alphafold_tar
                 ? Channel.value( file(params.alphafold_tar) )
-                : FETCH_ALPHAFOLD_BULK().tar
+                : FETCH_ALPHAFOLD_BULK().tar   // storeDir returns cached tar; PARSE also storeDir-cached
             af_plddt_ch = PARSE_ALPHAFOLD_PLDDT( af_tar_ch ).plddt
         } else {
             af_plddt_ch = Channel.value(no_file)
@@ -935,9 +952,16 @@ After copying/downloading the files, rerun the same command with -resume.
     // Pre-processed files (params.ppi_intact etc.) take priority.
     // When not set: download raw MiTab via FETCH_* and preprocess via PPI_PREPROCESS.
     if ( (mods == null || mods.contains('ppi')) && !params.skip_ppi ) {
-        def intact_f  = params.ppi_intact  ? file(params.ppi_intact,  checkIfExists: false) : null
-        def biogrid_f = params.ppi_biogrid ? file(params.ppi_biogrid, checkIfExists: false) : null
-        def hippie_f  = params.ppi_hippie  ? file(params.ppi_hippie,  checkIfExists: false) : null
+        // PPI processed files: explicit params > storeDir cache > download + preprocess.
+        def _cached_ppi_intact  = file("${params.ref_dir}/ppi/processed/Interaction_intact.tsv")
+        def _cached_ppi_biogrid = file("${params.ref_dir}/ppi/processed/Interaction_biogrid.tsv")
+        def _cached_ppi_hippie  = file("${params.ref_dir}/ppi/processed/Interaction_hippie.tsv")
+        def intact_f  = params.ppi_intact  ? file(params.ppi_intact,  checkIfExists: false)
+                      : _cached_ppi_intact.exists()  ? _cached_ppi_intact  : null
+        def biogrid_f = params.ppi_biogrid ? file(params.ppi_biogrid, checkIfExists: false)
+                      : _cached_ppi_biogrid.exists() ? _cached_ppi_biogrid : null
+        def hippie_f  = params.ppi_hippie  ? file(params.ppi_hippie,  checkIfExists: false)
+                      : _cached_ppi_hippie.exists()  ? _cached_ppi_hippie  : null
 
         def intact_ch
         def biogrid_ch
@@ -948,8 +972,10 @@ After copying/downloading the files, rerun the same command with -resume.
             biogrid_ch = Channel.value(biogrid_f)
             hippie_ch  = Channel.value(hippie_f)
         } else {
-            // At least one pre-processed file is missing → download + preprocess
-            log.info "PPI: pre-processed files not fully set → downloading raw PPI databases"
+            // At least one processed file is missing → download raw MiTab + preprocess.
+            // All three FETCH processes and PPI_PREPROCESS are storeDir-cached, so
+            // subsequent runs skip the downloads automatically.
+            log.info "PPI: processed files not cached → downloading raw PPI databases"
             def raw_intact  = intact_f  ? Channel.value(intact_f)  : FETCH_INTACT().zip
             def raw_biogrid = biogrid_f ? Channel.value(biogrid_f) : FETCH_BIOGRID().zip
             def raw_hippie  = hippie_f  ? Channel.value(hippie_f)  : FETCH_HIPPIE().txt
