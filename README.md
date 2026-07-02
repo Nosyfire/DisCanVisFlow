@@ -68,6 +68,7 @@ nextflow run Nosyfire/DisCanVisFlow \
     --target_gene RAF1 \
     --modules mutations,disorder \
     --fetch_cbioportal true \
+    --cbioportal_study msk_impact_2017 \
     --skip_iupred true \
     -resume
 ```
@@ -76,6 +77,7 @@ nextflow run Nosyfire/DisCanVisFlow \
 |------|--------|
 | `--modules mutations,disorder` | Run only mutation mapping + disorder prediction; skip PDB, conservation, GO, PPI, etc. |
 | `--fetch_cbioportal true` | Pull cBioPortal somatic MAF in addition to ClinVar (default mutation source) |
+| `--cbioportal_study msk_impact_2017` | Which cBioPortal study to download (datahub ID, e.g. `msk_impact_2017`, `tcga_pan_can_atlas_2018`) |
 | `--skip_iupred true` | Within the disorder module, run AIUPred only — skip IUPred3/ANCHOR2 |
 
 ELM motifs (`annotations/elm.tsv`) are always produced as part of the annotation backbone regardless of `--modules`.
@@ -242,7 +244,7 @@ Available module names: `mutations`, `disorder`, `mobidb`, `pdb`, `go`, `polymor
 # cBioPortal + ClinVar mutations + AIUPred disorder/binding + ELM (for RAF1)
 nextflow run main.nf --project test_one_protein --data local --machine hard --target_gene RAF1 \
     --modules mutations,disorder \
-    --fetch_cbioportal true \
+    --fetch_cbioportal true --cbioportal_study msk_impact_2017 \
     --skip_iupred true \
     -resume
 
