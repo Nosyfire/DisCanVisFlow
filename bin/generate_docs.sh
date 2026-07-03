@@ -56,6 +56,8 @@ while [[ $# -gt 0 ]]; do
 done
 
 RESULTS_DIR="$(cd "${RESULTS_DIR}" && pwd)"
+# Relative label (repo-root-relative) for the publishable report — no abs paths.
+REL_RESULTS="${RESULTS_DIR#${REPO_ROOT}/}"
 FINAL_DIR="${RESULTS_DIR}/final"
 INTER_DIR="${RESULTS_DIR}/intermediate"
 [[ -d "${FINAL_DIR}/sequence" ]] || { echo "[ERR] no final/sequence/ under ${RESULTS_DIR}" >&2; exit 1; }
@@ -128,7 +130,7 @@ python3 "${WORKER}" \
     --outdir     "${OUTDIR}" \
     --mapping_mode "${MAPPING_MODE}" \
     --pipeline_version "${PIPE_VER}" \
-    --command    "generate_docs.sh ${RESULTS_DIR} (docs-only, no pipeline run)" \
+    --command    "bin/generate_docs.sh ${REL_RESULTS} (docs-only, no pipeline run)" \
     "${ref_args[@]}"
 
 echo

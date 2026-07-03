@@ -661,6 +661,7 @@ def build_summary(args, seq_df, coverage, meta, regions, genes,
                   overrides, versions, main_pids, nonmain_pids, *, wrote_per_gene=True):
     final_dir = Path(args.final_dir).resolve()
     base = final_dir.name  # 'final'
+    project_dir = final_dir.parent.name  # e.g. 'discanvis' — relative, publishable
     L = []
     L.append("# Mapping summary\n")
     L.append(f"_Generated: {datetime.now().isoformat(timespec='seconds')}_\n")
@@ -676,7 +677,8 @@ def build_summary(args, seq_df, coverage, meta, regions, genes,
     L.append(f"| Run name | {args.run_name or 'n/a'} |")
     L.append(f"| Started | {args.start_time or 'n/a'} |")
     L.append(f"| Mapping mode | {args.mapping_mode or 'n/a'} |")
-    L.append(f"| Launch dir | `{args.launch_dir or 'n/a'}` |")
+    # Publishable: show the run's output directory name, not the absolute launch path.
+    L.append(f"| Output directory | `{project_dir}/` |")
     L.append("")
     if versions:
         L.append("### Tool / data versions\n")
@@ -788,7 +790,7 @@ def build_summary(args, seq_df, coverage, meta, regions, genes,
 
     # ── output file locations (relative to the run output dir) ──
     L.append("## Output locations\n")
-    L.append(f"All outputs are under `{final_dir}`. Paths below are relative to it.\n")
+    L.append(f"All outputs are under `{project_dir}/{base}/`. Paths below are relative to it.\n")
     L.append("| Category | Path | Files |")
     L.append("|---|---|---|")
     for d in sorted([p for p in final_dir.iterdir() if p.is_dir()]):

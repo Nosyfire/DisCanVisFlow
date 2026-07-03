@@ -5,6 +5,9 @@ work_*/
 # Pipeline outputs — large, machine-generated
 results/
 
+# Zenodo upload staging — large archives, uploaded manually (not via git)
+zenodo_upload/
+
 # Reference data cache — downloaded at runtime, can be 20-100 GB
 references/
 

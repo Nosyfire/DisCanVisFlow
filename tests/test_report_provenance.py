@@ -158,3 +158,11 @@ def test_summary_has_provenance_and_scale(tmp_path):
     assert "Isoforms with a genomic location:** 1 / 2" in pg
     assert "❌" in pg  # G1-202 is NOT mapped
     assert "| G1-201 |" in pg and "✅" in pg
+
+    # public-safe: no absolute filesystem path leaks into the summary
+    assert str(tmp_path) not in summary
+    assert "Launch dir" not in summary          # replaced by relative Output directory
+    assert "Output locations" in summary
+    # output-locations line is relative: "<run-dir-name>/final/", not absolute
+    assert f"All outputs are under `{tmp_path.name}/final/`" in summary
+    assert f"| Output directory | `{tmp_path.name}/` |" in summary
