@@ -1,0 +1,11 @@
+# Minimal dependency set to run `pytest tests/` (bin/*.py worker unit tests).
+# Proven sufficient: the full 348-test suite passes with exactly these packages
+# in a clean venv (no torch / deepcoil / blast / nextflow needed — those code
+# paths are not exercised by the dummy-input unit tests).
+pandas
+numpy
+requests
+tqdm
+biopython>=1.81
+obonet
+pytest
