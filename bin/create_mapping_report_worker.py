@@ -27,6 +27,7 @@ Usage (driven by modules/annotation_mapping.nf :: MAPPING_REPORT):
 """
 
 import argparse
+import gzip
 import logging
 import re
 import sys
@@ -270,6 +271,92 @@ def parse_map_regions(combined_map: Path) -> dict:
         if m and len(fields) >= 5:
             regions[fields[4]] = (m.group(1), m.group(2), m.group(3), m.group(4))
     return regions
+
+
+# ── provenance / base-statistics helpers ─────────────────────────────────────
+def count_fasta_entries(path):
+    """Count ``>`` headers in a FASTA (gz-aware). Returns int, or None when the
+    path is falsy or missing — so the report can show '—' without crashing."""
+    if not path:
+        return None
+    p = Path(path)
+    if not p.exists():
+        return None
+    opener = gzip.open if str(p).endswith(".gz") else open
+    n = 0
+    try:
+        with opener(p, "rt") as fh:
+            for line in fh:
+                if line.startswith(">"):
+                    n += 1
+    except OSError:
+        return None
+    return n
+
+
+def parse_gencode_version(path):
+    """Extract the GENCODE release token (e.g. ``v44``, ``v46lift37``) from a
+    filename like ``gencode.v44.pc_translations.fa``. None when absent."""
+    if not path:
+        return None
+    m = re.search(r"gencode\.(v\w+?)(?:\.|$)", str(path))
+    return m.group(1) if m else None
+
+
+def genome_mapped_pids(final_dir: Path, regions: dict) -> set:
+    """Protein_IDs that carry a genomic location. Prefer combined_map regions;
+    fall back to genome/genome_protein_index.tsv (present in gene slices where
+    combined_map.map is not copied)."""
+    if regions:
+        return set(regions)
+    idx = Path(final_dir) / "genome" / "genome_protein_index.tsv"
+    if idx.exists():
+        try:
+            s = pd.read_csv(idx, sep="\t", usecols=["Protein_ID"])
+            return set(s["Protein_ID"].astype(str).unique())
+        except Exception:                                        # pragma: no cover
+            return set()
+    return set()
+
+
+def compute_input_scale(seq_df, final_dir, regions, *, gencode_fasta=None,
+                        uniprot_fasta=None, uniprot_isoform_fasta=None):
+    """Ordered list of (label, value) base-count rows describing run scale.
+
+    ``seq_df`` must carry the normalised ``_pid``/``_gene``/``_main`` columns and
+    (optionally) a raw ``Database`` column for the direct/isoform breakdown."""
+    rows = []
+    uni_n = count_fasta_entries(uniprot_fasta)
+    iso_n = count_fasta_entries(uniprot_isoform_fasta)
+    gen_n = count_fasta_entries(gencode_fasta)
+    if uni_n is not None:
+        rows.append(("UniProt SwissProt entries (reference)", uni_n))
+    if iso_n is not None:
+        rows.append(("UniProt curated isoforms (reference)", iso_n))
+    if gen_n is not None:
+        rows.append(("GENCODE protein-coding entries (reference)", gen_n))
+
+    genes = sorted({g for g in seq_df["_gene"] if g})
+    rows.append(("Genes mapped in run", len(genes)))
+    rows.append(("Transcripts assigned in run", len(seq_df)))
+
+    if "Database" in seq_df.columns:
+        db = seq_df["Database"].astype(str)
+        direct = int(db.str.contains("SWISSPROT", case=False, na=False).sum())
+        isof = int(db.str.contains("isoform", case=False, na=False).sum())
+        trembl = int(db.str.contains("TREMBL", case=False, na=False).sum())
+        rows.append(("  via SwissProt canonical (direct)", direct))
+        rows.append(("  via curated isoform", isof))
+        if trembl:
+            rows.append(("  via TrEMBL", trembl))
+
+    is_main = seq_df["_main"].astype(str).str.lower().isin(["yes", "true", "1"])
+    rows.append(("Main (canonical) isoforms", int(is_main.sum())))
+
+    gm = genome_mapped_pids(Path(final_dir), regions)
+    run_pids = set(seq_df["_pid"])
+    rows.append(("Genome-mapped isoforms", len(gm & run_pids) if gm else 0))
+    return rows
 
 
 def _detect_key_col(rel: str, columns) -> str:
@@ -592,6 +679,57 @@ def build_summary(args, seq_df, coverage, meta, regions, genes,
             L.append(f"| {k} | {v} |")
         L.append("")
 
+    # ── data source versions (reference releases + download dates) ──
+    gc_fa = getattr(args, "gencode_fasta", "") or ""
+    uni_fa = getattr(args, "uniprot_fasta", "") or ""
+    iso_fa = getattr(args, "uniprot_isoform_fasta", "") or ""
+    gc_ver = (getattr(args, "gencode_version", "") or "").strip() or parse_gencode_version(gc_fa)
+
+    def _fdate(p):
+        try:
+            return datetime.fromtimestamp(Path(p).stat().st_mtime).strftime("%Y-%m-%d")
+        except Exception:
+            return "—"
+
+    src_rows = []
+    if gc_fa:
+        src_rows.append(("GENCODE", gc_ver or "?", _fdate(gc_fa), Path(gc_fa).name))
+    if uni_fa:
+        src_rows.append(("UniProt SwissProt", "release by date", _fdate(uni_fa), Path(uni_fa).name))
+    if iso_fa:
+        src_rows.append(("UniProt isoforms", "release by date", _fdate(iso_fa), Path(iso_fa).name))
+
+    L.append("### Data source versions\n")
+    if src_rows:
+        L.append("| Source | Release / Version | Date | File |")
+        L.append("|---|---|---|---|")
+        for s, v, d, f in src_rows:
+            L.append(f"| {s} | {v} | {d} | `{f}` |")
+    else:
+        L.append("_Reference FASTAs not supplied to the report "
+                 "(`--gencode_fasta` / `--uniprot_fasta`); "
+                 "per-track origins are in the Annotation data sources table below._")
+    L.append("")
+
+    # ── input scale (reference sizes + run-derived base counts) ──
+    scale = compute_input_scale(
+        seq_df, final_dir, regions,
+        gencode_fasta=gc_fa or None,
+        uniprot_fasta=uni_fa or None,
+        uniprot_isoform_fasta=iso_fa or None,
+    )
+    L.append("## Input scale\n")
+    L.append("Reference proteome sizes and how much of the run mapped back to "
+             "them. *Direct* = transcript assigned to a canonical SwissProt "
+             "entry by sequence identity; *curated isoform* = assigned to a "
+             "UniProt isoform.\n")
+    L.append("| Metric | Count |")
+    L.append("|---|---:|")
+    for lbl, val in scale:
+        disp = lbl.replace("  ", "&nbsp;&nbsp;&nbsp;", 1) if lbl.startswith("  ") else f"**{lbl}**"
+        L.append(f"| {disp} | {val:,} |")
+    L.append("")
+
     # ── annotation data sources ──
     L.append("## Annotation data sources\n")
     L.append("Each row is an annotation track with its origin (data source / tool), "
@@ -656,8 +794,11 @@ def build_summary(args, seq_df, coverage, meta, regions, genes,
     # ── run-wide overview: every annotation, its source, and main / non-main
     #    isoform coverage + annotation counts ──
     n_main, n_non = len(main_pids), len(nonmain_pids)
-    gm_main = sum(1 for p in main_pids if p in regions)
-    gm_non = sum(1 for p in nonmain_pids if p in regions)
+    # Prefer combined_map regions; fall back to genome_protein_index.tsv so gene
+    # slices (which don't carry combined_map.map) still report genome coverage.
+    gm_pids = genome_mapped_pids(final_dir, regions)
+    gm_main = sum(1 for p in main_pids if p in gm_pids)
+    gm_non = sum(1 for p in nonmain_pids if p in gm_pids)
     L.append("## Mapping overview (all annotations)\n")
     L.append(f"- **Genes / proteins:** {len(genes)}")
     L.append(f"- **Isoforms:** {n_main + n_non}  (main: {n_main}, non-main: {n_non})")
@@ -741,6 +882,14 @@ def main():
     ap.add_argument("--launch_dir", default="")
     ap.add_argument("--versions_file", default=None)
     ap.add_argument("--dbnsfp_version", default="")
+    ap.add_argument("--gencode_fasta", default="",
+                    help="GENCODE translations FASTA — for entry count + version.")
+    ap.add_argument("--uniprot_fasta", default="",
+                    help="UniProt SwissProt canonical FASTA — for entry count.")
+    ap.add_argument("--uniprot_isoform_fasta", default="",
+                    help="UniProt curated-isoform FASTA — for isoform count.")
+    ap.add_argument("--gencode_version", default="",
+                    help="Override GENCODE version (else parsed from --gencode_fasta).")
     ap.add_argument("--source", action="append", default=[])
     ap.add_argument("--per_gene_md_threshold", type=int, default=50,
                     help="Write per-gene MD only when gene count <= this (default 50). "

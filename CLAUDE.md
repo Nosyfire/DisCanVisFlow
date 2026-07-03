@@ -106,6 +106,15 @@ python bin/generate_manifest.py --no_checksum
 # Extract one gene from a completed full-proteome run (no recomputation)
 python bin/extract_gene_from_results.py --source results/discanvis --gene RAF1 --out results/discanvis_raf1
 python bin/extract_gene_from_results.py --source results/discanvis --gene RAF1,BRAF,KRAS --out results/discanvis_kinases
+
+# Docs-only: (re)generate enriched mapping reports for an existing results dir
+# WITHOUT running the pipeline. Adds data-source versions (GENCODE/UniProt release
+# + dates) and an "Input scale" section (# UniProt/GENCODE entries, direct vs
+# curated-isoform mappings, genome-mapped isoforms). Use after extract_gene_*,
+# or to backfill provenance onto an old run. Reference FASTAs auto-detected from
+# config/data/local.config + references/uniprot/; cleans stale report artifacts.
+bash bin/generate_docs.sh results/discanvis
+bash bin/generate_docs.sh results/discanvis_raf1 --mapping-mode all_isoform_mapping
 ```
 
 ## Running Tests

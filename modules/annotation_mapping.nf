@@ -1764,6 +1764,12 @@ process MAPPING_REPORT {
     if ( params.depmap_tsv )     ov << "--source 'mutations/DepMap/depmap_mutations.tsv=local|${params.depmap_tsv}'"
     if ( params.skip_pfam_api )  ov << "--source 'annotations/pfam_domains.tsv=local|(Pfam API skipped)'"
     def src_args = ov.join(' ')
+    // Reference FASTAs → data-source versions + input-scale base counts in the report.
+    def ref_args = [
+        params.gencode_fasta         ? "--gencode_fasta '${params.gencode_fasta}'"                 : "",
+        params.uniprot_fasta         ? "--uniprot_fasta '${params.uniprot_fasta}'"                 : "",
+        params.uniprot_isoform_fasta ? "--uniprot_isoform_fasta '${params.uniprot_isoform_fasta}'" : "",
+    ].findAll { it }.join(' ')
     """
     # ── capture tool / data versions for reproducibility ──
     {
@@ -1795,6 +1801,7 @@ process MAPPING_REPORT {
         --versions_file    versions.txt \\
         --per_gene_md_threshold ${params.per_gene_md_threshold ?: 50} \\
         --dbnsfp_version   '${dbnsfp_ver}' \\
+        ${ref_args} \\
         ${src_args} \\
         --outdir .
     """
