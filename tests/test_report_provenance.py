@@ -151,3 +151,10 @@ def test_summary_has_provenance_and_scale(tmp_path):
     assert "Genome-mapped isoforms" in summary
     # genome-mapped must be 1 (fallback via index), NOT 0
     assert "Data source versions" in summary
+
+    # per-gene report must agree with the summary: G1-201 is genome-mapped via
+    # the index fallback → ✅ and "1 / 2", not ❌ / "0 / 2"
+    pg = (out / "G1_mapping_report.md").read_text()
+    assert "Isoforms with a genomic location:** 1 / 2" in pg
+    assert "❌" in pg  # G1-202 is NOT mapped
+    assert "| G1-201 |" in pg and "✅" in pg

@@ -463,7 +463,11 @@ def section_sources(intermediate_dir: Path, overrides: dict, gene_pids: set) -> 
     return "\n".join(lines) + "\n"
 
 
-def section_isoforms(seq_df: pd.DataFrame, regions: dict, gene: str) -> str:
+def section_isoforms(seq_df: pd.DataFrame, regions: dict, gene: str,
+                     gm_pids: set = None) -> str:
+    # gm_pids: genome-mapped Protein_IDs (fallback set from genome_protein_index
+    # when combined_map.map — hence coord tuples in `regions` — is unavailable).
+    gm_pids = gm_pids if gm_pids is not None else set(regions)
     lines = ["## 3. Isoforms, alignment & genomic locations\n",
              "| Protein_ID | UniProt isoform | Main | Coverage | Alignment | Chr | Genomic region | Genome-mapped |",
              "|---|---|:---:|---:|---|---|---|:---:|"]
@@ -475,6 +479,9 @@ def section_isoforms(seq_df: pd.DataFrame, regions: dict, gene: str) -> str:
         if reg:
             chrom, strand, start, end = reg
             region, mapped, chr_disp = f"{strand}{start}-{end}", "✅", chrom
+        elif pid in gm_pids:
+            # genome-mapped, but exact coords need combined_map.map (absent in slices)
+            region, mapped, chr_disp = "— (see genome_protein_index)", "✅", r["_chr"]
         else:
             region, mapped, chr_disp = "—", "❌", r["_chr"]
             no_genome.append(pid)
@@ -931,6 +938,10 @@ def main():
     main_pids = set(seq_df.loc[is_main, "_pid"])
     nonmain_pids = set(seq_df.loc[~is_main, "_pid"])
 
+    # Genome-mapped PIDs (combined_map regions, or genome_protein_index fallback
+    # for gene slices) — shared by the per-gene reports and the summary.
+    gm_pids = genome_mapped_pids(final_dir, regions)
+
     genes = sorted([g for g in seq_df["_gene"].unique() if g])
     log.info("Building reports for %d gene(s): %s", len(genes), ", ".join(genes[:20]))
 
@@ -946,7 +957,7 @@ def main():
             mains = sub[sub["_main"].astype(str).str.lower().isin(["yes", "true", "1"])]
             if not mains.empty:
                 main_pid = mains.iloc[0]["_pid"]
-            n_gen = sum(1 for p in gene_pids if p in regions)
+            n_gen = sum(1 for p in gene_pids if p in gm_pids)
 
             head = [
                 f"# Mapping report — {gene}\n",
@@ -963,7 +974,7 @@ def main():
             report = "\n".join(head) + "\n"
             if intermediate_dir.exists():
                 report += section_sources(intermediate_dir, overrides, gene_pids) + "\n"
-            report += section_isoforms(seq_df, regions, gene) + "\n"
+            report += section_isoforms(seq_df, regions, gene, gm_pids) + "\n"
             report += section_coverage(coverage, meta, gene, gene_isos, overrides) + "\n"
             if intermediate_dir.exists():
                 report += section_before_after(intermediate_dir, final_dir, gene_pids)
