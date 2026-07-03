@@ -272,27 +272,27 @@ python bin/extract_gene_from_results.py --source results/discanvis --gene RAF1 -
 | 2 — Sequence Process | `modules/sequence_process.nf` | `create_sequence_table_worker.py` | `loc_chrom_with_names_isoforms_with_seq.tsv` |
 | 3 — Genome Mapping | `modules/genome_mapping.nf` | `create_genome_map_worker.py` | `combined_map.map` |
 | 4 — Mutation Mapping | `modules/mutation_mapping.nf` | `create_mutation_map_worker.py` | `Missense/Frameshift/Nonsense/Indel_filter_mutations_mapped.tsv` |
-| 5a — Annotation | `modules/annotation_mapping.nf` | `create_annotation_worker.py` | `elm.tsv`, `dibs.tsv`, `mfib.tsv`, `phasepro.tsv`, `ptm_merged.tsv`, `pfam_domains.tsv` |
-| 5b — Disorder | `modules/annotation_mapping.nf` | `create_disorder_worker.py` | `IUPredscores.tsv`, `AIUPredscores.tsv`, `AIUPredBinding.tsv`, `AlphaFoldTable.tsv`, `CombinedDisorderNew.tsv` |
-| 5c — PDB | `modules/annotation_mapping.nf` | `create_pdb_worker.py` | `pdb_structures.tsv`, `pdb_missing.tsv` |
-| 5d — Exon | `modules/annotation_mapping.nf` | `create_exon_worker.py` | `exon.tsv` |
-| 5e — Transcript Map | `modules/annotation_mapping.nf` | `create_transcript_map_worker.py` | Protein_ID-keyed mapped copies of all annotation TSVs |
-| 5f — GO Terms | `modules/annotation_mapping.nf` | `create_go_worker.py` | `go_terms.tsv` |
-| 5g — Polymorphism | `modules/annotation_mapping.nf` | `create_polymorphism_worker.py` | `polymorphism.tsv` (rsid + ref/alt + allele freq from dbSNP 155) |
-| 5h — PEM | `modules/annotation_mapping.nf` | `create_pem_worker.py`, `create_pem_transfer_worker.py` | `pem_core_motifs.tsv`, `pem_core_motifs_mapped.tsv` |
-| 5i — Coiled Coils | `modules/annotation_mapping.nf` | `create_coiledcoils_worker.py` | `coiled_coils.tsv`, `DeepCoil.tsv` |
-| 5j — PPI | `modules/annotation_mapping.nf` | `create_ppi_worker.py` | `interactions.tsv` |
-| 5k — ScanSite | `modules/annotation_mapping.nf` | `create_scansite_worker.py` | `scansite.tsv` |
-| 5m — Position-Based | `modules/annotation_mapping.nf` | `create_position_based_worker.py` | `position_based_annotations.tsv`, `rsa_scores.tsv` |
-| 5n — ELM Classes | `modules/annotation_mapping.nf` | `create_elm_class_worker.py` | `elm_classes.tsv` |
-| 5o — MobiDB | `modules/annotation_mapping.nf` | `create_mobidb_worker.py` | `mobidb_disorder.tsv` |
-| 7 — Conservation | `modules/annotation_mapping.nf` | `create_conservation_worker.py` | `conservation_multiple_level.tsv`, `conservation_phastcons.tsv` |
-| 8a — ClinVar disease | `modules/annotation_mapping.nf` | `create_clinvar_disease_build_worker.py` | `final/disease/clinvar_disease.tsv` |
-| 8f — Pathogenicity | `modules/annotation_mapping.nf` | `create_dbnsfp_map_worker.py` | `final/pathogenicity/pathogenicity_scores.tsv` |
-| 8g — ProteinGym | `modules/annotation_mapping.nf` | `create_proteingym_worker.py` | `proteingym.tsv` |
-| 8h — FINCHES | `modules/annotation_mapping.nf` | `create_finches_worker.py` | `finches_saturation.tsv` (off by default; `--skip_finches false` to enable; CC BY-NC 4.0) |
-| Report | `modules/annotation_mapping.nf` | `create_mapping_report_worker.py` | `mapping_reports/` (runs last) |
-| Scatter | `modules/annotation_mapping.nf` (`SPLIT_SEQ_TABLE`) | `split_seq_table.py` | N gene-balanced seq-table chunks (`--scatter_chunks N`) |
+| 5a — Annotation | `modules/annotation_backbone.nf` | `create_annotation_worker.py` | `elm.tsv`, `dibs.tsv`, `mfib.tsv`, `phasepro.tsv`, `ptm_merged.tsv`, `pfam_domains.tsv` |
+| 5b — Disorder | `modules/disorder.nf` | `create_disorder_worker.py` | `IUPredscores.tsv`, `AIUPredscores.tsv`, `AIUPredBinding.tsv`, `AlphaFoldTable.tsv`, `CombinedDisorderNew.tsv` |
+| 5c — PDB | `modules/structure.nf` | `create_pdb_worker.py` | `pdb_structures.tsv`, `pdb_missing.tsv` |
+| 5d — Exon | `modules/structure.nf` | `create_exon_worker.py` | `exon.tsv` |
+| 5e — Transcript Map | `modules/annotation_backbone.nf` | `create_transcript_map_worker.py` | Protein_ID-keyed mapped copies of all annotation TSVs |
+| 5f — GO Terms | `modules/functional.nf` | `create_go_worker.py` | `go_terms.tsv` |
+| 5g — Polymorphism | `modules/functional.nf` | `create_polymorphism_worker.py` | `polymorphism.tsv` (rsid + ref/alt + allele freq from dbSNP 155) |
+| 5h — PEM | `modules/functional.nf` | `create_pem_worker.py`, `create_pem_transfer_worker.py` | `pem_core_motifs.tsv`, `pem_core_motifs_mapped.tsv` |
+| 5i — Coiled Coils | `modules/functional.nf` | `create_coiledcoils_worker.py` | `coiled_coils.tsv`, `DeepCoil.tsv` |
+| 5j — PPI | `modules/functional.nf` | `create_ppi_worker.py` | `interactions.tsv` |
+| 5k — ScanSite | `modules/functional.nf` | `create_scansite_worker.py` | `scansite.tsv` |
+| 5m — Position-Based | `modules/disorder.nf` | `create_position_based_worker.py` | `position_based_annotations.tsv`, `rsa_scores.tsv` |
+| 5n — ELM Classes | `modules/annotation_backbone.nf` | `create_elm_class_worker.py` | `elm_classes.tsv` |
+| 5o — MobiDB | `modules/disorder.nf` | `create_mobidb_worker.py` | `mobidb_disorder.tsv` |
+| 7 — Conservation | `modules/functional.nf` | `create_conservation_worker.py` | `conservation_multiple_level.tsv`, `conservation_phastcons.tsv` |
+| 8a — ClinVar disease | `modules/disease.nf` | `create_clinvar_disease_build_worker.py` | `final/disease/clinvar_disease.tsv` |
+| 8f — Pathogenicity | `modules/pathogenicity.nf` | `create_dbnsfp_map_worker.py` | `final/pathogenicity/pathogenicity_scores.tsv` |
+| 8g — ProteinGym | `modules/pathogenicity.nf` | `create_proteingym_worker.py` | `proteingym.tsv` |
+| 8h — FINCHES | `modules/pathogenicity.nf` | `create_finches_worker.py` | `finches_saturation.tsv` (off by default; `--skip_finches false` to enable; CC BY-NC 4.0) |
+| Report | `modules/report.nf` | `create_mapping_report_worker.py` | `mapping_reports/` (runs last) |
+| Scatter | `modules/annotation_backbone.nf` (`SPLIT_SEQ_TABLE`) | `split_seq_table.py` | N gene-balanced seq-table chunks (`--scatter_chunks N`) |
 | Reference fetches | `modules/fetch_references.nf` | — | UniProt/GENCODE/ClinVar/GO/MobiDB/MONDO/AlphaMissense/IntAct/BioGRID/HIPPIE (cached via `storeDir`) |
 
 ### Key Conventions

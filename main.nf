@@ -101,46 +101,49 @@ include { FETCH_CLINVAR;
           MUTATION_MAP as MUTATION_MAP_CLINVAR;
           MUTATION_MAP as MUTATION_MAP_TCGA;
           MUTATION_MAP as MUTATION_MAP_CBIOPORTAL } from './modules/mutation_mapping'
+// Module 5 was split out of the former annotation_mapping.nf monolith into
+// thematic files: annotation_backbone / disorder / structure / functional /
+// disease / pathogenicity / report.
 include { FETCH_ELM;
-          FETCH_MOBIDB;
-          FETCH_GO;
-          ELM_CLASS_MAP;
           ELM_SWITCHES_MAP;
-          MOBIDB_MAP;
+          ELM_CLASS_MAP;
+          PARSE_UNIPROT_DAT;
           ANNOTATION_MAP;
           SPLIT_SEQ_TABLE;
+          TRANSCRIPT_MAP;
+          ISOFORM_ALIGN_MAP;
+          HOMOLOGY_MANIFEST        } from './modules/annotation_backbone'
+include { FETCH_MOBIDB;
+          MOBIDB_MAP;
+          PARSE_ALPHAFOLD_PLDDT;
           DISORDER_MAP;
+          POSITION_BASED_MAP       } from './modules/disorder'
+include { PDB_MAP;
+          PDB_BULK_MAP;
+          EXON_MAP                 } from './modules/structure'
+include { FETCH_GO;
           GO_MAP;
           POLYMORPHISM_MAP;
           PEM_MAP;
+          PEM_TRANSFER_MAP;
           COILEDCOILS_MAP;
           PPI_PREPROCESS;
           PPI_MAP;
           CONSERVATION_MAP;
           GOPHER_RECOMPUTE;
-          SCANSITE_MAP;
+          SCANSITE_MAP             } from './modules/functional'
+include { CLINVAR_DISEASE_BUILD;
           CLINVAR_DISEASE_MAP;
-          CLINVAR_DISEASE_BUILD;
           OMIM_MAP;
-          CANCER_DRIVER_MAP;
+          CANCER_DRIVER_MAP        } from './modules/disease'
+include { PROTEINGYM_MAP;
           ALPHAMISSENSE_MAP;
-          MAVEDB_MAP;
-          PROTEINGYM_MAP;
           DEPMAP_MAP;
           DBNSFP_MAP;
           PATHOGENICITY_MAP;
-          POSITION_BASED_MAP;
-          ISOFORM_ALIGN_MAP;
-          PEM_TRANSFER_MAP;
-          PDB_MAP;
-          PDB_BULK_MAP;
-          FINCHES_MAP;
-          EXON_MAP;
-          TRANSCRIPT_MAP;
-          HOMOLOGY_MANIFEST;
-          MAPPING_REPORT;
-          PARSE_UNIPROT_DAT;
-          PARSE_ALPHAFOLD_PLDDT    } from './modules/annotation_mapping'
+          MAVEDB_MAP;
+          FINCHES_MAP              } from './modules/pathogenicity'
+include { MAPPING_REPORT           } from './modules/report'
 
 // ---------------------------------------------------------------------------
 // Workflow
