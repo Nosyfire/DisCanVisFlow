@@ -28,6 +28,38 @@ For each human protein (UniProt SwissProt × GENCODE):
 
 All outputs use `Protein_ID` (GENCODE transcript name, e.g. `RAF1-201`) as the primary key and land in `results/<project>/final/`.
 
+### Pipeline flow
+
+```mermaid
+flowchart TD
+    UP["UniProt SwissProt FASTA"] --> SUB["SUBSET_FASTA<br/>exact gene match"]
+    GC["GENCODE FASTA + GTF"] --> SUB
+    SUB --> BLAST["MAKEBLASTDB ×2 → reciprocal BLASTP<br/>→ MERGE_BLAST_HITS"]
+    BLAST --> IDMAP["ID_MAP<br/>transcript → UniProt isoform"]
+    IDMAP --> SEQ["SEQUENCE_PROCESS<br/>isoform table + coords"]
+    SEQ --> GENOME["BLAT_ALIGN → GENOME_MAP<br/>combined_map.map"]
+
+    GENOME --> MUT["MUTATION_MAP<br/>ClinVar / MAF / VCF"]
+    GENOME --> POLY["POLYMORPHISM_MAP<br/>dbSNP 155"]
+    GENOME --> EXON["EXON_MAP"]
+
+    SEQ --> ANNO["ANNOTATION backbone<br/>ELM · DIBS · MFIB · PhasePro · PTM · Pfam"]
+    SEQ --> DIS["DISORDER<br/>IUPred3 · ANCHOR2 · AIUPred · AlphaFold · MobiDB"]
+    SEQ --> STRUCT["STRUCTURE<br/>PDB coverage · RSA"]
+    SEQ --> FUNC["FUNCTIONAL<br/>GO · PPI · coiled-coils · ScanSite · conservation"]
+    GENOME --> PATH["PATHOGENICITY<br/>dbNSFP · AlphaMissense · MaveDB · ProteinGym"]
+    MUT --> DISEASE["DISEASE / DRIVERS<br/>ClinVar-MONDO · OMIM · CGC · DepMap"]
+
+    ANNO --> TMAP["TRANSCRIPT_MAP<br/>UniProt-keyed → all isoforms"]
+    DIS --> TMAP
+    TMAP --> REPORT["MAPPING_REPORT<br/>mapping_summary.md + release.json"]
+    MUT --> REPORT
+    FUNC --> REPORT
+    STRUCT --> REPORT
+    PATH --> REPORT
+    DISEASE --> REPORT
+```
+
 ---
 
 ## Quick start
@@ -417,18 +449,22 @@ Nextflow acts purely as orchestrator: it handles caching, parallelism, and data 
 
 ## Annotation sources — per-release update cadence
 
-| Source | Update method | Freeze / always-current |
-|--------|---------------|------------------------|
-| UniProt SwissProt | `bin/refresh_refs.sh uniprot` | Frozen in `local.config` |
-| GENCODE | `bin/refresh_refs.sh gencode` | Pinned to v44 by default |
-| ClinVar | `bin/refresh_refs.sh clinvar` | Always-current via FETCH_CLINVAR |
-| GO (GOA + OBO) | `bin/refresh_refs.sh go` | Always-current via FETCH_GO |
-| MobiDB | `bin/refresh_refs.sh mobidb` | Always-current via FETCH_MOBIDB |
-| ELM instances | `legacy_data/elm/elm_instances-2023.tsv` | Frozen 2023 snapshot |
-| dbSNP bigBed | manual — see `bin/refresh_refs.sh dbsnp` | Large; rarely updated |
-| AlphaMissense | `bin/refresh_refs.sh alphamissense` | v2023 frozen |
-| dbNSFP | `--dbnsfp_raw_dir` or `--dbnsfp_tsv` | External; update manually |
-| PPI (IntAct/BioGRID/HIPPIE) | `FETCH_INTACT/BIOGRID/HIPPIE + PPI_PREPROCESS` | Auto on first run |
+| Source | Origin | Update method | Freeze / always-current |
+|--------|--------|---------------|------------------------|
+| UniProt SwissProt | [ftp.uniprot.org](https://ftp.uniprot.org/pub/databases/uniprot/current_release/) | `bin/refresh_refs.sh uniprot` | Frozen in `local.config`; release captured in `release.json` |
+| GENCODE | [gencodegenes.org](https://www.gencodegenes.org/human/) | `bin/refresh_refs.sh gencode` | Pinned to v44 by default |
+| ClinVar | [NCBI ClinVar FTP](https://ftp.ncbi.nlm.nih.gov/pub/clinvar/) | `bin/refresh_refs.sh clinvar` | Always-current via FETCH_CLINVAR |
+| GO (GOA + OBO) | [geneontology.org](http://geneontology.org/) | `bin/refresh_refs.sh go` | Always-current via FETCH_GO |
+| MobiDB | [mobidb.org](https://mobidb.org/) | `bin/refresh_refs.sh mobidb` | Always-current via FETCH_MOBIDB |
+| ELM instances | [elm.eu.org](http://elm.eu.org/) | `legacy_data/elm/elm_instances-2023.tsv` | Frozen 2023 snapshot |
+| dbSNP bigBed | [UCSC dbSnp155Common](https://hgdownload.soe.ucsc.edu/gbdb/hg38/snp/) | manual — see `bin/refresh_refs.sh dbsnp` | Large; rarely updated |
+| AlphaMissense | [Zenodo 8208688](https://zenodo.org/records/8208688) | `bin/refresh_refs.sh alphamissense` | v2023 frozen |
+| dbNSFP | [dbNSFP](https://www.dbnsfp.org/) | `--dbnsfp_raw_dir` or `--dbnsfp_tsv` | External; update manually |
+| PPI (IntAct/BioGRID/HIPPIE) | [IntAct](https://www.ebi.ac.uk/intact/) · [BioGRID](https://thebiogrid.org/) · [HIPPIE](http://cbdm-01.zdv.uni-mainz.de/~mschaefer/hippie/) | `FETCH_INTACT/BIOGRID/HIPPIE + PPI_PREPROCESS` | Auto on first run |
+
+The exact reference versions and entry counts used by any completed run are
+recorded in `results/<project>/mapping_reports/release.json` and the
+"Data source versions" / "Input scale" sections of `mapping_summary.md`.
 
 ---
 
