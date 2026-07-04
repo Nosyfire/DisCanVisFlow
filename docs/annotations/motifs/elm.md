@@ -32,9 +32,22 @@ After `TRANSCRIPT_MAP`:
 
 `final/annotations/elm.tsv` adds `Protein_ID`, `mapping_type` (`direct`/`homology_similarity`), `homology_transfer` and `homology_identity` columns. Positions are re-mapped to the Gencode transcript coordinate system.
 
+## Related ELM tables
+
+Two companion tables are produced alongside the instances:
+
+| File | Contents |
+|------|----------|
+| `final/annotations/elm_classes.tsv` | The ELM **class** dictionary (regex pattern, description, probability) for every motif class referenced in `elm.tsv` — worker `bin/create_elm_class_worker.py` |
+| `final/annotations/elmswitches_mapped.tsv` | ELM **switches** (motifs whose activity is toggled by a conformational or PTM switch), mapped to isoforms |
+
+Predicted (rather than curated) ELM motifs are documented separately under
+[PEM — Predicted ELM Core Motifs](pem.md).
+
 ## Notes
 
 - The 2023 snapshot contains ~3,700 human instances across ~290 ELM classes.
 - Only instances with `Logic = true positive` or `unknown` are typically used downstream; check the Django model for the current filter.
 - Motif start/end are in UniProt sequence space; after transcript mapping they reflect the Gencode isoform position.
-- DIBS (disordered binding sites) and MFIB (molecular function in intrinsically disordered) follow the same format as ELM but come from separate local files.
+- [DIBS](dibs.md), [MFIB](mfib.md), and [PhasePro](phasepro.md) follow the same
+  region format as ELM but come from separate local files.
