@@ -186,3 +186,14 @@ def test_summary_has_provenance_and_scale(tmp_path):
     # output-locations line is relative: "<run-dir-name>/final/", not absolute
     assert f"All outputs are under `{tmp_path.name}/final/`" in summary
     assert f"| Output directory | `{tmp_path.name}/` |" in summary
+
+    # ── machine-readable companion ──
+    import json
+    rel = json.loads((out / "release.json").read_text())
+    assert rel["mapping_mode"] == "all_isoform_mapping"
+    assert rel["genes"] == 1
+    assert rel["data_sources"]["gencode"]["version"] == "v44"
+    assert rel["data_sources"]["gencode"]["file"] == "gencode.v44.pc_translations.fa"
+    assert rel["input_scale"]["Genome-mapped isoforms"] == 1
+    # no absolute path leaks in the JSON either (only basenames)
+    assert str(tmp_path) not in (out / "release.json").read_text()

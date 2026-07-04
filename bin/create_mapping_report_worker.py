@@ -28,6 +28,7 @@ Usage (driven by modules/annotation_mapping.nf :: MAPPING_REPORT):
 
 import argparse
 import gzip
+import json
 import logging
 import re
 import sys
@@ -1030,6 +1031,56 @@ def main():
                             wrote_per_gene=write_per_gene)
     (outdir / "mapping_summary.md").write_text(summary)
     log.info("Wrote mapping_summary.md")
+
+    release = build_release_json(args, seq_df, final_dir, regions, genes)
+    (outdir / "release.json").write_text(json.dumps(release, indent=2) + "\n")
+    log.info("Wrote release.json")
+
+
+def build_release_json(args, seq_df, final_dir, regions, genes):
+    """Machine-readable companion to mapping_summary.md — the same provenance
+    (source versions, entry counts, git/pipeline version) as a JSON manifest
+    that downstream DB-upload / release tooling can consume without parsing
+    markdown."""
+    gc_fa = getattr(args, "gencode_fasta", "") or ""
+    uni_fa = getattr(args, "uniprot_fasta", "") or ""
+    iso_fa = getattr(args, "uniprot_isoform_fasta", "") or ""
+    gc_ver = (getattr(args, "gencode_version", "") or "").strip() or parse_gencode_version(gc_fa)
+    uni_ver = parse_uniprot_reldate(getattr(args, "uniprot_reldate", "") or None)
+
+    def _fdate(p):
+        try:
+            return datetime.fromtimestamp(Path(p).stat().st_mtime).strftime("%Y-%m-%d")
+        except Exception:
+            return None
+
+    def _src(path, version):
+        if not path:
+            return None
+        return {"version": version, "file": Path(path).name,
+                "downloaded": _fdate(path)}
+
+    scale = compute_input_scale(
+        seq_df, final_dir, regions,
+        gencode_fasta=gc_fa or None,
+        uniprot_fasta=uni_fa or None,
+        uniprot_isoform_fasta=iso_fa or None,
+    )
+    return {
+        "generated": datetime.now().isoformat(timespec="seconds"),
+        "pipeline_version": args.pipeline_version or None,
+        "nextflow_version": args.nextflow_version or None,
+        "mapping_mode": args.mapping_mode or None,
+        "run_name": args.run_name or None,
+        "profile": args.profile or None,
+        "genes": len(genes),
+        "data_sources": {
+            "gencode": _src(gc_fa, gc_ver),
+            "uniprot_swissprot": _src(uni_fa, uni_ver),
+            "uniprot_isoforms": _src(iso_fa, uni_ver),
+        },
+        "input_scale": {lbl.strip(): val for lbl, val in scale},
+    }
 
 
 if __name__ == "__main__":
