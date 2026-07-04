@@ -58,10 +58,14 @@ process MAPPING_REPORT {
     if ( params.skip_pfam_api )  ov << "--source 'annotations/pfam_domains.tsv=local|(Pfam API skipped)'"
     def src_args = ov.join(' ')
     // Reference FASTAs → data-source versions + input-scale base counts in the report.
+    // reldate.txt is captured by FETCH_UNIPROT_FASTA into references/uniprot/;
+    // the worker no-ops gracefully when the file is absent (e.g. --data local).
+    def reldate_path = params.ref_dir ? "${params.ref_dir}/uniprot/uniprot_reldate.txt" : ""
     def ref_args = [
         params.gencode_fasta         ? "--gencode_fasta '${params.gencode_fasta}'"                 : "",
         params.uniprot_fasta         ? "--uniprot_fasta '${params.uniprot_fasta}'"                 : "",
         params.uniprot_isoform_fasta ? "--uniprot_isoform_fasta '${params.uniprot_isoform_fasta}'" : "",
+        reldate_path                 ? "--uniprot_reldate '${reldate_path}'"                        : "",
     ].findAll { it }.join(' ')
     """
     # ── capture tool / data versions for reproducibility ──

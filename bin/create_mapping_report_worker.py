@@ -303,6 +303,36 @@ def parse_gencode_version(path):
     return m.group(1) if m else None
 
 
+def parse_uniprot_reldate(path):
+    """Extract the UniProt release string from a reldate.txt file.
+
+    reldate.txt looks like::
+
+        UniProt Knowledgebase Release 2025_03 consists of:
+        ...
+
+    Returns e.g. ``Release 2025_03``. Falls back to the first non-empty line
+    (our stamped ``downloaded YYYY-MM-DD`` fallback) if no release token is
+    found, or None when the file is missing/empty."""
+    if not path:
+        return None
+    p = Path(path)
+    if not p.exists():
+        return None
+    try:
+        text = p.read_text(errors="replace")
+    except Exception:                                            # pragma: no cover
+        return None
+    m = re.search(r"Release\s+(\d{4}_\d{2})", text)
+    if m:
+        return f"Release {m.group(1)}"
+    for line in text.splitlines():
+        line = line.strip()
+        if line:
+            return line
+    return None
+
+
 def genome_mapped_pids(final_dir: Path, regions: dict) -> set:
     """Protein_IDs that carry a genomic location. Prefer combined_map regions;
     fall back to genome/genome_protein_index.tsv (present in gene slices where
@@ -693,6 +723,7 @@ def build_summary(args, seq_df, coverage, meta, regions, genes,
     uni_fa = getattr(args, "uniprot_fasta", "") or ""
     iso_fa = getattr(args, "uniprot_isoform_fasta", "") or ""
     gc_ver = (getattr(args, "gencode_version", "") or "").strip() or parse_gencode_version(gc_fa)
+    uni_ver = parse_uniprot_reldate(getattr(args, "uniprot_reldate", "") or None)
 
     def _fdate(p):
         try:
@@ -704,9 +735,11 @@ def build_summary(args, seq_df, coverage, meta, regions, genes,
     if gc_fa:
         src_rows.append(("GENCODE", gc_ver or "?", _fdate(gc_fa), Path(gc_fa).name))
     if uni_fa:
-        src_rows.append(("UniProt SwissProt", "release by date", _fdate(uni_fa), Path(uni_fa).name))
+        src_rows.append(("UniProt SwissProt", uni_ver or "release by date",
+                         _fdate(uni_fa), Path(uni_fa).name))
     if iso_fa:
-        src_rows.append(("UniProt isoforms", "release by date", _fdate(iso_fa), Path(iso_fa).name))
+        src_rows.append(("UniProt isoforms", uni_ver or "release by date",
+                         _fdate(iso_fa), Path(iso_fa).name))
 
     L.append("### Data source versions\n")
     if src_rows:
@@ -899,6 +932,9 @@ def main():
                     help="UniProt curated-isoform FASTA — for isoform count.")
     ap.add_argument("--gencode_version", default="",
                     help="Override GENCODE version (else parsed from --gencode_fasta).")
+    ap.add_argument("--uniprot_reldate", default="",
+                    help="UniProt reldate.txt — real release string (e.g. 2025_03) "
+                         "instead of falling back to the download date.")
     ap.add_argument("--source", action="append", default=[])
     ap.add_argument("--per_gene_md_threshold", type=int, default=50,
                     help="Write per-gene MD only when gene count <= this (default 50). "

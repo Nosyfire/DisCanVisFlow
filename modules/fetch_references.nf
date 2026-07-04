@@ -37,6 +37,7 @@ process FETCH_UNIPROT_FASTA {
 
     output:
     path 'uniprot_swissprot.fasta', emit: fasta
+    path 'uniprot_reldate.txt', emit: reldate
 
     script:
     """
@@ -50,12 +51,20 @@ process FETCH_UNIPROT_FASTA {
 
     n=\$(grep -c '^>' uniprot_swissprot.fasta)
     echo "Done — \${n} SwissProt entries written to uniprot_swissprot.fasta"
+
+    # Capture the UniProt release string (e.g. "UniProt Release 2025_03") so
+    # reports can cite the exact data version, not just the download date.
+    # Non-fatal: a stamped fallback keeps the run going if the FTP path moves.
+    curl -fsSL 'https://ftp.uniprot.org/pub/databases/uniprot/current_release/knowledgebase/complete/reldate.txt' \\
+        -o uniprot_reldate.txt \\
+        || printf 'UniProt release string unavailable; downloaded %s\\n' "\$(date -u +%Y-%m-%d)" > uniprot_reldate.txt
     """
 
     stub:
     """
     printf '>sp|P04049|RAF1_HUMAN Proto-oncogene serine/threonine-protein kinase Raf OS=Homo sapiens OX=9606 GN=RAF1 PE=1 SV=1\\nMANTIQQFLHR\\n' \\
         > uniprot_swissprot.fasta
+    printf 'UniProt Release 2025_03 (stub)\\n' > uniprot_reldate.txt
     """
 }
 

@@ -41,7 +41,7 @@ if [[ -z "${RESULTS_DIR}" || "${RESULTS_DIR}" == -* ]]; then
 fi
 shift || true
 
-GENCODE=""; UNIPROT=""; ISOFORM=""; MAPPING_MODE="all_isoform_mapping"
+GENCODE=""; UNIPROT=""; ISOFORM=""; RELDATE=""; MAPPING_MODE="all_isoform_mapping"
 OUTDIR=""; USE_REFS=1
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -90,6 +90,10 @@ if [[ "${USE_REFS}" -eq 1 ]]; then
         c="${REPO_ROOT}/references/uniprot/UP000005640_9606_additional.fasta"
         [[ -r "$c" ]] && ISOFORM="$c"
     fi
+    if [[ -z "${RELDATE}" ]]; then
+        c="${REPO_ROOT}/references/uniprot/uniprot_reldate.txt"
+        [[ -r "$c" ]] && RELDATE="$c"
+    fi
 fi
 
 # ── pipeline version from git (best-effort) ───────────────────────────────────
@@ -104,6 +108,7 @@ echo " Output dir  : ${OUTDIR}"
 echo " GENCODE fa  : ${GENCODE:-<none>}"
 echo " UniProt fa  : ${UNIPROT:-<none>}"
 echo " Isoform fa  : ${ISOFORM:-<none>}"
+echo " Reldate     : ${RELDATE:-<none>}"
 echo " Mapping mode: ${MAPPING_MODE}"
 echo
 
@@ -111,6 +116,7 @@ ref_args=()
 [[ -n "${GENCODE}" ]] && ref_args+=(--gencode_fasta "${GENCODE}")
 [[ -n "${UNIPROT}" ]] && ref_args+=(--uniprot_fasta "${UNIPROT}")
 [[ -n "${ISOFORM}" ]] && ref_args+=(--uniprot_isoform_fasta "${ISOFORM}")
+[[ -n "${RELDATE}" ]] && ref_args+=(--uniprot_reldate "${RELDATE}")
 
 inter_args=()
 [[ -d "${INTER_DIR}" ]] && inter_args+=(--intermediate_dir "${INTER_DIR}")

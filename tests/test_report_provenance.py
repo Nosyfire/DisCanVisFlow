@@ -51,6 +51,26 @@ def test_parse_gencode_version():
     assert M.parse_gencode_version(None) is None
 
 
+# ── parse_uniprot_reldate ─────────────────────────────────────────────────────
+def test_parse_uniprot_reldate_release(tmp_path):
+    p = tmp_path / "reldate.txt"
+    p.write_text("UniProt Knowledgebase Release 2025_03 consists of:\n"
+                 "Swiss-Prot Release 2025_03 of 21-May-2025\n")
+    assert M.parse_uniprot_reldate(p) == "Release 2025_03"
+
+
+def test_parse_uniprot_reldate_fallback_line(tmp_path):
+    p = tmp_path / "reldate.txt"
+    p.write_text("UniProt release string unavailable; downloaded 2026-07-04\n")
+    assert M.parse_uniprot_reldate(p) == (
+        "UniProt release string unavailable; downloaded 2026-07-04")
+
+
+def test_parse_uniprot_reldate_missing():
+    assert M.parse_uniprot_reldate("/no/such/reldate.txt") is None
+    assert M.parse_uniprot_reldate(None) is None
+
+
 # ── genome_mapped_pids: fallback to genome_protein_index.tsv ──────────────────
 def test_genome_mapped_prefers_regions(tmp_path):
     (tmp_path / "genome").mkdir()
