@@ -461,6 +461,25 @@ config/
 
 ## Troubleshooting
 
+### Nextflow can't find Java / `Cannot find java` on launch
+
+**Cause**: Nextflow needs a Java 11–21 runtime on `PATH`. In non-interactive
+shells (cron, `ssh host 'cmd'`, CI, `nohup`) the conda `activate` hook that puts
+Java on `PATH` often doesn't run, so `nextflow run ...` fails immediately.
+
+**Fix**: point Nextflow at the JVM inside the `discanvis` conda env explicitly:
+
+```bash
+conda activate discanvis
+export JAVA_CMD="$CONDA_PREFIX/bin/java"
+export JAVA_HOME="$CONDA_PREFIX"
+export PATH="$CONDA_PREFIX/bin:$PATH"
+nextflow run main.nf --project test_one_protein --data local --machine hard --target_gene RAF1 -resume
+```
+
+Interactive sessions that ran `conda activate discanvis` normally already have
+this — the export lines only matter for detached / scripted runs.
+
 ### IUPredscores / AIUPredscores are empty (header only)
 
 **Cause**: `aiupred_python` points to a non-existent or wrong Python binary.

@@ -29,6 +29,12 @@ conda env update -n discanvis -f environment.yml --prune
 #   curl -fsSL https://hgdownload.soe.ucsc.edu/admin/exe/linux.x86_64/bigBedToBed \
 #     -o "$CONDA_PREFIX/bin/bigBedToBed" && chmod +x "$CONDA_PREFIX/bin/bigBedToBed"
 # A missing bigBedToBed no longer crashes the run — it just skips polymorphism.
+
+# Java for Nextflow in NON-INTERACTIVE shells (cron/ssh/nohup/CI): the conda
+# activate hook that puts Java on PATH may not run, so nextflow fails at launch.
+# Export the env's JVM explicitly before `nextflow run`:
+#   export JAVA_CMD="$CONDA_PREFIX/bin/java" JAVA_HOME="$CONDA_PREFIX"
+#   export PATH="$CONDA_PREFIX/bin:$PATH"
 ```
 
 ## Running the Pipeline
