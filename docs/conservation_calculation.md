@@ -90,7 +90,7 @@ For protein residues, the pipeline takes the **mean phastCons score of the three
 
 ### Data sources
 
-phastCons bigWig files are stored locally at `/dlab/home/norbi/data/phastcons/` (per-chromosome files: `chr1.bw` ... `chrY.bw`). They are not downloaded by the pipeline; they must be present and the path set via `params.phastcons_dir`.
+phastCons bigWig files (per-chromosome: `chr1.bw` ... `chrY.bw`) are not downloaded by the pipeline. Provide them locally and set the directory via `params.phastcons_dir` (`--phastcons_dir /path/to/phastcons/`).
 
 ### Computation pipeline
 
@@ -171,7 +171,7 @@ Both are displayed as color-coded per-residue tracks in the DisCanVis2 protein s
 # Full conservation (GOPHER + phastCons)
 nextflow run main.nf --project test_one_protein --data local --machine laptop --target_gene RAF1 \
     --gopher_conservation_table /path/to/conservation_table.tsv \
-    --phastcons_dir /dlab/home/norbi/data/phastcons/ \
+    --phastcons_dir /path/to/phastcons/ \
     -resume
 
 # GOPHER only (no phastCons bigWigs available)
@@ -181,7 +181,7 @@ nextflow run main.nf --project test_one_protein --data local --machine laptop --
 
 # phastCons only (no GOPHER pre-computation)
 nextflow run main.nf --project test_one_protein --data local --machine laptop --target_gene RAF1 \
-    --phastcons_dir /dlab/home/norbi/data/phastcons/ \
+    --phastcons_dir /path/to/phastcons/ \
     -resume
 # (GOPHER is automatically skipped when gopher_conservation_table is not set)
 

@@ -8,13 +8,13 @@ Two complementary conservation signals are computed: GOPHER trident scores acros
 
 ### GOPHER conservation
 
-- **File:** `params.gopher_conservation_table` (default: `/dlab/home/norbi/data/Gopher/DisCanVis2/quefo/HUMAN/conservation/conservation_table.tsv`)
+- **File:** `params.gopher_conservation_table` (no default — point it at your pre-computed GOPHER conservation table; GOPHER is skipped when unset)
 - **Method:** GOPHER trident algorithm applied to seven taxonomic levels
 - **Taxonomic levels:** global, Mammalia, Vertebrata, Eukaryota, Eumetazoa, Opisthokonta, Viridiplantae
 
 ### phastCons 100-vertebrate
 
-- **Directory:** `params.phastcons_dir` (default: `/dlab/home/norbi/data/phastcons/`, contains `chr*.bw` files)
+- **Directory:** `params.phastcons_dir` (no default — a directory of per-chromosome `chr*.bw` files; phastCons is skipped when unset)
 - **Format:** UCSC bigWig files, one per chromosome
 - **Tool required:** `bigWigToBedGraph` in PATH (installed via conda UCSC tools)
 - **Coordinate source:** Genomic positions from `combined_map.map` (requires Module 3 to have run)

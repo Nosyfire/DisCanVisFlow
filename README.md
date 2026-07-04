@@ -1,16 +1,16 @@
 # DisCanVisFlow — Disease & Disorder Annotation for Human Protein Isoforms
 
-> A Nextflow DSL2 pipeline that maps disease variants, functional annotations, and structural features onto every curated protein isoform in the human SwissProt proteome. Designed to power the DisCanVis2 web server, but fully usable as a standalone data-generation pipeline for proteomics, structural biology, or ML feature pipelines.
+> A Nextflow DSL2 pipeline that maps disease variants, functional annotations, and structural features onto every curated protein isoform in the human SwissProt proteome. Built to power the DisCanVis2 web server, but fully usable as a standalone data-generation pipeline for proteomics, structural biology, or ML feature pipelines.
 
 ---
 
 ## What it does
 
-For each human protein (UniProt SwissProt × GENCODE):
+For each human protein (UniProt SwissProt × GENCODE), the pipeline:
 
 1. **Maps each GENCODE transcript to its best UniProt isoform** via reciprocal BLASTP
-2. **Builds a per-residue coordinate map** (protein pos ↔ codon ↔ hg38 position) via BLAT
-3. **Runs 20+ annotation modules** — all DB-ready, Protein_ID-keyed TSVs:
+2. **Builds a per-residue coordinate map** (protein position ↔ codon ↔ hg38 position) via BLAT
+3. **Runs 20+ annotation modules**, producing DB-ready, `Protein_ID`-keyed TSVs:
 
 | Category | Annotations |
 |----------|-------------|
@@ -19,16 +19,14 @@ For each human protein (UniProt SwissProt × GENCODE):
 | SLiMs & PTMs | ELM motifs, DIBS, MFIB, PhasePro, PTMdb, PhosphoSite, Pfam domains, UniProt ROI/binding |
 | Structure | PDB coverage, unobserved regions, RSA scores |
 | Polymorphism | dbSNP 155 common SNPs + allele frequencies |
-| Pathogenicity | dbNSFP (raw chr*.gz or pre-mapped), AlphaMissense, MaveDB, ProteinGym |
+| Pathogenicity | dbNSFP, AlphaMissense, MaveDB, ProteinGym |
 | Disease | ClinVar disease ontology (MONDO), OMIM disease + mutations |
 | Interactions | IntAct, BioGRID, HIPPIE |
 | Gene function | GO terms (GOA), ScanSite phospho motifs, PEM core motifs |
 | Conservation | GOPHER multi-level, phastCons per-residue |
 | Cancer | CGC census, Compendium, DepMap somatic mutations |
 
-All outputs use `Protein_ID` (GENCODE transcript name, e.g. `RAF1-201`) as the primary key and land in `results/<project>/final/`.
-
-### Pipeline flow
+All outputs use `Protein_ID` (the GENCODE transcript name, e.g. `RAF1-201`) as the primary key and land in `results/<project>/final/`.
 
 ```mermaid
 flowchart LR
@@ -37,313 +35,41 @@ flowchart LR
     ANN --> OUT["TRANSCRIPT_MAP → final/ TSVs<br/>+ MAPPING_REPORT"]
 ```
 
-The full process-level DAG, module tables, and design decisions live in
-**[docs/architecture.md](docs/architecture.md)**.
+The full process-level DAG, module tables, and design decisions are in
+[docs/architecture.md](docs/architecture.md).
 
 ---
 
 ## Quick start
 
-### 1. Clone and create conda environment
+**1. Install** (conda; see [Installation](docs/installation.md) for local references and disorder predictors):
 
 ```bash
 git clone https://github.com/Nosyfire/DisCanVisFlow
 cd DisCanVisFlow
-
 conda env create -f environment.yml
 conda activate discanvis
 ```
 
-### 2. Run a single-gene test
-
-> **Tip:** Nextflow caches pipeline revisions locally. Add `-latest` after updates or on a fresh machine.
-
-```bash
-# All annotation tracks — downloads all references automatically on first run
-nextflow run Nosyfire/DisCanVisFlow -latest \
-    --project test_one_protein \
-    --machine medium \
-    --target_gene RAF1 \
-    -resume
-
-# Focused: ClinVar + cBioPortal mutations, AIUPred disorder, ELM only
-nextflow run Nosyfire/DisCanVisFlow -latest \
-    --project test_one_protein \
-    --machine medium \
-    --target_gene RAF1 \
-    --modules mutations,disorder \
-    --skip_iupred true \
-    -resume
-```
-
-That's it — no `--data` or `--fetch_cbioportal` needed. See [Configuration guide](docs/configuration_guide.md) for what they mean and when to change them.
-
-### 3. Validate the DAG without running
+**2. Run one gene.** In the default (portable) mode, all open references download
+automatically on first run:
 
 ```bash
-nextflow run Nosyfire/DisCanVisFlow -latest --project test_one_protein --target_gene RAF1 -stub
+nextflow run main.nf --project test_one_protein --machine medium --target_gene RAF1 -resume
 ```
 
----
-
-## New machine setup
-
-> See [docs/configuration_guide.md](docs/configuration_guide.md) for a full explanation of all flags (`--data`, `--machine`, `--modules`, `--fetch_cbioportal`, skip flags) and per-process resource benchmarks.
-
-### Option A — Portable (default, no config needed)
-
-References download automatically on first run and are re-used via `storeDir` in `references/`.
-No config editing required — just pick the right `--machine` for your hardware. Disorder
-predictors and external programs must still be set up (see below).
+**3. Run the full proteome:**
 
 ```bash
-nextflow run main.nf --project discanvis --data discanvis_data --machine hard -resume
+nextflow run main.nf --project discanvis --machine hard -resume
 ```
 
-### Option B — Local paths (`--data local`)
-
-Use pre-existing local files to avoid downloading large references. Copy the template and fill in your paths:
-
-```bash
-cp config/data/local.config.template config/data/local.config
-```
-
-Then edit `config/data/local.config` with your machine's actual file paths for:
-- UniProt FASTA, GENCODE FASTA/GTF
-- hg38.2bit (for genome/mutation/polymorphism mapping)
-- External_Programs directory (IUPred3, AIUPred, etc.)
-- Optional: AlphaMissense, MaveDB, ProteinGym, DepMap, dbNSFP paths
-
-> **Important**: `config/data/local.config` is machine-specific and is NOT committed to git. It is listed in `.gitignore`. Every collaborator maintains their own.
-
----
-
-## External programs (disorder predictors)
-
-Disorder prediction requires libraries not in conda. Run the setup script once per machine:
-
-```bash
-bash bin/setup_external_programs.sh
-```
-
-This clones AIUPred from GitHub, creates `discanvis_aiupred` and `discanvis_deepcoil` conda environments, and installs `bigBedToBed`. With `--data discanvis_data`, the `SETUP_DEPS` Nextflow process handles this automatically on first run.
-
-### Manual setup
-
-| Tool | Required | Setup |
-|------|----------|-------|
-| **IUPred3 / ANCHOR2** | For IUPred/ANCHOR scores | Register at [iupred2a.elte.hu/download](https://iupred2a.elte.hu/download) → extract into `External_Programs/iupred3/` |
-| **AIUPred disorder** | For AIUPred scores | Cloned by `setup_external_programs.sh` → `External_Programs/aiupred-caid3/` |
-| **AIUPred-Binding** | For binding-region scores | Cloned by `setup_external_programs.sh` → `External_Programs/AIUPred/` |
-| **DeepCoil** | For coiled-coil predictions | Set `deepcoil_python` in local.config; skip with `--skip_coiledcoils true` on CUDA 12+ hardware |
-| **bigBedToBed** | For polymorphism (dbSNP bigBed) | Installed via `bioconda::ucsc-bigbedtobed` in `environment.yml` — available automatically |
-| **bigWigToBedGraph** | For phastCons conservation | Installed via `bioconda::ucsc-bigwigtobedgraph` in `environment.yml` — available automatically |
-
-If a disorder predictor is unavailable, the scores for that predictor will be empty (the pipeline does not crash). Set `--skip_iupred true`, `--skip_aiupred true`, or `--skip_coiledcoils true` to explicitly skip.
-
-### Python paths in local.config
-
-When using `--data local`, specify the Python binary for each predictor:
-
-```groovy
-// config/data/local.config
-params {
-    ext_programs    = '/path/to/External_Programs'
-    aiupred_python  = '/path/to/envs/aiupred/bin/python'     // has scipy + torch
-    deepcoil_python = '/path/to/envs/discanvis_deepcoil/bin/python'
-}
-```
-
-`bigWigToBedGraph` is found automatically via the conda env (installed as `ucsc-bigwigtobedgraph` from bioconda). No path override needed.
-
-With `--data discanvis_data`, the `SETUP_DEPS` process auto-detects and writes the Python paths.
-
----
-
-## Project derivation model
-
-The canonical starting point is always **raw data + a full pipeline run**. Secondary projects (subsets, alternative views) are **derived** from the primary run — not re-run separately.
-
-### Primary run: `discanvis`
-
-Runs the full pipeline on the complete human proteome:
-
-```bash
-nextflow run main.nf --project discanvis --data local --machine hard -resume
-```
-
-Produces `results/discanvis/final/` with all annotation TSVs (~70 files, full proteome).
-
-### Derived projects (no re-computation)
-
-After `discanvis` completes, run one script to produce all derived directories:
-
-```bash
-bash bin/derive_projects_from_discanvis.sh
-# or specify source:
-bash bin/derive_projects_from_discanvis.sh results/discanvis
-```
-
-This generates:
-
-| Project | Method | Output |
-|---------|--------|--------|
-| `vep_benchmarking` | `rsync` full copy | `results/vep_benchmarking/` |
-| `cellular_vulnerability` | Selective full-proteome copy: annotations, sequence, drivers, dbnsfp, combined disorder, alphamissense, DepMap mutations | `results/cellular_vulnerability/` |
-| `test_subset` | 5-gene extraction (TP53, RAF1, BRAF, KRAS, EGFR) | `results/test_subset/` |
-| `raf1_example` | Single-gene extraction | `results/raf1_example/` |
-
-Extraction uses `bin/extract_gene_from_results.py`, which filters all TSVs by `Protein_ID` prefix:
-
-```bash
-# Custom extraction
-python bin/extract_gene_from_results.py \
-    --source results/discanvis \
-    --gene   RAF1,BRAF,KRAS \
-    --out    results/kinase_subset
-
-# From gene list file (custom subset example)
-python bin/extract_gene_from_results.py \
-    --source results/discanvis \
-    --gene_list_file config/gene_lists/my_genes.txt \
-    --out    results/my_gene_subset
-```
-
-### When to re-run the pipeline vs. re-derive
-
-| Scenario | Action |
-|----------|--------|
-| Add a new annotation track | Re-run `discanvis` with `-resume` → re-derive |
-| Update a reference dataset (e.g. new ClinVar) | `bin/refresh_refs.sh clinvar` → re-run with `-resume` → re-derive |
-| Add a new gene to cellular_vulnerability | Re-derive from existing discanvis (no pipeline re-run) |
-| Update disorder predictors (new IUPred version) | Re-run `discanvis --skip_alphafold true --alphafold_precomputed_table results/discanvis/final/disorder/AlphaFoldTable.tsv -resume` → re-derive |
-
----
-
-## Common run commands
-
-### Single-gene test
-
-```bash
-nextflow run main.nf --project test_one_protein --data local --machine hard --target_gene RAF1 -resume
-```
-
-### Include only specific annotation modules (`--modules`)
-
-Use `--modules` with a comma-separated list of module names to run only what you need.
-When `--modules` is set, the backbone (BLAST, ID mapping, sequence processing, ANNOTATION_MAP)
-always runs; only the named optional modules are added on top.
-
-Available module names: `mutations`, `disorder`, `mobidb`, `pdb`, `go`, `polymorphism`,
-`pem`, `coiledcoils`, `ppi`, `conservation`, `scansite`, `clinvar_disease`, `omim`,
-`cancer_drivers`, `alphamissense`, `depmap`, `mavedb`, `proteingym`, `dbnsfp`, `finches`
-
-```bash
-# cBioPortal + ClinVar mutations + AIUPred disorder/binding + ELM (for RAF1)
-# --fetch_cbioportal without --cbioportal_study uses the public API (no study ID needed)
-nextflow run main.nf --project test_one_protein --data local --machine hard --target_gene RAF1 \
-    --modules mutations,disorder \
-    --fetch_cbioportal true \
-    --skip_iupred true \
-    -resume
-
-# Disorder + PDB unobserved regions only
-nextflow run main.nf --project test_one_protein --data local --machine hard --target_gene TP53 \
-    --modules disorder,pdb \
-    -resume
-
-# Mutations + GO terms + PPI
-nextflow run main.nf --project test_one_protein --data local --machine hard --target_gene EGFR \
-    --modules mutations,go,ppi \
-    -resume
-```
-
-To skip individual predictors *within* a module (e.g. skip IUPred3 but keep AIUPred):
-
-```bash
-nextflow run main.nf --project test_one_protein --data local --machine hard --target_gene RAF1 \
-    --skip_alphafold true --skip_iupred true -resume
-```
-
-### Re-run disorder only (with pre-computed pLDDT from a prior run)
-
-```bash
-nextflow run main.nf --project discanvis --data local --machine hard \
-    --alphafold_precomputed_table results/discanvis/final/disorder/AlphaFoldTable.tsv \
-    --skip_alphafold true \
-    -resume
-```
-
-This avoids re-fetching AlphaFold from the EBI API (~8 hours for full proteome) while recomputing IUPred/AIUPred.
-
-### Custom VCF / MAF mutations
-
-```bash
-# ClinVar VCF override
-nextflow run main.nf --project test_one_protein --data local --machine hard --target_gene TP53 \
-    --clinvar_vcf /path/to/clinvar.vcf.gz -resume
-
-# TCGA MAF
-nextflow run main.nf --project test_one_protein --data local --machine hard --target_gene TP53 \
-    --mutation_maf /path/to/tcga.maf --mutation_source TCGA -resume
-
-# Custom VCF
-nextflow run main.nf --project test_one_protein --data local --machine hard --target_gene TP53 \
-    --mutation_vcf /path/to/variants.vcf.gz --mutation_source MyStudy -resume
-```
-
-Note: `--clinvar_vcf`, `--mutation_maf`, and `--mutation_vcf` are mutually exclusive.
-
-### Gene list from file
-
-```bash
-nextflow run main.nf --project discanvis --data local --machine hard \
-    --gene_list_file config/gene_lists/my_genes.txt -resume
-```
-
-### SLURM cluster
-
-```bash
-nextflow run main.nf --project discanvis --data local --machine slurm \
-    --description "Full proteome — $(date +%Y-%m)" -resume
-```
-
-### Docker
-
-```bash
-docker build -t discanvis-pipeline:latest .
-nextflow run main.nf --project test_one_protein --data local --machine hard --env docker \
-    --target_gene RAF1 -resume
-```
-
----
-
-## Reference data management
-
-### List cached references
-
-```bash
-bin/refresh_refs.sh
-python bin/generate_manifest.py --no_checksum   # writes references/MANIFEST.tsv
-```
-
-### Force re-download
-
-```bash
-bin/refresh_refs.sh clinvar             # ClinVar only
-bin/refresh_refs.sh clinvar mobidb go   # multiple
-bin/refresh_refs.sh all                  # everything except hg38/dbsnp/alphafold
-bin/refresh_refs.sh --force all          # truly everything
-```
-
-Then `-resume` — only deleted files re-download.
-
-### Two data modes
-
-| Mode | Behavior | When to use |
-|------|----------|-------------|
-| `--data discanvis_data` | Downloads open references on demand | New machine, CI, portable |
-| `--data local` | Reads pre-existing paths from `config/data/local.config` | Reproducibility with frozen snapshots |
+Outputs land in `results/<project>/final/`. To validate the workflow graph
+without computing anything, add `-stub`.
+
+That is the happy path. Everything else — other machines, module selection,
+mutation inputs (MAF/VCF), gene lists, SLURM, Docker, and every flag — is in the
+[Configuration guide](docs/configuration_guide.md).
 
 ---
 
@@ -356,235 +82,33 @@ results/<project>/
 │                        pdb/ disease/ drivers/ conservation/ position/ sequence/
 ├── intermediate/        Entry_Isoform-keyed staging TSVs (input to TRANSCRIPT_MAP)
 └── mapping_reports/     mapping_summary.md · release.json · mapping_coverage.tsv
-
-work/<data>/             Nextflow task cache (per --data flag)
-references/              storeDir-cached downloads (shared across all runs)
 ```
 
 The full per-file breakdown of `final/` is in
 [docs/architecture.md § Outputs](docs/architecture.md#outputs-resultsproject).
-
-**Cross-project cache sharing**: Two projects using the same `--data` flag share `work/<data>/`. Nextflow `-resume` automatically reuses tasks whose inputs are unchanged — so `cellular_vulnerability` and `discanvis` (both `--data local`) share BLAST, genome mapping, and reference downloads.
-
----
-
-## Running tests
-
-```bash
-conda activate discanvis
-
-# All tests
-pytest tests/ -v
-
-# Single module
-pytest tests/test_create_disorder_worker.py -v
-
-# Specific test function
-pytest tests/test_create_mutation_map_worker.py::TestMissenseFilter -v
-```
-
-Tests call `bin/*.py` scripts as subprocesses with dummy data in `tests/dummy_data/`. No Nextflow required.
-
----
-
-## Architecture: modular design
-
-Every computation step is a standalone Python worker in `bin/`:
-
-```
-bin/create_disorder_worker.py      # IUPred3, AIUPred, AlphaFold pLDDT
-bin/create_annotation_worker.py    # ELM, DIBS, MFIB, PTM, Pfam
-bin/create_mutation_map_worker.py  # ClinVar/MAF/VCF → protein positions
-bin/create_transcript_map_worker.py # UniProt-keyed → all isoforms
-...
-```
-
-Each `bin/*.py` has `argparse` and can be called directly for debugging:
-
-```bash
-# Debug a single protein
-python bin/create_disorder_worker.py \
-    --loc_chrom results/discanvis/final/sequence/loc_chrom_with_names_isoforms_with_seq.tsv \
-    --ext_programs /path/to/External_Programs \
-    --aiupred_python /opt/anaconda3/envs/aiupred/bin/python \
-    --output_dir /tmp/test_disorder \
-    --skip_alphafold
-```
-
-Nextflow acts purely as orchestrator: it handles caching, parallelism, and data flow. The workers are tested independently via `pytest tests/`.
-
-The complete module → process → worker → output mapping is in
-[docs/architecture.md](docs/architecture.md#modules).
-
----
-
-## Annotation sources — per-release update cadence
-
-| Source | Origin | Update method | Freeze / always-current |
-|--------|--------|---------------|------------------------|
-| UniProt SwissProt | [ftp.uniprot.org](https://ftp.uniprot.org/pub/databases/uniprot/current_release/) | `bin/refresh_refs.sh uniprot` | Frozen in `local.config`; release captured in `release.json` |
-| GENCODE | [gencodegenes.org](https://www.gencodegenes.org/human/) | `bin/refresh_refs.sh gencode` | Pinned to v44 by default |
-| ClinVar | [NCBI ClinVar FTP](https://ftp.ncbi.nlm.nih.gov/pub/clinvar/) | `bin/refresh_refs.sh clinvar` | Always-current via FETCH_CLINVAR |
-| GO (GOA + OBO) | [geneontology.org](http://geneontology.org/) | `bin/refresh_refs.sh go` | Always-current via FETCH_GO |
-| MobiDB | [mobidb.org](https://mobidb.org/) | `bin/refresh_refs.sh mobidb` | Always-current via FETCH_MOBIDB |
-| ELM instances | [elm.eu.org](http://elm.eu.org/) | `legacy_data/elm/elm_instances-2023.tsv` | Frozen 2023 snapshot |
-| dbSNP bigBed | [UCSC dbSnp155Common](https://hgdownload.soe.ucsc.edu/gbdb/hg38/snp/) | manual — see `bin/refresh_refs.sh dbsnp` | Large; rarely updated |
-| AlphaMissense | [Zenodo 8208688](https://zenodo.org/records/8208688) | `bin/refresh_refs.sh alphamissense` | v2023 frozen |
-| dbNSFP | [dbNSFP](https://www.dbnsfp.org/) | `--dbnsfp_raw_dir` or `--dbnsfp_tsv` | External; update manually |
-| PPI (IntAct/BioGRID/HIPPIE) | [IntAct](https://www.ebi.ac.uk/intact/) · [BioGRID](https://thebiogrid.org/) · [HIPPIE](http://cbdm-01.zdv.uni-mainz.de/~mschaefer/hippie/) | `FETCH_INTACT/BIOGRID/HIPPIE + PPI_PREPROCESS` | Auto on first run |
-
-The exact reference versions and entry counts used by any completed run are
-recorded in `results/<project>/mapping_reports/release.json` and the
-"Data source versions" / "Input scale" sections of `mapping_summary.md`.
-
----
-
-## Configuration layout
-
-```
-config/
-├── projects/
-│   ├── discanvis.config            Full proteome — all annotation tracks
-│   ├── cellular_vulnerability.config  Turbine ML features subset
-│   ├── vep_benchmarking.config     VEP benchmark set
-│   ├── test_one_protein.config     Single-gene smoke test
-│   └── test_subset.config          Multi-gene regression (5 genes)
-├── machines/
-│   ├── hard.config                 Large server (64+ CPUs, 1+ TB RAM)
-│   ├── medium.config               Workstation (64 GB / 16 CPUs)
-│   ├── low.config                  Low-RAM node (32 GB / 6 CPUs)
-│   ├── laptop.config               Memory-safe, 8 GB limit
-│   └── slurm.config                SLURM cluster
-├── data/
-│   ├── local.config                Machine-specific paths (NOT in git)
-│   ├── local.config.template       Template — copy and fill in paths
-│   └── discanvis_data.config       Portable; auto-downloads references
-└── envs/
-    ├── conda.config
-    └── docker.config
-```
-
-Every flag, axis, project, and machine is documented in
-[docs/configuration_guide.md](docs/configuration_guide.md).
+The meaning of every annotation column/track is documented per track under
+[docs/annotations/](docs/annotations/README.md).
 
 ---
 
 ## Documentation
 
-| Topic | Document |
-|-------|----------|
-| Architecture — DAG, modules, workers, design decisions, output tree | [docs/architecture.md](docs/architecture.md) |
-| Configuration — all four axes, projects, machines, `--modules`, skip flags | [docs/configuration_guide.md](docs/configuration_guide.md) |
-| Isoform mapping — BLAST, identity table, annotation transfer | [docs/isoform_mapping.md](docs/isoform_mapping.md) |
-| Conservation scores — GOPHER + phastCons | [docs/conservation_calculation.md](docs/conservation_calculation.md) |
-| Performance benchmark — per-process timing & bottlenecks | [docs/performance_benchmark.md](docs/performance_benchmark.md) |
-| Per-annotation reference — one page per track | [docs/annotations/](docs/annotations/README.md) |
-| Citations, licenses, data-use agreements | [CITATIONS.md](CITATIONS.md) |
-
----
-
-## Troubleshooting
-
-### Nextflow can't find Java / `Cannot find java` on launch
-
-**Cause**: Nextflow needs a Java 11–21 runtime on `PATH`. In non-interactive
-shells (cron, `ssh host 'cmd'`, CI, `nohup`) the conda `activate` hook that puts
-Java on `PATH` often doesn't run, so `nextflow run ...` fails immediately.
-
-**Fix**: point Nextflow at the JVM inside the `discanvis` conda env explicitly:
-
-```bash
-conda activate discanvis
-export JAVA_CMD="$CONDA_PREFIX/bin/java"
-export JAVA_HOME="$CONDA_PREFIX"
-export PATH="$CONDA_PREFIX/bin:$PATH"
-nextflow run main.nf --project test_one_protein --data local --machine hard --target_gene RAF1 -resume
-```
-
-Interactive sessions that ran `conda activate discanvis` normally already have
-this — the export lines only matter for detached / scripted runs.
-
-### IUPredscores / AIUPredscores are empty (header only)
-
-**Cause**: `aiupred_python` points to a non-existent or wrong Python binary.
-
-**Fix**:
-1. Verify the correct env: `conda run -n aiupred python -c "import iupred3_lib; print('OK')"`
-2. Set it in `local.config`: `aiupred_python = '/opt/anaconda3/envs/aiupred/bin/python'`
-3. Delete the cached work dirs for DISORDER_MAP (Nextflow cached the wrong results):
-   ```bash
-   find work/local -name ".command.sh" | xargs grep -l "create_disorder_worker" | \
-       xargs -I{} dirname {} | xargs rm -rf
-   ```
-4. Re-run with `-resume`.
-
-### coiled_coils.tsv is empty
-
-Same root cause as above but for DeepCoil. Set `deepcoil_python` in `local.config`.
-
-### pfam_domains.tsv is empty
-
-**Cause**: `parse_uniprot_dat_worker.py` had wrong column indices for `protein2ipr.dat.gz`.
-**Fix**: Already fixed in this codebase (commit `7fdfb24`). Delete the storeDir cache and re-run:
-```bash
-rm references/uniprot_parsed/pfam_domains.tsv
-nextflow run main.nf ... -resume
-```
-
-### conservation_phastcons.tsv is empty
-
-**Cause**: `bigWigToBedGraph` not in PATH.
-**Fix**: Install from bioconda (already in `environment.yml`):
-```bash
-conda install -n discanvis -c bioconda ucsc-bigwigtobedgraph
-```
-Or if not using conda, set the full path in `local.config`: `bigwigtobedgraph = '/path/to/bigWigToBedGraph'`.
-
-### Nextflow caches a task with wrong results
-
-If a task produced an incorrect output (e.g. empty file) but exit code was 0, Nextflow `-resume` will not re-run it even after fixing the code.
-
-**Fix**: Delete the specific work dir so Nextflow re-runs it:
-```bash
-# Find work dirs for a specific process
-find work/local -name ".command.sh" | xargs grep -l "create_disorder_worker" | \
-    xargs -I{} dirname {}
-# Delete them
-rm -rf work/local/XX/YYYYYYYY...
-```
-
-Then re-run with `-resume`.
-
-### storeDir file is 0 bytes (failed download)
-
-```bash
-find references/ -empty -name "*.tsv" -o -empty -name "*.gz"
-rm <empty-file>
-nextflow run main.nf ... -resume
-```
-
----
-
-## Performance notes
-
-Benchmarks on `gpu0.dlab.elte.hu` (64 CPUs, 1.4 TB RAM):
-
-| Task | Time |
-|------|------|
-| Single gene (RAF1), all tracks | ~4 min |
-| Full proteome (~20k genes), all tracks | ~24 h |
-| BLAST (full proteome) | ~2 h |
-| DISORDER_MAP (20 chunks, iupred+aiupred+alphafold) | ~8 h |
-| DBNSFP_MAP (raw chr*.gz, 20 chunks) | ~3 h |
-
-Key tips:
-- Always use `--pdb_bulk true` (SIFTS join, ~10 min vs. 9 h for per-protein API)
-- Use `--dbnsfp_tsv` (pre-mapped) instead of `--dbnsfp_raw_dir` for development runs
-- Set `scatter_chunks=20` to parallelize DISORDER_MAP, DBNSFP_MAP, COILEDCOILS_MAP
-- AlphaFold re-fetch takes ~25 min per chunk; use `--alphafold_precomputed_table` to skip if already done
+| I want to… | Read |
+|------------|------|
+| Install it & set up references / predictors | [docs/installation.md](docs/installation.md) |
+| See every flag, project, machine, and run recipe | [docs/configuration_guide.md](docs/configuration_guide.md) |
+| Understand the pipeline structure (DAG, modules, outputs) | [docs/architecture.md](docs/architecture.md) |
+| Know what an annotation column/track means | [docs/annotations/](docs/annotations/README.md) |
+| Understand isoform mapping & annotation transfer | [docs/isoform_mapping.md](docs/isoform_mapping.md) |
+| Understand conservation scores (GOPHER + phastCons) | [docs/conservation_calculation.md](docs/conservation_calculation.md) |
+| Know where reference data comes from & how to refresh it | [docs/reference_data.md](docs/reference_data.md) |
+| Estimate runtime & tune performance | [docs/performance.md](docs/performance.md) |
+| Fix a failing or empty-output run | [docs/troubleshooting.md](docs/troubleshooting.md) |
+| Cite the tools & databases | [CITATIONS.md](CITATIONS.md) |
 
 ---
 
 ## Citation
 
-If you use this pipeline, please cite the tools and databases listed in `CITATIONS.md`.
+If you use this pipeline, please cite the tools and databases listed in
+[CITATIONS.md](CITATIONS.md).

@@ -8,12 +8,10 @@ ClinVar mutations are disease-associated variants from NCBI ClinVar, mapped from
 
 - **Auto-download:** NCBI FTP (`ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/clinvar.vcf.gz`), cached via `storeDir` in `references/clinvar/`
 - **Local override:** `--clinvar_vcf /path/to/clinvar.vcf.gz` skips the download
-- **Real file location on this machine:** `/dlab/home/norbi/PycharmProjects/DisCanVis_Automated_Pipeline/data/raw/mutations/clinvar/v_2026_03_09/clinvar.vcf.gz`
-- **VCF version used in testing:** 2026-03-09
 
 ## Output files
 
-Under `results/{gene_dir}/mutations/ClinVar/`:
+Under `results/<project>/final/mutations/ClinVar/`:
 
 | File | Mutation type |
 |------|--------------|

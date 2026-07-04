@@ -200,13 +200,13 @@ With `blat_chunks=1` (enforced by `test_one_protein`), the peak footprint is ~6 
 
 ## Common flag combinations
 
-```bash
-# Fresh machine, single gene, all tracks
-nextflow run Nosyfire/DisCanVisFlow -latest \
-    --project test_one_protein --machine medium --target_gene RAF1 -resume
+The basic single-gene and full-proteome commands are in the
+[README quick start](../README.md#quick-start). The combinations below show the
+non-trivial variations.
 
+```bash
 # Fast focused run: only disorder + mutations (no PDB, GO, conservation, PPI...)
-nextflow run Nosyfire/DisCanVisFlow -latest \
+nextflow run main.nf \
     --project test_one_protein --machine medium --target_gene RAF1 \
     --modules mutations,disorder --skip_iupred true -resume
 
@@ -222,4 +222,141 @@ nextflow run main.nf \
 # Validate pipeline wiring without running anything
 nextflow run Nosyfire/DisCanVisFlow -latest \
     --project test_one_protein --target_gene RAF1 -stub
+```
+
+---
+
+## Mutation inputs (ClinVar / MAF / VCF)
+
+The `mutations` module accepts one mutation source. `--clinvar_vcf`,
+`--mutation_maf`, and `--mutation_vcf` are **mutually exclusive**.
+
+```bash
+# ClinVar VCF override (instead of the auto-downloaded ClinVar)
+nextflow run main.nf --project test_one_protein --machine hard --target_gene TP53 \
+    --clinvar_vcf /path/to/clinvar.vcf.gz -resume
+
+# TCGA / cBioPortal MAF
+nextflow run main.nf --project test_one_protein --machine hard --target_gene TP53 \
+    --mutation_maf /path/to/tcga.maf --mutation_source TCGA -resume
+
+# Custom VCF
+nextflow run main.nf --project test_one_protein --machine hard --target_gene TP53 \
+    --mutation_vcf /path/to/variants.vcf.gz --mutation_source MyStudy -resume
+```
+
+For cBioPortal somatic mutations, see
+[`--fetch_cbioportal`](#--fetch_cbioportal--somatic-mutations-from-cbioportal) above.
+
+---
+
+## Re-running disorder with pre-computed AlphaFold
+
+Fetching AlphaFold pLDDT from the EBI API is the slow part of `DISORDER_MAP`
+(~8 h for the full proteome). Reuse a prior run's scores to recompute
+IUPred/AIUPred without re-fetching:
+
+```bash
+nextflow run main.nf --project discanvis --machine hard \
+    --alphafold_precomputed_table results/discanvis/final/disorder/AlphaFoldTable.tsv \
+    --skip_alphafold true \
+    -resume
+```
+
+---
+
+## Projects: primary run and derived projects
+
+The canonical starting point is always **raw data + one full pipeline run**.
+Secondary projects (subsets, alternative views) are **derived** from that run —
+not computed separately.
+
+### Primary run
+
+```bash
+nextflow run main.nf --project discanvis --machine hard -resume
+```
+
+Produces `results/discanvis/final/` with every annotation TSV for the full
+proteome.
+
+### Derived projects (no re-computation)
+
+After `discanvis` completes, one script produces all derived directories:
+
+```bash
+bash bin/derive_projects_from_discanvis.sh            # default source: results/discanvis
+bash bin/derive_projects_from_discanvis.sh results/discanvis
+```
+
+| Project | Method | Output |
+|---------|--------|--------|
+| `vep_benchmarking` | full copy | `results/vep_benchmarking/` |
+| `cellular_vulnerability` | selective full-proteome copy (annotations, sequence, drivers, dbnsfp, combined disorder, alphamissense, DepMap) | `results/cellular_vulnerability/` |
+| `test_subset` | 5-gene extraction (TP53, RAF1, BRAF, KRAS, EGFR) | `results/test_subset/` |
+
+Ad-hoc extraction of any gene set from a completed run (filters all TSVs by
+`Protein_ID` prefix — no pipeline re-run):
+
+```bash
+python bin/extract_gene_from_results.py \
+    --source results/discanvis --gene RAF1,BRAF,KRAS --out results/kinase_subset
+
+python bin/extract_gene_from_results.py \
+    --source results/discanvis --gene_list_file config/gene_lists/my_genes.txt \
+    --out results/my_gene_subset
+```
+
+### Re-run vs. re-derive
+
+| Scenario | Action |
+|----------|--------|
+| Add a new annotation track | Re-run `discanvis` with `-resume`, then re-derive |
+| Update a reference (e.g. new ClinVar) | `bin/refresh_refs.sh clinvar`, re-run with `-resume`, then re-derive |
+| Add a gene to a derived subset | Re-derive from existing `discanvis` (no pipeline re-run) |
+
+---
+
+## SLURM cluster
+
+```bash
+nextflow run main.nf --project discanvis --machine slurm \
+    --description "Full proteome — $(date +%Y-%m)" -resume
+```
+
+---
+
+## Docker
+
+```bash
+docker build -t discanvis-pipeline:latest .
+nextflow run main.nf --project test_one_protein --machine hard --env docker \
+    --target_gene RAF1 -resume
+```
+
+---
+
+## Configuration file layout
+
+```
+config/
+├── projects/
+│   ├── discanvis.config              Full proteome — all annotation tracks
+│   ├── cellular_vulnerability.config Turbine ML features subset
+│   ├── vep_benchmarking.config       VEP benchmark set
+│   ├── test_one_protein.config       Single-gene smoke test
+│   └── test_subset.config            Multi-gene regression (5 genes)
+├── machines/
+│   ├── hard.config                   Large server (64+ CPUs)
+│   ├── medium.config                 Workstation (64 GB / 16 CPUs)
+│   ├── low.config                    Low-RAM node (32 GB / 6 CPUs)
+│   ├── laptop.config                 Memory-safe, 8 GB limit
+│   └── slurm.config                  SLURM cluster
+├── data/
+│   ├── local.config                  Machine-specific paths (NOT in git)
+│   ├── local.config.template         Template — copy and fill in paths
+│   └── discanvis_data.config         Portable; auto-downloads references
+└── envs/
+    ├── conda.config
+    └── docker.config
 ```

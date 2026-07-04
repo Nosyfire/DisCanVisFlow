@@ -27,7 +27,7 @@ Before analysing data or explaining what an annotation means, read the relevant 
 | Pipeline modules, processes, output structure | `docs/architecture.md` |
 | How UniProt ↔ GENCODE isoform mapping works | `docs/isoform_mapping.md` |
 | Conservation score details (GOPHER / phastCons) | `docs/conservation_calculation.md` |
-| Performance and bottleneck notes | `docs/performance_benchmark.md` |
+| Performance and scaling notes | `docs/performance.md` |
 
 Read `references/annotations.md` whenever the user asks what an annotation means, wants to
 interpret scores, or asks about a specific track (disorder, ELM, PTM, RSA, etc.).
