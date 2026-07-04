@@ -1,6 +1,23 @@
 # Annotation Overview — DisCanVis Pipeline
 
-This index covers every annotation type produced by the pipeline. Annotations are divided into two groups based on whether they require genomic coordinates (from `combined_map.map`) or work directly on protein sequences and accessions.
+This index covers every annotation type produced by the pipeline. The tables
+below group annotations by whether they require genomic coordinates (from
+`combined_map.map`) or work directly on protein sequences.
+
+Per-track detail pages are organised into category folders that mirror the
+`final/` output directories:
+
+| Folder | Tracks |
+|--------|--------|
+| [`mutations/`](mutations/) | ClinVar, DepMap (cBioPortal / TCGA via config) |
+| [`pathogenicity/`](pathogenicity/) | AlphaMissense, dbNSFP |
+| [`disease/`](disease/) | ClinVar disease ontology, OMIM |
+| [`drivers/`](drivers/) | Cancer Gene Census, Compendium |
+| [`disorder/`](disorder/) | IUPred3, ANCHOR2, AIUPred, AlphaFold pLDDT, Combined disorder |
+| [`motifs/`](motifs/) | ELM SLiMs, PTMs, ScanSite phospho motifs |
+| [`interactions/`](interactions/) | IntAct / BioGRID / HIPPIE PPIs |
+| [`conservation/`](conservation/) | GOPHER multi-level, phastCons |
+| [`polymorphism/`](polymorphism/) | dbSNP 155 common SNPs |
 
 ---
 
@@ -32,24 +49,24 @@ These annotations operate on protein sequences and UniProt accessions. They do n
 
 | Annotation | Module | Output file | Detail |
 |------------|--------|-------------|--------|
-| ELM linear motifs | 5a | `final/annotations/elm.tsv` | [elm.md](elm.md) |
+| ELM linear motifs | 5a | `final/annotations/elm.tsv` | [elm.md](motifs/elm.md) |
 | DIBS (disordered binding sites) | 5a | `final/annotations/dibs.tsv` | |
 | MFIB (molecular function in intrinsically disordered) | 5a | `final/annotations/mfib.tsv` | |
 | PhasePro (phase-separation drivers) | 5a | `final/annotations/phasepro.tsv` | |
-| PTM sites (PTMdb + PhosphoSite) | 5a | `final/annotations/ptm_merged.tsv` | [ptm.md](ptm.md) |
+| PTM sites (PTMdb + PhosphoSite) | 5a | `final/annotations/ptm_merged.tsv` | [ptm.md](motifs/ptm.md) |
 | Pfam domains | 5a | `final/annotations/pfam_domains.tsv` | |
 | PEM Core Motifs | 5h | `final/annotations/pem_core_motifs.tsv` | |
-| ScanSite 4.0 kinase motifs | 5k | `final/annotations/scansite.tsv` | [scansite.md](scansite.md) |
-| SNP polymorphisms | 5l | `final/annotations/snp_polymorphisms.tsv` | [snp_polymorphisms.md](snp_polymorphisms.md) |
+| ScanSite 4.0 kinase motifs | 5k | `final/annotations/scansite.tsv` | [scansite.md](motifs/scansite.md) |
+| SNP polymorphisms | 5l | `final/annotations/snp_polymorphisms.tsv` | [snp_polymorphisms.md](polymorphism/polymorphism.md) |
 
 ### Disorder and structure
 
 | Annotation | Module | Output file | Detail |
 |------------|--------|-------------|--------|
-| IUPred3 disorder + ANCHOR2 binding | 5b | `final/disorder/IUPredscores.tsv`, `Anchorscores.tsv` | [disorder.md](disorder.md) |
-| AIUPred disorder + binding | 5b | `final/disorder/AIUPredscores.tsv`, `AIUPredBinding.tsv` | [disorder.md](disorder.md) |
-| AlphaFold pLDDT | 5b | `final/disorder/AlphaFoldTable.tsv` | [disorder.md](disorder.md) |
-| Combined disorder (CombinedDisorderNew) | 5b | `final/disorder/CombinedDisorderNew.tsv`, `CombinedDisorderNew_Pos.tsv` | [disorder.md](disorder.md) |
+| IUPred3 disorder + ANCHOR2 binding | 5b | `final/disorder/IUPredscores.tsv`, `Anchorscores.tsv` | [disorder.md](disorder/disorder.md) |
+| AIUPred disorder + binding | 5b | `final/disorder/AIUPredscores.tsv`, `AIUPredBinding.tsv` | [disorder.md](disorder/disorder.md) |
+| AlphaFold pLDDT | 5b | `final/disorder/AlphaFoldTable.tsv` | [disorder.md](disorder/disorder.md) |
+| Combined disorder (CombinedDisorderNew) | 5b | `final/disorder/CombinedDisorderNew.tsv`, `CombinedDisorderNew_Pos.tsv` | [disorder.md](disorder/disorder.md) |
 | PDB structures | 5c | `final/pdb/pdb_structures.tsv`, `pdb_regions.tsv`, `pdb_disorder.tsv` | |
 | Coiled coils (DeepCoil) | 5i | `final/annotations/coiled_coils.tsv`, `DeepCoil.tsv` | |
 
@@ -59,25 +76,25 @@ These annotations operate on protein sequences and UniProt accessions. They do n
 |------------|--------|-------------|--------|
 | GO terms | 5f | `final/annotations/go_terms.tsv` | |
 | UniProt natural variants (polymorphism) | 5g | `final/annotations/polymorphism.tsv` | |
-| Protein-protein interactions (PPI) | 5j | `final/annotations/interactions.tsv` | [ppi.md](ppi.md) |
+| Protein-protein interactions (PPI) | 5j | `final/annotations/interactions.tsv` | [ppi.md](interactions/ppi.md) |
 
 ### Conservation
 
 | Annotation | Module | Output file | Detail |
 |------------|--------|-------------|--------|
-| GOPHER 7-level conservation | 7 | `final/conservation/conservation_multiple_level.tsv` | [conservation.md](conservation.md) |
-| phastCons (also genome-level) | 7 | `final/conservation/conservation_phastcons.tsv` | [conservation.md](conservation.md) |
+| GOPHER 7-level conservation | 7 | `final/conservation/conservation_multiple_level.tsv` | [conservation.md](conservation/conservation.md) |
+| phastCons (also genome-level) | 7 | `final/conservation/conservation_phastcons.tsv` | [conservation.md](conservation/conservation.md) |
 
 ### Pathogenicity and disease
 
 | Annotation | Module | Output file | Detail |
 |------------|--------|-------------|--------|
-| AlphaMissense (GENCODE isoforms) | 8d | `final/annotations/alphamissense.tsv` | [alphamissense.md](alphamissense.md) |
-| dbNSFP pathogenicity scores | 8f | `final/annotations/pathogenicity_scores.tsv` | [pathogenicity.md](pathogenicity.md) |
-| ClinVar disease ontology + Final_Category | 8a | `final/annotations/clinvar_disease.tsv` | [disease_ontology.md](disease_ontology.md) |
-| OMIM disease ontology | 8b | `final/annotations/omim_disease.tsv` | [disease_ontology.md](disease_ontology.md) |
-| Cancer Gene Census (CGC) | 8c | `final/annotations/census_driver.tsv` | [cancer_drivers.md](cancer_drivers.md) |
-| Cosmic Compendium driver scores | 8c | `final/annotations/compendium_driver.tsv` | [cancer_drivers.md](cancer_drivers.md) |
+| AlphaMissense (GENCODE isoforms) | 8d | `final/annotations/alphamissense.tsv` | [alphamissense.md](pathogenicity/alphamissense.md) |
+| dbNSFP pathogenicity scores | 8f | `final/annotations/pathogenicity_scores.tsv` | [pathogenicity.md](pathogenicity/dbnsfp.md) |
+| ClinVar disease ontology + Final_Category | 8a | `final/annotations/clinvar_disease.tsv` | [disease_ontology.md](disease/disease_ontology.md) |
+| OMIM disease ontology | 8b | `final/annotations/omim_disease.tsv` | [disease_ontology.md](disease/disease_ontology.md) |
+| Cancer Gene Census (CGC) | 8c | `final/annotations/census_driver.tsv` | [cancer_drivers.md](drivers/cancer_drivers.md) |
+| Cosmic Compendium driver scores | 8c | `final/annotations/compendium_driver.tsv` | [cancer_drivers.md](drivers/cancer_drivers.md) |
 
 ---
 
@@ -92,8 +109,8 @@ by sequence similarity (≥ `--homology_min_identity`, default 0.90), its row is
 flagged `mapping_type=homology_similarity` (same UniProt accession →
 `mapping_type=direct`).
 
-See [../architecture.md § Key design decisions](../architecture.md#key-design-decisions)
-and [../isoform_mapping.md](../isoform_mapping.md) for the transfer logic.
+See [Architecture § Key design decisions](../pipeline/architecture.md#key-design-decisions)
+and [Isoform mapping](../pipeline/isoform_mapping.md) for the transfer logic.
 
 ---
 

@@ -24,10 +24,10 @@ Before analysing data or explaining what an annotation means, read the relevant 
 | Need | File to read |
 |------|-------------|
 | **What each annotation column means** | `skills/idp-dataset/references/annotations.md` |
-| Pipeline modules, processes, output structure | `docs/architecture.md` |
-| How UniProt ↔ GENCODE isoform mapping works | `docs/isoform_mapping.md` |
-| Conservation score details (GOPHER / phastCons) | `docs/conservation_calculation.md` |
-| Performance and scaling notes | `docs/performance.md` |
+| Pipeline modules, processes, output structure | `docs/pipeline/architecture.md` |
+| How UniProt ↔ GENCODE isoform mapping works | `docs/pipeline/isoform_mapping.md` |
+| Conservation score details (GOPHER / phastCons) | `docs/pipeline/conservation_method.md` |
+| Performance and scaling notes | `docs/guide/performance.md` |
 
 Read `references/annotations.md` whenever the user asks what an annotation means, wants to
 interpret scores, or asks about a specific track (disorder, ELM, PTM, RSA, etc.).

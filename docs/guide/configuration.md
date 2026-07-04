@@ -201,7 +201,7 @@ With `blat_chunks=1` (enforced by `test_one_protein`), the peak footprint is ~6 
 ## Common flag combinations
 
 The basic single-gene and full-proteome commands are in the
-[README quick start](../README.md#quick-start). The combinations below show the
+[README quick start](../../README.md#quick-start). The combinations below show the
 non-trivial variations.
 
 ```bash

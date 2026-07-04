@@ -50,7 +50,7 @@ faster than the first.
 
 | Knob | Effect |
 |------|--------|
-| `--machine <laptop\|low\|medium\|hard\|slurm>` | Sets CPUs, RAM caps, and parallelism (`blat_chunks`, `scatter_chunks`, queue size) to match your hardware — see [Configuration guide § `--machine`](configuration_guide.md#--machine--how-much-cpuram-to-claim) |
+| `--machine <laptop\|low\|medium\|hard\|slurm>` | Sets CPUs, RAM caps, and parallelism (`blat_chunks`, `scatter_chunks`, queue size) to match your hardware — see [Configuration guide § `--machine`](configuration.md#--machine--how-much-cpuram-to-claim) |
 | `scatter_chunks` | Splits the sequence table into N gene-balanced chunks so `DISORDER_MAP`, `DBNSFP_MAP`, and `COILEDCOILS_MAP` run concurrently. Full proteome: 20 |
 | `blat_chunks` | Parallel BLAT jobs; each loads the ~4 GB hg38.2bit, so cap at your CPU/RAM budget. `test_one_protein` forces 1 |
 | `pdb_bulk = true` | Maps PDB coverage from one SIFTS download instead of per-protein PDBe API calls (~10 min vs ~9 h at full proteome). Default in both data configs |
@@ -70,5 +70,5 @@ The two processes worth watching on memory-constrained machines:
 With `blat_chunks = 1` (enforced by `test_one_protein`) the peak footprint of a
 single-gene run is ~6 GB. A machine with ≥ 16 GB free RAM comfortably runs
 `--machine medium`. See
-[Configuration guide § Per-process resource usage](configuration_guide.md#per-process-resource-usage-raf1-single-gene---modules-mutationsdisorder)
+[Configuration guide § Per-process resource usage](configuration.md#per-process-resource-usage-raf1-single-gene---modules-mutationsdisorder)
 for the detailed per-process table.

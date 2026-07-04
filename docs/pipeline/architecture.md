@@ -1,7 +1,7 @@
 # DisCanVisFlow — Architecture
 
 > Canonical reference for the pipeline DAG, modules, workers, design decisions,
-> inputs, and outputs. The [README](../README.md) is the entry point and quick
+> inputs, and outputs. The [README](../../README.md) is the entry point and quick
 > start; this document is the depth behind it.
 
 ## What it does

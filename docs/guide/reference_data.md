@@ -28,7 +28,7 @@ used by a completed run are recorded in
 | PPI (IntAct / BioGRID / HIPPIE) | [IntAct](https://www.ebi.ac.uk/intact/) · [BioGRID](https://thebiogrid.org/) · [HIPPIE](http://cbdm-01.zdv.uni-mainz.de/~mschaefer/hippie/) | auto (`FETCH_INTACT/BIOGRID/HIPPIE` + `PPI_PREPROCESS`) | Auto on first run |
 
 Licences and citation requirements for every source are in
-[CITATIONS.md](../CITATIONS.md).
+[CITATIONS.md](../../CITATIONS.md).
 
 ---
 

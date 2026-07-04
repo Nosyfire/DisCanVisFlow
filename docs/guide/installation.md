@@ -3,7 +3,7 @@
 Everything you need to get DisCanVisFlow running on a new machine: the conda
 environment, the disorder-prediction helpers, and how references are supplied.
 
-The [README](../README.md) quick start is enough for the common case (portable
+The [README](../../README.md) quick start is enough for the common case (portable
 mode auto-downloads open references). Read this page when you want local
 reference files, the licensed disorder predictors, or a development setup.
 
@@ -16,7 +16,7 @@ reference files, the licensed disorder predictors, or a development setup.
 | [Nextflow](https://www.nextflow.io/) ≥ 24 | DSL2; installed into the conda env below |
 | Java 11–21 | Provided by the conda env; see [Troubleshooting](troubleshooting.md#nextflow-cant-find-java) for non-interactive shells |
 | conda / mamba | For the `discanvis` environment |
-| Docker *(optional)* | Alternative to conda — see [Configuration guide § Docker](configuration_guide.md#docker) |
+| Docker *(optional)* | Alternative to conda — see [Configuration guide § Docker](configuration.md#docker) |
 
 ---
 
@@ -137,4 +137,4 @@ pytest tests/ -v
 - Single test: `pytest tests/test_create_mutation_map_worker.py::TestMissenseFilter -v`
 
 Once both pass, run a real single gene — see the
-[README quick start](../README.md#quick-start).
+[README quick start](../../README.md#quick-start).

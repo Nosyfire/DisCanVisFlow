@@ -36,13 +36,13 @@ flowchart LR
 ```
 
 The full process-level DAG, module tables, and design decisions are in
-[docs/architecture.md](docs/architecture.md).
+[the architecture doc](docs/pipeline/architecture.md).
 
 ---
 
 ## Quick start
 
-**1. Install** (conda; see [Installation](docs/installation.md) for local references and disorder predictors):
+**1. Install** (conda; see [Installation](docs/guide/installation.md) for local references and disorder predictors):
 
 ```bash
 git clone https://github.com/Nosyfire/DisCanVisFlow
@@ -69,7 +69,7 @@ without computing anything, add `-stub`.
 
 That is the happy path. Everything else — other machines, module selection,
 mutation inputs (MAF/VCF), gene lists, SLURM, Docker, and every flag — is in the
-[Configuration guide](docs/configuration_guide.md).
+[Configuration guide](docs/guide/configuration.md).
 
 ---
 
@@ -85,7 +85,7 @@ results/<project>/
 ```
 
 The full per-file breakdown of `final/` is in
-[docs/architecture.md § Outputs](docs/architecture.md#outputs-resultsproject).
+[the architecture doc](docs/pipeline/architecture.md#outputs-resultsproject).
 The meaning of every annotation column/track is documented per track under
 [docs/annotations/](docs/annotations/README.md).
 
@@ -93,17 +93,33 @@ The meaning of every annotation column/track is documented per track under
 
 ## Documentation
 
+The docs are split by concern: **[guide/](docs/guide/)** (running it),
+**[pipeline/](docs/pipeline/)** (how it works), and
+**[annotations/](docs/annotations/README.md)** (what each output means).
+
+**Getting started & operations** — [docs/guide/](docs/guide/)
+
 | I want to… | Read |
 |------------|------|
-| Install it & set up references / predictors | [docs/installation.md](docs/installation.md) |
-| See every flag, project, machine, and run recipe | [docs/configuration_guide.md](docs/configuration_guide.md) |
-| Understand the pipeline structure (DAG, modules, outputs) | [docs/architecture.md](docs/architecture.md) |
-| Know what an annotation column/track means | [docs/annotations/](docs/annotations/README.md) |
-| Understand isoform mapping & annotation transfer | [docs/isoform_mapping.md](docs/isoform_mapping.md) |
-| Understand conservation scores (GOPHER + phastCons) | [docs/conservation_calculation.md](docs/conservation_calculation.md) |
-| Know where reference data comes from & how to refresh it | [docs/reference_data.md](docs/reference_data.md) |
-| Estimate runtime & tune performance | [docs/performance.md](docs/performance.md) |
-| Fix a failing or empty-output run | [docs/troubleshooting.md](docs/troubleshooting.md) |
+| Install it & set up references / predictors | [Installation](docs/guide/installation.md) |
+| See every flag, project, machine, and run recipe | [Configuration](docs/guide/configuration.md) |
+| Know where reference data comes from & how to refresh it | [Reference data](docs/guide/reference_data.md) |
+| Estimate runtime & tune performance | [Performance](docs/guide/performance.md) |
+| Fix a failing or empty-output run | [Troubleshooting](docs/guide/troubleshooting.md) |
+
+**How it works** — [docs/pipeline/](docs/pipeline/)
+
+| I want to… | Read |
+|------------|------|
+| Understand the pipeline structure (DAG, modules, outputs) | [Architecture](docs/pipeline/architecture.md) |
+| Understand isoform mapping & annotation transfer | [Isoform mapping](docs/pipeline/isoform_mapping.md) |
+| Understand conservation scores (GOPHER + phastCons) | [Conservation method](docs/pipeline/conservation_method.md) |
+
+**Annotation reference** — [docs/annotations/](docs/annotations/README.md)
+
+| I want to… | Read |
+|------------|------|
+| Know what an annotation column/track means | [Annotation index](docs/annotations/README.md) |
 | Cite the tools & databases | [CITATIONS.md](CITATIONS.md) |
 
 ---
