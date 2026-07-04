@@ -15,7 +15,7 @@ The pipeline filters the ELM instance table to Homo sapiens proteins and maps th
 
 ## Output columns
 
-`unmapped/annotations/elm.tsv` (UniProt-keyed):
+`intermediate/annotations/elm.tsv` (UniProt-keyed):
 
 | Column | Description |
 |--------|-------------|
@@ -30,7 +30,7 @@ The pipeline filters the ELM instance table to Homo sapiens proteins and maps th
 
 After `TRANSCRIPT_MAP`:
 
-`mapped/annotations/elm.tsv` adds `Protein_ID` and `homology_transfer` columns. Positions are re-mapped to the Gencode transcript coordinate system.
+`final/annotations/elm.tsv` adds `Protein_ID`, `mapping_type` (`direct`/`homology_similarity`), `homology_transfer` and `homology_identity` columns. Positions are re-mapped to the Gencode transcript coordinate system.
 
 ## Notes
 

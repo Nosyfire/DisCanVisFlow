@@ -35,7 +35,7 @@ The pipeline uses **seven taxonomic levels**, each reflecting a different evolut
 
 ### Computation pipeline
 
-GOPHER runs are **pre-computed** for the full human proteome; the Nextflow module only performs a lookup. The conservation scores are stored in a flat TSV `conservation_table.tsv` supplied via `params.conservation_table`.
+GOPHER runs are **pre-computed** for the full human proteome; the Nextflow module only performs a lookup. The conservation scores are stored in a flat TSV `conservation_table.tsv` supplied via `params.gopher_conservation_table`.
 
 ```mermaid
 flowchart TD
@@ -48,7 +48,7 @@ flowchart TD
     TAX --> CALC[conservation_calculation.py\nTrident score per position\nper taxonomic level]
     CALC --> TABLE[conservation_table.tsv\nuniprot_acc | level | conservation_score]
 
-    TABLE --> NF_IN[Nextflow CONSERVATION_MAP input\nparams.conservation_table]
+    TABLE --> NF_IN[Nextflow CONSERVATION_MAP input\nparams.gopher_conservation_table]
     NF_IN --> STRIP[Strip isoform suffix\nP04049-2 → P04049]
     STRIP --> LOOKUP[Look up canonical accession\nin gopher_data dict]
     LOOKUP --> OUT[conservation_multiple_level.tsv\nProtein_ID | Entry_Isoform | level | conservationscores]
@@ -170,20 +170,20 @@ Both are displayed as color-coded per-residue tracks in the DisCanVis2 protein s
 ```bash
 # Full conservation (GOPHER + phastCons)
 nextflow run main.nf --project test_one_protein --data local --machine laptop --target_gene RAF1 \
-    --conservation_table /path/to/conservation_table.tsv \
+    --gopher_conservation_table /path/to/conservation_table.tsv \
     --phastcons_dir /dlab/home/norbi/data/phastcons/ \
     -resume
 
 # GOPHER only (no phastCons bigWigs available)
 nextflow run main.nf --project test_one_protein --data local --machine laptop --target_gene RAF1 \
-    --conservation_table /path/to/conservation_table.tsv \
+    --gopher_conservation_table /path/to/conservation_table.tsv \
     --skip_phastcons -resume
 
 # phastCons only (no GOPHER pre-computation)
 nextflow run main.nf --project test_one_protein --data local --machine laptop --target_gene RAF1 \
     --phastcons_dir /dlab/home/norbi/data/phastcons/ \
     -resume
-# (GOPHER is automatically skipped when conservation_table is not set)
+# (GOPHER is automatically skipped when gopher_conservation_table is not set)
 
 # Skip both (fastest test runs)
 nextflow run main.nf --project test_one_protein --data local --machine laptop --target_gene RAF1 \
@@ -194,8 +194,8 @@ nextflow run main.nf --project test_one_protein --data local --machine laptop --
 
 | Parameter | Description |
 |-----------|-------------|
-| `params.conservation_table` | Path to pre-computed GOPHER conservation TSV; if unset, GOPHER step is skipped |
+| `params.gopher_conservation_table` | Path to pre-computed GOPHER conservation TSV; if unset, GOPHER step is skipped |
 | `params.phastcons_dir` | Directory with per-chromosome `.bw` files; if unset, phastCons step is skipped |
 | `params.bigwigtobedgraph` | Path to `bigWigToBedGraph` binary (default: uses `$PATH`) |
-| `--skip_gopher` | Force-skip GOPHER even if `conservation_table` is set |
+| `--skip_gopher` | Force-skip GOPHER even if `gopher_conservation_table` is set |
 | `--skip_phastcons` | Force-skip phastCons even if `phastcons_dir` is set |

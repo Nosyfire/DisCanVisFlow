@@ -101,6 +101,14 @@ flowchart TD
 | Position on different isoform | Has `Position` column | 3-AA context window search in target | `True` if found |
 | Region not found | Indel disrupts the region | Skip (dropped conservatively) | — |
 
+Every mapped row in `final/` carries three provenance columns:
+
+| Column | Values | Meaning |
+|--------|--------|---------|
+| `mapping_type` | `direct` / `homology_similarity` | `direct` = same UniProt accession (source == target); `homology_similarity` = transferred to a different isoform by sequence match |
+| `homology_transfer` | `True` / `False` | Boolean form of the above (`True` ⇔ `mapping_type = homology_similarity`) |
+| `homology_identity` | 0–1 | Sequence identity of the transfer; homology rows are only kept at ≥ `--homology_min_identity` (default `0.90`) |
+
 The `--only_main_isoforms` flag restricts transfer to only the main GENCODE isoform (the one with `alignmentpuntcuality = identical`), which reduces runtime at the cost of missing transfers to alternative transcripts.
 
 ---
@@ -145,4 +153,9 @@ For RAF1:
 
 When `--only_main_isoforms` is set, the pipeline restricts transcript-level mapping to isoforms with `alignmentpuntcuality = identical`.
 
-The coverage threshold for including a match is controlled by `params.blast_min_coverage` (default: `0.5`); pairs below this threshold are excluded from `loc_chrom_with_names_isoforms_with_seq.tsv` entirely.
+Two coverage thresholds gate a match (both percentages, 0–100):
+
+- `params.blast_coverage` (default `90`) — minimum BLAST alignment coverage in Module 0.
+- `params.idmap_coverage` (default `95`) — minimum coverage for `ID_MAP` to accept a transcript → UniProt assignment in Module 1.
+
+Pairs below these thresholds are excluded from `loc_chrom_with_names_isoforms_with_seq.tsv`.

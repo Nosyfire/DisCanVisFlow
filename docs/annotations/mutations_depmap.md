@@ -32,7 +32,7 @@ If only the raw CSV exists, the pipeline prints a raw-file confirmation and runs
 
 ## Output file
 
-`unmapped/mutations/depmap_mutations.tsv` (also documented historically as `unmapped/annotations/` — use `mutations/` path)
+`final/mutations/DepMap/depmap_mutations.tsv`
 
 ## Output columns
 

@@ -21,7 +21,7 @@ Default stringency: **High** (MAMMALIAN motif class). Override with `--stringenc
 
 ## Output file
 
-`unmapped/annotations/scansite.tsv`
+`final/annotations/scansite.tsv`
 
 ## Output columns
 

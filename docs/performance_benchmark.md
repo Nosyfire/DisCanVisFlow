@@ -1,5 +1,15 @@
 # Performance Benchmark — DisCanVisFlow
 
+> **Snapshot, not live status.** This is a point-in-time trace of a *single*
+> RAF1 run (details below), kept as a benchmark reference and an optimization
+> backlog. Absolute timings will differ on other hardware, genes, and releases.
+> The ✅/❌ status column in [Summary Prioritization](#summary-prioritization)
+> was last reconciled against the code on **2026-07-04** — treat it as a to-do
+> list, not a guarantee.
+>
+> For the timings of *your* run, read `results/<project>/reports/trace.tsv`
+> (Nextflow execution trace) and the per-process table in `mapping_summary.md`.
+
 **Run configuration**
 
 | Field | Value |
@@ -100,7 +110,7 @@ Pre-extract the gene's chromosomal region from each chr*.gz using `tabix` or a r
 **Fix — use SIFTS bulk download** (already implemented):
 Pass `--pdb_bulk true`. This downloads the SIFTS `uniprot_segments_observed.tsv.gz` once (cached in `references/sifts/`), then maps all isoforms locally — no per-isoform HTTP calls.
 
-`--pdb_bulk true` is already set in `discanvis_data.config`. It should also be the default in `local_refs.config` for any run that has internet access.
+`pdb_bulk = true` is already the default in **both** `config/data/local.config` and `config/data/discanvis_data.config`, so any run with internet access uses the bulk SIFTS path automatically.
 
 **Expected speedup**: REST latency eliminated; PDB_MAP drops to < 2s.
 
@@ -153,9 +163,9 @@ Index the AlphaMissense file by gene (e.g. with `tabix` on a bgzip-compressed ve
 
 16 chunks run in parallel, each using 1 CPU and 4 GB RAM. For RAF1 this is good: 16 chunks × 1s/chunk on 16 cores = 38s wall.
 
-For the full proteome, the GENCODE cDNA is ~170 MB. With `blat_chunks=16` each chunk is ~10 MB, completing in ~40s. With `blat_chunks=64` (and 64 CPUs) the wall time would drop to ~10s. BLAT is not the critical path bottleneck at full proteome scale.
+For the full proteome, the GENCODE cDNA is ~170 MB. Chunk count is tuned per machine so it matches available CPUs. BLAT is not the critical-path bottleneck at full-proteome scale.
 
-**Suggestion**: Leave at 16 chunks for single-gene; increase `blat_chunks = 64` in `hard.config` for full-proteome runs.
+**Status**: `hard.config` now sets `blat_chunks = 32` (fills all 32 idle CPUs, cutting the BLAT phase from ~40 min to ~20 min on the full proteome). `test_one_protein` forces `blat_chunks = 1` regardless of machine. Going beyond the CPU count yields no gain.
 
 ---
 
@@ -169,10 +179,10 @@ For the full proteome, the GENCODE cDNA is ~170 MB. With `blat_chunks=16` each c
 | 🟠 High | AlphaMissense: per-gene pre-index | ❌ Pending | 9.4 GB/gene read → 1 MB/gene |
 | 🟡 Medium | MUTATION_MAP_CLINVAR: bcftools region filter | ❌ Pending | 5.1 GB RSS → 100 MB |
 | 🟡 Medium | MUTATION_MAP_TCGA: pre-filter MAF by region | ❌ Pending | 3.5 GB/chunk I/O → 10 MB/chunk |
-| 🟢 Low | PPI_MAP: raise CPU allocation; explore polars | ❌ Pending | 22s → 5s |
-| 🟢 Low | BLAT: increase to 64 chunks in hard.config | ❌ Pending | 38s → 10s |
+| 🟢 Low | PPI_MAP: raise CPU allocation; explore polars | ❌ Pending (`PPI_MAP` still `process_low`) | 22s → 5s |
+| 🟢 Low | BLAT: match chunk count to CPUs in hard.config | ✅ **Done** (`blat_chunks = 32`) | ~40 min → ~20 min (full proteome) |
 
-### Implemented changes (this session)
+### Implemented optimizations (already in the codebase)
 
 **POLYMORPHISM_MAP** (`bin/create_polymorphism_worker.py`): replaced per-isoform `bigBedToBed` calls
 with chromosome-level sweeps. Instead of one call per unique `(chrom, start, end)` region (= one per

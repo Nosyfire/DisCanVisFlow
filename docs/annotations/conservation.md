@@ -21,7 +21,7 @@ Two complementary conservation signals are computed: GOPHER trident scores acros
 
 ## Output files
 
-Both files are placed under `unmapped/conservation/`:
+Both files are placed under `final/conservation/`:
 
 | File | Description |
 |------|-------------|

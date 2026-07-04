@@ -24,8 +24,8 @@ Both tables are pre-processed and filtered to proteins in the current run.
 
 ## Output files
 
-`unmapped/annotations/census_driver.tsv`
-`unmapped/annotations/compendium_driver.tsv`
+`final/annotations/census_driver.tsv`
+`final/annotations/compendium_driver.tsv`
 
 ## Output columns
 

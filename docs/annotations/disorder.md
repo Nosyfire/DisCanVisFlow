@@ -17,7 +17,7 @@ Intrinsic disorder predictions are computed per isoform using four tools: IUPred
 
 ## Output files
 
-All files are placed under `unmapped/disorder/`:
+All files are placed under `final/disorder/`:
 
 | File | Description |
 |------|-------------|
@@ -47,5 +47,5 @@ All files are placed under `unmapped/disorder/`:
 - AlphaFold isoform suffix (e.g. `-2`) is stripped before querying the EBI API; fallback tries v6 → v5 → v4 model versions.
 - Combined disorder logic: a residue is called disordered when supported by MobiDB curated/homology evidence OR when pLDDT < 70 (RSA proxy) AND IUPred3 > 0.5, excluding residues inside Pfam domains.
 - Regions shorter than 5 consecutive disordered residues are filtered out.
-- `CombinedDisorderNew.tsv` and `CombinedDisorderNew_Pos.tsv` are also copied to `mapped/disorder/` as pass-through (they are already `Protein_ID`-keyed).
+- `CombinedDisorderNew.tsv` and `CombinedDisorderNew_Pos.tsv` are already `Protein_ID`-keyed, so they need no `TRANSCRIPT_MAP` transfer step.
 - Worker: `bin/create_disorder_worker.py`

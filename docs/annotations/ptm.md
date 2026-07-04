@@ -12,7 +12,7 @@ Post-translational modification (PTM) sites record experimentally characterized 
 
 ## Output columns
 
-`unmapped/annotations/ptm_merged.tsv` (UniProt-keyed):
+`intermediate/annotations/ptm_merged.tsv` (UniProt-keyed):
 
 | Column | Description |
 |--------|-------------|
@@ -25,7 +25,7 @@ Post-translational modification (PTM) sites record experimentally characterized 
 
 After `TRANSCRIPT_MAP`:
 
-`mapped/annotations/ptm_merged.tsv` adds `Protein_ID` and `homology_transfer`.
+`final/annotations/ptm_merged.tsv` adds `Protein_ID`, `mapping_type` (`direct`/`homology_similarity`), `homology_transfer` and `homology_identity`.
 
 ## Notes
 

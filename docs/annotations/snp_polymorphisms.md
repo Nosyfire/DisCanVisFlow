@@ -15,7 +15,7 @@ This is distinct from the UniProt natural variants / polymorphism annotation (Mo
 
 ## Output file
 
-`unmapped/annotations/snp_polymorphisms.tsv`
+`final/annotations/snp_polymorphisms.tsv`
 
 ## Output columns
 

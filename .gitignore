@@ -40,3 +40,7 @@ __pycache__/
 *.swo
 .idea/
 .vscode/
+
+# Superpowers plugin brainstorming/planning specs — local design artifacts,
+# not part of the pipeline docs
+docs/superpowers/

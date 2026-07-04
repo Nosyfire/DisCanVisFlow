@@ -21,7 +21,7 @@ Both tables are filtered to proteins in the current run and keyed by `Protein_ID
 
 ### Output file
 
-`unmapped/annotations/clinvar_disease.tsv`
+`final/annotations/clinvar_disease.tsv`
 
 ### Output columns
 
@@ -70,7 +70,7 @@ Category assignment requires `--clinvar_category_tsv`. Without it, `Final_Catego
 
 ### Output file
 
-`unmapped/annotations/omim_disease.tsv`
+`final/annotations/omim_disease.tsv`
 
 ### Output columns
 

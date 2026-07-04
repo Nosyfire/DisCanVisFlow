@@ -20,7 +20,7 @@ Each file uses the same format: `Accession A`, `Accession B`, `Publication Ident
 
 ## Output file
 
-`unmapped/annotations/interactions.tsv`
+`final/annotations/interactions.tsv`
 
 ## Output columns
 

@@ -12,7 +12,7 @@ Per-variant pathogenicity predictor scores from 14 computational tools, compiled
 
 ## Output file
 
-`unmapped/annotations/pathogenicity_scores.tsv`
+`final/annotations/pathogenicity_scores.tsv`
 
 ## Output columns
 

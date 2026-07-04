@@ -13,7 +13,7 @@ AlphaMissense (Google DeepMind, 2023) provides per-variant pathogenicity scores 
 
 ## Output file
 
-`unmapped/annotations/alphamissense.tsv`
+`final/annotations/alphamissense.tsv`
 
 ## Output columns
 
