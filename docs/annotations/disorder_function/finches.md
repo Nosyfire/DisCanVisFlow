@@ -34,7 +34,7 @@ in-silico saturation-mutagenesis scan of condensate-forming propensity.
 
 - **Positive Δε** = the mutation *increases* LLPS tendency; **negative Δε** =
   *decreases* it.
-- Complements the curated [PhasePro](../motifs/phasepro.md) phase-separation
+- Complements the curated [PhasePro](phasepro.md) phase-separation
   regions with a per-mutation quantitative scan.
 - Non-commercial licence (CC BY-NC 4.0); disabled by default for that reason.
 - Worker: `bin/create_finches_worker.py` (Module 8h).

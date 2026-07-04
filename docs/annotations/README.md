@@ -12,7 +12,7 @@ UniProt-keyed annotations become isoform-keyed is described in
 
 ---
 
-## Mutations — [`mutations/`](mutations/)
+## Mutations — [`mutations/`](mutations)
 
 Somatic and germline variants mapped from genomic coordinates to isoform
 residues (genome-anchored; require `params.hg38_2bit`).
@@ -24,7 +24,7 @@ residues (genome-anchored; require `params.hg38_2bit`).
 | TCGA somatic mutations | `mutations/TCGA/*` | [tcga.md](mutations/tcga.md) |
 | DepMap somatic mutations | `mutations/DepMap/depmap_mutations.tsv` | [depmap.md](mutations/depmap.md) |
 
-## Pathogenicity — [`pathogenicity/`](pathogenicity/)
+## Pathogenicity — [`pathogenicity/`](pathogenicity)
 
 Predicted and experimentally measured variant effects.
 
@@ -34,23 +34,22 @@ Predicted and experimentally measured variant effects.
 | dbNSFP (14 predictors) | `pathogenicity/dbnsfp_scores.tsv` | [dbnsfp.md](pathogenicity/dbnsfp.md) |
 | MaveDB (MAVE assays) | `pathogenicity/mavedb.tsv` | [mavedb.md](pathogenicity/mavedb.md) |
 | ProteinGym (DMS benchmarks) | `pathogenicity/proteingym.tsv` | [proteingym.md](pathogenicity/proteingym.md) |
-| FINCHES (LLPS saturation) | `pathogenicity/finches_saturation.tsv` | [finches.md](pathogenicity/finches.md) |
 
-## Disease — [`disease/`](disease/)
+## Disease — [`disease/`](disease)
 
 | Track | Output | Page |
 |-------|--------|------|
 | ClinVar disease ontology (MONDO) | `disease/clinvar_disease.tsv` | [disease_ontology.md](disease/disease_ontology.md) |
 | OMIM disease + mutations | `disease/omim_disease.tsv` | [disease_ontology.md](disease/disease_ontology.md) |
 
-## Cancer drivers — [`drivers/`](drivers/)
+## Cancer drivers — [`drivers/`](drivers)
 
 | Track | Output | Page |
 |-------|--------|------|
 | Cancer Gene Census (CGC) | `drivers/census_driver.tsv` | [cancer_drivers.md](drivers/cancer_drivers.md) |
 | COSMIC Compendium driver scores | `drivers/compendium_driver.tsv` | [cancer_drivers.md](drivers/cancer_drivers.md) |
 
-## Disorder — [`disorder/`](disorder/)
+## Disorder — [`disorder/`](disorder)
 
 Per-residue intrinsic disorder from multiple predictors.
 
@@ -62,23 +61,38 @@ Per-residue intrinsic disorder from multiple predictors.
 | Combined disorder | `disorder/CombinedDisorderNew.tsv` | [disorder.md](disorder/disorder.md) |
 | MobiDB consensus disorder | `disorder/mobidb_disorder.tsv` | [mobidb.md](disorder/mobidb.md) |
 
-## Motifs, PTMs & domains — [`motifs/`](motifs/)
+## Disorder-associated function — [`disorder_function/`](disorder_function)
 
-Sequence features mapped from UniProt/ELM coordinates to isoforms.
+Functional features that reside in — or act through — intrinsically disordered
+regions. Short linear motifs (SLiMs) are grouped in a [`motifs/`](disorder_function/motifs)
+sub-folder.
 
 | Track | Output | Page |
 |-------|--------|------|
-| ELM linear motifs (SLiMs) | `annotations/elm.tsv` (+ `elm_classes`, `elmswitches`) | [elm.md](motifs/elm.md) |
-| PEM predicted ELM motifs | `annotations/pem_core_motifs.tsv` | [pem.md](motifs/pem.md) |
-| PTM sites (PTMdb + PhosphoSite) | `annotations/ptm_merged.tsv` | [ptm.md](motifs/ptm.md) |
-| ScanSite phospho motifs | `annotations/scansite.tsv` | [scansite.md](motifs/scansite.md) |
-| Pfam domains | `annotations/pfam_domains.tsv` | [pfam.md](motifs/pfam.md) |
-| DIBS (disordered binding sites) | `annotations/dibs.tsv` | [dibs.md](motifs/dibs.md) |
-| MFIB (mutual folding by binding) | `annotations/mfib.tsv` | [mfib.md](motifs/mfib.md) |
-| PhasePro (phase-separation drivers) | `annotations/phasepro.tsv` | [phasepro.md](motifs/phasepro.md) |
-| UniProt regions of interest & binding sites | `annotations/uniprot_roi.tsv`, `uniprot_binding.tsv` | [uniprot_features.md](motifs/uniprot_features.md) |
+| ELM linear motifs (SLiMs) | `annotations/elm.tsv` (+ `elm_classes`, `elmswitches`) | [motifs/elm.md](disorder_function/motifs/elm.md) |
+| PEM predicted ELM motifs | `annotations/pem_core_motifs.tsv` | [motifs/pem.md](disorder_function/motifs/pem.md) |
+| ScanSite phospho motifs | `annotations/scansite.tsv` | [motifs/scansite.md](disorder_function/motifs/scansite.md) |
+| DIBS (disordered binding sites) | `annotations/dibs.tsv` | [dibs.md](disorder_function/dibs.md) |
+| MFIB (mutual folding by binding) | `annotations/mfib.tsv` | [mfib.md](disorder_function/mfib.md) |
+| PhasePro (phase-separation drivers) | `annotations/phasepro.tsv` | [phasepro.md](disorder_function/phasepro.md) |
+| FINCHES (LLPS saturation mutagenesis) | `pathogenicity/finches_saturation.tsv` | [finches.md](disorder_function/finches.md) |
 
-## Structure — [`structure/`](structure/)
+## Ordered-region function — [`order_function/`](order_function)
+
+Functional features of structured / folded regions.
+
+| Track | Output | Page |
+|-------|--------|------|
+| Pfam domains | `annotations/pfam_domains.tsv` | [pfam.md](order_function/pfam.md) |
+| UniProt regions of interest & binding sites | `annotations/uniprot_roi.tsv`, `uniprot_binding.tsv` | [uniprot_features.md](order_function/uniprot_features.md) |
+
+## Post-translational modifications — [`ptm/`](ptm)
+
+| Track | Output | Page |
+|-------|--------|------|
+| PTM sites (PTMdb + PhosphoSite) | `annotations/ptm_merged.tsv` | [ptm.md](ptm/ptm.md) |
+
+## Structure — [`structure/`](structure)
 
 | Track | Output | Page |
 |-------|--------|------|
@@ -86,13 +100,13 @@ Sequence features mapped from UniProt/ELM coordinates to isoforms.
 | Coiled coils (DeepCoil) | `annotations/coiled_coils.tsv` | [coiled_coils.md](structure/coiled_coils.md) |
 | RSA & position-based annotations | `disorder/rsa_scores.tsv`, `position/position_based_annotations.tsv` | [rsa.md](structure/rsa.md) |
 
-## Interactions — [`interactions/`](interactions/)
+## Interactions — [`interactions/`](interactions)
 
 | Track | Output | Page |
 |-------|--------|------|
 | Protein-protein interactions (IntAct/BioGRID/HIPPIE) | `annotations/interactions.tsv` | [ppi.md](interactions/ppi.md) |
 
-## Conservation — [`conservation/`](conservation/)
+## Conservation — [`conservation/`](conservation)
 
 | Track | Output | Page |
 |-------|--------|------|
@@ -101,13 +115,13 @@ Sequence features mapped from UniProt/ELM coordinates to isoforms.
 
 See also the [conservation method](../pipeline/conservation_method.md) deep-dive.
 
-## Polymorphism — [`polymorphism/`](polymorphism/)
+## Polymorphism — [`polymorphism/`](polymorphism)
 
 | Track | Output | Page |
 |-------|--------|------|
 | dbSNP 155 common SNPs + allele frequencies | `annotations/polymorphism.tsv` | [polymorphism.md](polymorphism/polymorphism.md) |
 
-## Function — [`function/`](function/)
+## Function — [`function/`](function)
 
 | Track | Output | Page |
 |-------|--------|------|

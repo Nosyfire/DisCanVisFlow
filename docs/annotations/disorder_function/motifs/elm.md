@@ -49,5 +49,5 @@ Predicted (rather than curated) ELM motifs are documented separately under
 - The 2023 snapshot contains ~3,700 human instances across ~290 ELM classes.
 - Only instances with `Logic = true positive` or `unknown` are typically used downstream; check the Django model for the current filter.
 - Motif start/end are in UniProt sequence space; after transcript mapping they reflect the Gencode isoform position.
-- [DIBS](dibs.md), [MFIB](mfib.md), and [PhasePro](phasepro.md) follow the same
+- [DIBS](../dibs.md), [MFIB](../mfib.md), and [PhasePro](../phasepro.md) follow the same
   region format as ELM but come from separate local files.

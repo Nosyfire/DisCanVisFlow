@@ -93,11 +93,11 @@ The meaning of every annotation column/track is documented per track under
 
 ## Documentation
 
-The docs are split by concern: **[guide/](docs/guide/)** (running it),
-**[pipeline/](docs/pipeline/)** (how it works), and
+The docs are split by concern: **[guide/](docs/guide)** (running it),
+**[pipeline/](docs/pipeline)** (how it works), and
 **[annotations/](docs/annotations/README.md)** (what each output means).
 
-**Getting started & operations** — [docs/guide/](docs/guide/)
+**Getting started & operations** — [docs/guide/](docs/guide)
 
 | I want to… | Read |
 |------------|------|
@@ -107,7 +107,7 @@ The docs are split by concern: **[guide/](docs/guide/)** (running it),
 | Estimate runtime & tune performance | [Performance](docs/guide/performance.md) |
 | Fix a failing or empty-output run | [Troubleshooting](docs/guide/troubleshooting.md) |
 
-**How it works** — [docs/pipeline/](docs/pipeline/)
+**How it works** — [docs/pipeline/](docs/pipeline)
 
 | I want to… | Read |
 |------------|------|
