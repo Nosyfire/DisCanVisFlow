@@ -24,7 +24,7 @@ Before analysing data or explaining what an annotation means, read the relevant 
 | Need | File to read |
 |------|-------------|
 | **What each annotation column means** | `skills/idp-dataset/references/annotations.md` |
-| Pipeline modules, processes, output structure | `PIPELINE_DESIGN.md` |
+| Pipeline modules, processes, output structure | `docs/architecture.md` |
 | How UniProt ↔ GENCODE isoform mapping works | `docs/isoform_mapping.md` |
 | Conservation score details (GOPHER / phastCons) | `docs/conservation_calculation.md` |
 | Performance and bottleneck notes | `docs/performance_benchmark.md` |

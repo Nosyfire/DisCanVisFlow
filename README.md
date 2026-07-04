@@ -31,34 +31,14 @@ All outputs use `Protein_ID` (GENCODE transcript name, e.g. `RAF1-201`) as the p
 ### Pipeline flow
 
 ```mermaid
-flowchart TD
-    UP["UniProt SwissProt FASTA"] --> SUB["SUBSET_FASTA<br/>exact gene match"]
-    GC["GENCODE FASTA + GTF"] --> SUB
-    SUB --> BLAST["MAKEBLASTDB ×2 → reciprocal BLASTP<br/>→ MERGE_BLAST_HITS"]
-    BLAST --> IDMAP["ID_MAP<br/>transcript → UniProt isoform"]
-    IDMAP --> SEQ["SEQUENCE_PROCESS<br/>isoform table + coords"]
-    SEQ --> GENOME["BLAT_ALIGN → GENOME_MAP<br/>combined_map.map"]
-
-    GENOME --> MUT["MUTATION_MAP<br/>ClinVar / MAF / VCF"]
-    GENOME --> POLY["POLYMORPHISM_MAP<br/>dbSNP 155"]
-    GENOME --> EXON["EXON_MAP"]
-
-    SEQ --> ANNO["ANNOTATION backbone<br/>ELM · DIBS · MFIB · PhasePro · PTM · Pfam"]
-    SEQ --> DIS["DISORDER<br/>IUPred3 · ANCHOR2 · AIUPred · AlphaFold · MobiDB"]
-    SEQ --> STRUCT["STRUCTURE<br/>PDB coverage · RSA"]
-    SEQ --> FUNC["FUNCTIONAL<br/>GO · PPI · coiled-coils · ScanSite · conservation"]
-    GENOME --> PATH["PATHOGENICITY<br/>dbNSFP · AlphaMissense · MaveDB · ProteinGym"]
-    MUT --> DISEASE["DISEASE / DRIVERS<br/>ClinVar-MONDO · OMIM · CGC · DepMap"]
-
-    ANNO --> TMAP["TRANSCRIPT_MAP<br/>UniProt-keyed → all isoforms"]
-    DIS --> TMAP
-    TMAP --> REPORT["MAPPING_REPORT<br/>mapping_summary.md + release.json"]
-    MUT --> REPORT
-    FUNC --> REPORT
-    STRUCT --> REPORT
-    PATH --> REPORT
-    DISEASE --> REPORT
+flowchart LR
+    IN["UniProt + GENCODE"] --> MAP["BLAST → ID_MAP → SEQUENCE<br/>→ BLAT → GENOME_MAP"]
+    MAP --> ANN["20+ annotation modules<br/>mutations · disorder · structure ·<br/>functional · pathogenicity · disease"]
+    ANN --> OUT["TRANSCRIPT_MAP → final/ TSVs<br/>+ MAPPING_REPORT"]
 ```
+
+The full process-level DAG, module tables, and design decisions live in
+**[docs/architecture.md](docs/architecture.md)**.
 
 ---
 
@@ -371,30 +351,18 @@ Then `-resume` — only deleted files re-download.
 
 ```
 results/<project>/
-├── final/
-│   ├── annotations/     elm.tsv, dibs.tsv, mfib.tsv, phasepro.tsv, ptm_merged.tsv,
-│   │                    pfam_domains.tsv, go_terms.tsv, polymorphism.tsv,
-│   │                    interactions.tsv, scansite.tsv, pem_core_motifs.tsv, coiled_coils.tsv …
-│   ├── disorder/        IUPredscores.tsv, Anchorscores.tsv, AIUPredscores.tsv,
-│   │                    AIUPredBinding.tsv, AlphaFoldTable.tsv, CombinedDisorderNew.tsv …
-│   ├── genome/          combined_map.map, exon.tsv
-│   ├── mutations/       Missense/Frameshift/Nonsense/Indel_filter_mutations_mapped.tsv …
-│   ├── pathogenicity/   dbnsfp_scores.tsv, alphamissense.tsv, mavedb.tsv, proteingym.tsv
-│   ├── pdb/             pdb_structures.tsv, pdb_missing.tsv
-│   ├── disease/         clinvar_disease.tsv, omim_disease.tsv
-│   ├── drivers/         cancer_driver.tsv, census_driver.tsv, compendium_driver.tsv
-│   ├── conservation/    conservation_multiple_level.tsv, conservation_phastcons.tsv
-│   ├── position/        position_based_annotations.tsv, rsa_scores.tsv
-│   └── sequence/        loc_chrom_with_names_isoforms_with_seq.tsv, isoform_alignment.tsv …
+├── final/               ALL DB-ready, Protein_ID-keyed TSVs, grouped by category:
+│                        annotations/ disorder/ genome/ mutations/ pathogenicity/
+│                        pdb/ disease/ drivers/ conservation/ position/ sequence/
 ├── intermediate/        Entry_Isoform-keyed staging TSVs (input to TRANSCRIPT_MAP)
-└── mapping_reports/
-    ├── mapping_summary.md        Run metadata, annotation sources, per-run coverage
-    └── mapping_coverage.tsv      Per-(Gene × annotation) coverage matrix
+└── mapping_reports/     mapping_summary.md · release.json · mapping_coverage.tsv
 
-work/local/              Nextflow task cache — --data local
-work/discanvis_data/     Nextflow task cache — --data discanvis_data
+work/<data>/             Nextflow task cache (per --data flag)
 references/              storeDir-cached downloads (shared across all runs)
 ```
+
+The full per-file breakdown of `final/` is in
+[docs/architecture.md § Outputs](docs/architecture.md#outputs-resultsproject).
 
 **Cross-project cache sharing**: Two projects using the same `--data` flag share `work/<data>/`. Nextflow `-resume` automatically reuses tasks whose inputs are unchanged — so `cellular_vulnerability` and `discanvis` (both `--data local`) share BLAST, genome mapping, and reference downloads.
 
@@ -445,6 +413,9 @@ python bin/create_disorder_worker.py \
 
 Nextflow acts purely as orchestrator: it handles caching, parallelism, and data flow. The workers are tested independently via `pytest tests/`.
 
+The complete module → process → worker → output mapping is in
+[docs/architecture.md](docs/architecture.md#modules).
+
 ---
 
 ## Annotation sources — per-release update cadence
@@ -492,6 +463,23 @@ config/
     ├── conda.config
     └── docker.config
 ```
+
+Every flag, axis, project, and machine is documented in
+[docs/configuration_guide.md](docs/configuration_guide.md).
+
+---
+
+## Documentation
+
+| Topic | Document |
+|-------|----------|
+| Architecture — DAG, modules, workers, design decisions, output tree | [docs/architecture.md](docs/architecture.md) |
+| Configuration — all four axes, projects, machines, `--modules`, skip flags | [docs/configuration_guide.md](docs/configuration_guide.md) |
+| Isoform mapping — BLAST, identity table, annotation transfer | [docs/isoform_mapping.md](docs/isoform_mapping.md) |
+| Conservation scores — GOPHER + phastCons | [docs/conservation_calculation.md](docs/conservation_calculation.md) |
+| Performance benchmark — per-process timing & bottlenecks | [docs/performance_benchmark.md](docs/performance_benchmark.md) |
+| Per-annotation reference — one page per track | [docs/annotations/](docs/annotations/README.md) |
+| Citations, licenses, data-use agreements | [CITATIONS.md](CITATIONS.md) |
 
 ---
 

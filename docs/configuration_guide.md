@@ -93,11 +93,23 @@ BLAT loads the hg38.2bit genome file (~4 GB) per process. With `--machine hard`,
 | `--project` | What it does | Output directory |
 |-------------|-------------|-----------------|
 | `test_one_protein` | Single-gene smoke test (default gene: TP53) | `results/test_one_protein/` |
-| `discanvis` | Full human proteome, all annotation tracks | `results/discanvis/` |
+| `discanvis` | Full human proteome, all annotation tracks (legacy preset) | `results/discanvis/` |
+| `full_discanvis` | Full DisCanVis database update | `results/discanvis/` |
 | `cellular_vulnerability` | Turbine ML feature set (gene-list driven) | `results/cellular_vulnerability/` |
+| `vep_benchmarking` | Variant-effect-predictor benchmark set | `results/vep_benchmarking/` |
 | `test_subset` | 5-gene regression set (TP53, RAF1, BRAF, KRAS, EGFR) | `results/test_subset/` |
+| `individual_run_raf1` | Single-gene real run (RAF1) with blast/ + intermediate/ + reports/ | `results/individual_run_raf1/` |
+| `individual_run_ctbnn1` | Single-gene real run (CTNNB1) | `results/individual_run_ctbnn1/` |
+| `subset_run_test` | Sliced multi-gene subset (RAF1, CTNNB1, TP53, BRAF) | `results/subset_run_test/` |
 
 Override the default gene with `--target_gene RAF1`, or supply a list with `--gene_list_file`.
+
+**Defaults** (from `nextflow.config`, applied when a flag is omitted):
+`--project cellular_vulnerability --data discanvis_data --machine laptop --env conda`.
+
+Any project setting can be overridden directly on the CLI (`--target_gene`,
+`--skip_pdb`, `--outdir`, `--ram '4 GB'`, individual data paths, …). `-resume`
+reuses cached steps; `-stub` validates the DAG without executing workers.
 
 ---
 

@@ -1,4 +1,8 @@
-# DisCanVisFlow — Pipeline Overview
+# DisCanVisFlow — Architecture
+
+> Canonical reference for the pipeline DAG, modules, workers, design decisions,
+> inputs, and outputs. The [README](../README.md) is the entry point and quick
+> start; this document is the depth behind it.
 
 ## What it does
 
@@ -10,40 +14,42 @@ The pipeline runs as one Nextflow DSL2 workflow with ~40 processes across 7 modu
 
 ## Data flow (DAG)
 
-```
-UniProt SwissProt FASTA          GENCODE v44 FASTA + GTF
-        │                                   │
-   SUBSET_FASTA (exact gene match)     SUBSET_FASTA
-        │                                   │
-   MAKEBLASTDB                         MAKEBLASTDB
-        │                                   │
-        └──────────── BLASTP (reciprocal) ──┘
-                             │
-                      MERGE_BLAST_HITS
-                             │
-                           ID_MAP
-                             │
-                     SEQUENCE_PROCESS (Module 2)
-                             │
-              ┌──────────────┼──────────────────────────────┐
-              │              │                              │
-        SUBSET_CDNA    BLAT_ALIGN              annotation inputs (5a–5o, 7, 8)
-              │              │
-        GENOME_MAP ◄─────────┘
-          (combined_map.map)
-              │
-        MUTATION_MAP ◄── ClinVar / MAF / VCF
-              │
-     CLINVAR_DISEASE_BUILD ◄── MONDO OBO
-              │
-        TRANSCRIPT_MAP ◄── ANNOTATION_MAP  (ELM/DIBS/MFIB/PhasePro/PTM/Pfam)
-                       ◄── DISORDER_MAP    (IUPred3/AIUPred/AlphaFold pLDDT)
-                       ◄── PDB_MAP
-                       ◄── GO_MAP / POLYMORPHISM_MAP / PEM_MAP
-                       ◄── DEPMAP_MAP / PATHOGENICITY_MAP / ALPHAMISSENSE_MAP
-                       ◄── CONSERVATION_MAP / PPI_MAP / SCANSITE_MAP / ...
-              │
-        MAPPING_REPORT  →  mapping_summary.md + mapping_coverage.tsv
+This is the canonical pipeline DAG. The README shows a simplified overview that
+links here.
+
+```mermaid
+flowchart TD
+    UP["UniProt SwissProt FASTA"] --> SUB["SUBSET_FASTA<br/>exact gene match"]
+    GC["GENCODE v44 FASTA + GTF"] --> SUB
+    SUB --> BLAST["MAKEBLASTDB ×2 → reciprocal BLASTP<br/>→ MERGE_BLAST_HITS"]
+    BLAST --> IDMAP["ID_MAP<br/>transcript → UniProt isoform"]
+    IDMAP --> SEQ["SEQUENCE_PROCESS (Module 2)<br/>isoform table + coords"]
+    SEQ --> CDNA["SUBSET_CDNA"]
+    SEQ --> BLAT["BLAT_ALIGN"]
+    CDNA --> GENOME["GENOME_MAP<br/>combined_map.map"]
+    BLAT --> GENOME
+
+    GENOME --> MUT["MUTATION_MAP<br/>ClinVar / MAF / VCF"]
+    GENOME --> POLY["POLYMORPHISM_MAP<br/>dbSNP 155"]
+    GENOME --> EXON["EXON_MAP"]
+    MUT --> DISEASE["CLINVAR_DISEASE_BUILD ◄ MONDO OBO<br/>OMIM · CGC · DepMap"]
+    GENOME --> PATH["PATHOGENICITY<br/>dbNSFP · AlphaMissense · MaveDB · ProteinGym"]
+
+    SEQ --> ANNO["ANNOTATION_MAP<br/>ELM · DIBS · MFIB · PhasePro · PTM · Pfam"]
+    SEQ --> DIS["DISORDER_MAP<br/>IUPred3 · ANCHOR2 · AIUPred · AlphaFold · MobiDB"]
+    SEQ --> STRUCT["PDB_MAP · RSA"]
+    SEQ --> FUNC["GO · PPI · coiled-coils · ScanSite · PEM · conservation"]
+
+    ANNO --> TMAP["TRANSCRIPT_MAP<br/>UniProt-keyed → all isoforms"]
+    DIS --> TMAP
+    TMAP --> REPORT["MAPPING_REPORT<br/>mapping_summary.md + release.json + mapping_coverage.tsv"]
+    MUT --> REPORT
+    POLY --> REPORT
+    EXON --> REPORT
+    STRUCT --> REPORT
+    FUNC --> REPORT
+    PATH --> REPORT
+    DISEASE --> REPORT
 ```
 
 ---
