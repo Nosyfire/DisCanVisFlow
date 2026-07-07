@@ -145,7 +145,8 @@ include { PROTEINGYM_MAP;
           PATHOGENICITY_MAP;
           MAVEDB_MAP;
           FINCHES_MAP;
-          CATGRANULE_MAP           } from './modules/pathogenicity'
+          CATGRANULE_MAP;
+          PLAAC_MAP                } from './modules/pathogenicity'
 include { MAPPING_REPORT           } from './modules/report'
 
 // ---------------------------------------------------------------------------
@@ -1178,6 +1179,12 @@ After copying/downloading the files, rerun the same command with -resume.
         CATGRANULE_MAP.out.catgranule.view { f -> "\n✔  catGRANULE LLPS propensity: ${f}\n" }
     }
 
+    // ── PLAAC prion-like domain ─────────────────────────────────────────────
+    if ( (mods == null || mods.contains('plaac')) && !params.skip_plaac ) {
+        PLAAC_MAP( SEQUENCE_PROCESS.out.loc_chrom_seq )
+        PLAAC_MAP.out.plaac.view { f -> "\n✔  PLAAC prion-like domains: ${f}\n" }
+    }
+
     // ── Step 5m: PositionBasedAnnotations + RSAscores ────────────────────────
     // Requires disorder outputs (IUPred + pLDDT). Skipped when disorder is not requested.
     if ( (mods == null || mods.contains('disorder')) ) {
@@ -1269,6 +1276,7 @@ After copying/downloading the files, rerun the same command with -resume.
     if ( (mods == null || mods.contains('dbnsfp')) && !params.skip_pathogenicity && !(genome_enabled && (params.dbnsfp_raw_dir || params.fetch_dbnsfp)) ) report_gate = report_gate.mix( PATHOGENICITY_MAP.out.scores )
     if ( (mods == null || mods.contains('finches')) && !params.skip_finches )             report_gate = report_gate.mix( FINCHES_MAP.out.finches )
     if ( (mods == null || mods.contains('catgranule')) && !params.skip_catgranule )        report_gate = report_gate.mix( CATGRANULE_MAP.out.catgranule )
+    if ( (mods == null || mods.contains('plaac')) && !params.skip_plaac )                  report_gate = report_gate.mix( PLAAC_MAP.out.plaac )
     if ( (mods == null || mods.contains('lcr')) && !params.skip_lcr )                     report_gate = report_gate.mix( LCR_MAP.out.lcr )
     if ( (mods == null || mods.contains('dssp')) && !params.skip_dssp )                   report_gate = report_gate.mix( DSSP_MAP.out.dssp )
 

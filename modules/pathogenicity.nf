@@ -322,3 +322,39 @@ process CATGRANULE_MAP {
     printf 'Protein_ID\\tPosition\\tcatgranule_score\\tcatgranule_total\\n' > catgranule.tsv
     """
 }
+
+// ──────────────────────────────────────────────────────────────────────────
+// PLAAC_MAP — prion-like domain HMM (Lancaster 2014). Worker:
+// create_plaac_worker.py. Missing jar/Java → empty track, never crashes.
+// ──────────────────────────────────────────────────────────────────────────
+process PLAAC_MAP {
+    tag  { "plaac_map" }
+    label 'process_medium'
+    publishDir(
+        path: { params.gene_dir ? "${params.outdir}/${params.gene_dir}/final/phase_separation"
+                                : "${params.outdir}/final/phase_separation" },
+        mode: 'copy'
+    )
+
+    input:
+    path loc_chrom
+
+    output:
+    path "plaac.tsv", emit: plaac
+
+    script:
+    def only_main_arg = params.only_main_isoforms ? '--only_main_isoforms' : ''
+    def jar_arg       = params.plaac_jar ? "--plaac_jar ${params.plaac_jar}" : ''
+    """
+    create_plaac_worker.py \\
+        --seq_table ${loc_chrom} \\
+        --outdir    . \\
+        ${jar_arg} \\
+        ${only_main_arg}
+    """
+
+    stub:
+    """
+    printf 'Protein_ID\\tPosition\\tplaac_score\\tin_PRD\\n' > plaac.tsv
+    """
+}
