@@ -34,6 +34,8 @@ Usage
       [--max_seq_len 3000]
 """
 
+from __future__ import annotations
+
 import argparse
 import logging
 import sys
