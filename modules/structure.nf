@@ -149,3 +149,40 @@ process LCR_MAP {
     printf 'Protein_ID\\tstart\\tend\\tlength\\n' > low_complexity.tsv
     """
 }
+
+
+// ──────────────────────────────────────────────────────────────────────────
+// DSSP_MAP — secondary structure (8+3 state) + true RSA from AlphaFold mmCIF.
+// Worker: create_dssp_worker.py. Missing mkdssp → empty track, never crashes.
+// ──────────────────────────────────────────────────────────────────────────
+process DSSP_MAP {
+    tag  { "dssp_map" }
+    label 'process_medium'
+    publishDir(
+        path: { params.gene_dir ? "${params.outdir}/${params.gene_dir}/final/structure"
+                                : "${params.outdir}/final/structure" },
+        mode: 'copy'
+    )
+
+    input:
+    path loc_chrom
+
+    output:
+    path "dssp.tsv", emit: dssp
+
+    script:
+    def only_main_arg = params.only_main_isoforms ? '--only_main_isoforms' : ''
+    def cif_dir_arg   = params.alphafold_cif_dir ? "--cif_dir ${params.alphafold_cif_dir}" : ''
+    """
+    create_dssp_worker.py \\
+        --seq_table ${loc_chrom} \\
+        --outdir    . \\
+        ${cif_dir_arg} \\
+        ${only_main_arg}
+    """
+
+    stub:
+    """
+    printf 'Protein_ID\\tPosition\\taa\\tss8\\tss3\\trsa\\n' > dssp.tsv
+    """
+}

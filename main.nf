@@ -121,7 +121,8 @@ include { FETCH_MOBIDB;
 include { PDB_MAP;
           PDB_BULK_MAP;
           EXON_MAP;
-          LCR_MAP                  } from './modules/structure'
+          LCR_MAP;
+          DSSP_MAP                 } from './modules/structure'
 include { FETCH_GO;
           GO_MAP;
           POLYMORPHISM_MAP;
@@ -873,6 +874,12 @@ After copying/downloading the files, rerun the same command with -resume.
         LCR_MAP.out.lcr.view { f -> "\n✔  Low-complexity regions: ${f}\n" }
     }
 
+    // ── DSSP secondary structure + true RSA ─────────────────────────────────
+    if ( (mods == null || mods.contains('dssp')) && !params.skip_dssp ) {
+        DSSP_MAP( SEQUENCE_PROCESS.out.loc_chrom_seq )
+        DSSP_MAP.out.dssp.view { f -> "\n✔  DSSP SS + true RSA: ${f}\n" }
+    }
+
     // ── Step 5f: GO Term annotation ───────────────────────────────────────────
     if ( (mods == null || mods.contains('go')) ) {
         def go_refs = FETCH_GO()
@@ -1255,6 +1262,7 @@ After copying/downloading the files, rerun the same command with -resume.
     if ( (mods == null || mods.contains('dbnsfp')) && !params.skip_pathogenicity && !(genome_enabled && (params.dbnsfp_raw_dir || params.fetch_dbnsfp)) ) report_gate = report_gate.mix( PATHOGENICITY_MAP.out.scores )
     if ( (mods == null || mods.contains('finches')) && !params.skip_finches )             report_gate = report_gate.mix( FINCHES_MAP.out.finches )
     if ( (mods == null || mods.contains('lcr')) && !params.skip_lcr )                     report_gate = report_gate.mix( LCR_MAP.out.lcr )
+    if ( (mods == null || mods.contains('dssp')) && !params.skip_dssp )                   report_gate = report_gate.mix( DSSP_MAP.out.dssp )
 
     MAPPING_REPORT(
         SEQUENCE_PROCESS.out.loc_chrom_seq,
