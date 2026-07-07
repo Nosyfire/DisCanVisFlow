@@ -144,7 +144,8 @@ include { PROTEINGYM_MAP;
           DBNSFP_MAP;
           PATHOGENICITY_MAP;
           MAVEDB_MAP;
-          FINCHES_MAP              } from './modules/pathogenicity'
+          FINCHES_MAP;
+          CATGRANULE_MAP           } from './modules/pathogenicity'
 include { MAPPING_REPORT           } from './modules/report'
 
 // ---------------------------------------------------------------------------
@@ -1171,6 +1172,12 @@ After copying/downloading the files, rerun the same command with -resume.
         }
     }
 
+    // ── catGRANULE 2.0 LLPS propensity ──────────────────────────────────────
+    if ( (mods == null || mods.contains('catgranule')) && !params.skip_catgranule ) {
+        CATGRANULE_MAP( SEQUENCE_PROCESS.out.loc_chrom_seq )
+        CATGRANULE_MAP.out.catgranule.view { f -> "\n✔  catGRANULE LLPS propensity: ${f}\n" }
+    }
+
     // ── Step 5m: PositionBasedAnnotations + RSAscores ────────────────────────
     // Requires disorder outputs (IUPred + pLDDT). Skipped when disorder is not requested.
     if ( (mods == null || mods.contains('disorder')) ) {
@@ -1261,6 +1268,7 @@ After copying/downloading the files, rerun the same command with -resume.
     if ( (mods == null || mods.contains('omim')) && !params.skip_omim )                   report_gate = report_gate.mix( OMIM_MAP.out.omim_disease )
     if ( (mods == null || mods.contains('dbnsfp')) && !params.skip_pathogenicity && !(genome_enabled && (params.dbnsfp_raw_dir || params.fetch_dbnsfp)) ) report_gate = report_gate.mix( PATHOGENICITY_MAP.out.scores )
     if ( (mods == null || mods.contains('finches')) && !params.skip_finches )             report_gate = report_gate.mix( FINCHES_MAP.out.finches )
+    if ( (mods == null || mods.contains('catgranule')) && !params.skip_catgranule )        report_gate = report_gate.mix( CATGRANULE_MAP.out.catgranule )
     if ( (mods == null || mods.contains('lcr')) && !params.skip_lcr )                     report_gate = report_gate.mix( LCR_MAP.out.lcr )
     if ( (mods == null || mods.contains('dssp')) && !params.skip_dssp )                   report_gate = report_gate.mix( DSSP_MAP.out.dssp )
 

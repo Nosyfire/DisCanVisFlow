@@ -282,3 +282,43 @@ process FINCHES_MAP {
     printf 'Protein_ID\\tPosition\\tWT_AA\\tMut_AA\\tWT_Epsilon\\tMut_Epsilon\\tDelta_Epsilon\\n' > finches_saturation.tsv
     """
 }
+
+// ──────────────────────────────────────────────────────────────────────────
+// CATGRANULE_MAP — catGRANULE 2.0 LLPS propensity (Monti et al.). Per-residue
+// profile + per-protein RandomForest LLPS score. catGRANULE's deps live in a
+// separate env, so the worker delegates to params.catgranule_python. Missing
+// env/lib → empty track, never crashes. Worker: create_catgranule_worker.py.
+// ──────────────────────────────────────────────────────────────────────────
+process CATGRANULE_MAP {
+    tag  { "catgranule_map" }
+    label 'process_medium'
+    publishDir(
+        path: { params.gene_dir ? "${params.outdir}/${params.gene_dir}/final/phase_separation"
+                                : "${params.outdir}/final/phase_separation" },
+        mode: 'copy'
+    )
+
+    input:
+    path loc_chrom
+
+    output:
+    path "catgranule.tsv", emit: catgranule
+
+    script:
+    def only_main_arg = params.only_main_isoforms ? '--only_main_isoforms' : ''
+    def py_arg        = params.catgranule_python ? "--catgranule_python ${params.catgranule_python}" : ''
+    def lib_arg       = params.catgranule_lib    ? "--catgranule_lib ${params.catgranule_lib}"       : ''
+    """
+    create_catgranule_worker.py \\
+        --seq_table ${loc_chrom} \\
+        --outdir    . \\
+        ${py_arg} \\
+        ${lib_arg} \\
+        ${only_main_arg}
+    """
+
+    stub:
+    """
+    printf 'Protein_ID\\tPosition\\tcatgranule_score\\tcatgranule_total\\n' > catgranule.tsv
+    """
+}
