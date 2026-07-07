@@ -208,6 +208,11 @@ def main():
     import tempfile
     ok = skipped = 0
     buffer: list = []
+    # Cache parsed DSSP residues per acc_base — multiple Protein_ID rows can
+    # share the same canonical AlphaFold accession, and mkdssp is expensive.
+    # Misses (no model / mkdssp failure) are cached too (as []) so a bad
+    # acc_base isn't re-resolved/re-run for every isoform sharing it.
+    dssp_cache: dict = {}
     with tempfile.TemporaryDirectory() as td:
         tmp = Path(td)
         for _, r in df.iterrows():
@@ -216,11 +221,12 @@ def main():
             if not acc:
                 skipped += 1
                 continue
-            cif = _resolve_cif(acc, cif_dir, args.delay, not args.no_download)
-            if cif is None:
-                skipped += 1
-                continue
-            residues = _run_dssp(cif, args.mkdssp, tmp)
+            if acc in dssp_cache:
+                residues = dssp_cache[acc]
+            else:
+                cif = _resolve_cif(acc, cif_dir, args.delay, not args.no_download)
+                residues = _run_dssp(cif, args.mkdssp, tmp) if cif is not None else []
+                dssp_cache[acc] = residues
             if not residues:
                 skipped += 1
                 continue
