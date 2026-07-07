@@ -114,3 +114,38 @@ process PDB_BULK_MAP {
     printf 'Protein_ID\\tAccession\\tpdb_id\\tchain_id\\tprot_start\\tprot_end\\tunp_start\\tunp_end\\tlength\\n' > pdb_missing.tsv
     """
 }
+
+
+// ──────────────────────────────────────────────────────────────────────────
+// LCR_MAP — low-complexity regions via NCBI SEG (segmasker). Worker:
+// create_lcr_worker.py. Missing segmasker → empty track, never crashes.
+// ──────────────────────────────────────────────────────────────────────────
+process LCR_MAP {
+    tag  { "lcr_map" }
+    label 'process_low'
+    publishDir(
+        path: { params.gene_dir ? "${params.outdir}/${params.gene_dir}/final/annotations"
+                                : "${params.outdir}/final/annotations" },
+        mode: 'copy'
+    )
+
+    input:
+    path loc_chrom
+
+    output:
+    path "low_complexity.tsv", emit: lcr
+
+    script:
+    def only_main_arg = params.only_main_isoforms ? '--only_main_isoforms' : ''
+    """
+    create_lcr_worker.py \\
+        --seq_table ${loc_chrom} \\
+        --outdir    . \\
+        ${only_main_arg}
+    """
+
+    stub:
+    """
+    printf 'Protein_ID\\tstart\\tend\\tlength\\n' > low_complexity.tsv
+    """
+}

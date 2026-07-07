@@ -120,7 +120,8 @@ include { FETCH_MOBIDB;
           POSITION_BASED_MAP       } from './modules/disorder'
 include { PDB_MAP;
           PDB_BULK_MAP;
-          EXON_MAP                 } from './modules/structure'
+          EXON_MAP;
+          LCR_MAP                  } from './modules/structure'
 include { FETCH_GO;
           GO_MAP;
           POLYMORPHISM_MAP;
@@ -866,6 +867,12 @@ After copying/downloading the files, rerun the same command with -resume.
         }
     }
 
+    // ── Low-complexity regions (SEG) ────────────────────────────────────────
+    if ( (mods == null || mods.contains('lcr')) && !params.skip_lcr ) {
+        LCR_MAP( SEQUENCE_PROCESS.out.loc_chrom_seq )
+        LCR_MAP.out.lcr.view { f -> "\n✔  Low-complexity regions: ${f}\n" }
+    }
+
     // ── Step 5f: GO Term annotation ───────────────────────────────────────────
     if ( (mods == null || mods.contains('go')) ) {
         def go_refs = FETCH_GO()
@@ -1247,6 +1254,7 @@ After copying/downloading the files, rerun the same command with -resume.
     if ( (mods == null || mods.contains('omim')) && !params.skip_omim )                   report_gate = report_gate.mix( OMIM_MAP.out.omim_disease )
     if ( (mods == null || mods.contains('dbnsfp')) && !params.skip_pathogenicity && !(genome_enabled && (params.dbnsfp_raw_dir || params.fetch_dbnsfp)) ) report_gate = report_gate.mix( PATHOGENICITY_MAP.out.scores )
     if ( (mods == null || mods.contains('finches')) && !params.skip_finches )             report_gate = report_gate.mix( FINCHES_MAP.out.finches )
+    if ( (mods == null || mods.contains('lcr')) && !params.skip_lcr )                     report_gate = report_gate.mix( LCR_MAP.out.lcr )
 
     MAPPING_REPORT(
         SEQUENCE_PROCESS.out.loc_chrom_seq,
