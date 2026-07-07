@@ -97,12 +97,62 @@ def _resolve_cif(acc_base: str, cif_dir: Path, delay: float,
     return None
 
 
+# Structural mmCIF categories mkdssp needs; everything else (esp. _ma_* which
+# demands mmcif_ma.dic this libcifpp build lacks) is dropped. Keeping
+# _entity_poly_seq lets mkdssp resolve residues without an external CCD.
+_CIF_KEEP_CATEGORIES = {
+    "_entry", "_atom_type", "_atom_site", "_struct_asym", "_software",
+    "_entity", "_entity_poly", "_entity_poly_seq", "_pdbx_poly_seq_scheme",
+}
+
+
+def _sanitize_cif(text: str) -> str:
+    """Strip ModelArchive/metadata categories from an AlphaFold mmCIF, keeping
+    only the structural categories mkdssp needs. Preserves the data_ header."""
+    lines = text.splitlines()
+    data_hdr = next((ln for ln in lines if ln.startswith("data_")), "data_AF")
+
+    # split into '#'-delimited blocks (AF CIFs use a '#' line after each category)
+    blocks, cur = [], []
+    for ln in lines:
+        if ln.startswith("data_"):
+            continue
+        if ln.rstrip() == "#":
+            if cur:
+                blocks.append(cur); cur = []
+        else:
+            cur.append(ln)
+    if cur:
+        blocks.append(cur)
+
+    def _category_of(block):
+        for ln in block:
+            if ln.startswith("_"):
+                return ln.split(".", 1)[0]
+        return None
+
+    out = [data_hdr, "#"]
+    for b in blocks:
+        cat = _category_of(b)
+        if cat is None or cat.startswith("_ma_") or cat not in _CIF_KEEP_CATEGORIES:
+            continue
+        out.extend(b)
+        out.append("#")
+    return "\n".join(out) + "\n"
+
+
 def _run_dssp(cif: Path, mkdssp: str, tmp: Path) -> list:
     """Return list of (resnum:int, aa:str, ss8:str, acc:float) from mkdssp mmCIF output."""
+    clean = tmp / "clean.cif"
+    try:
+        clean.write_text(_sanitize_cif(cif.read_text()))
+    except Exception as exc:
+        log.warning("CIF sanitize failed for %s: %s", cif.name, exc)
+        return []
     out = tmp / "out.cif"
     proc = subprocess.run(
         [mkdssp, "--output-format", "mmcif", "--calculate-accessibility",
-         str(cif), str(out)],
+         str(clean), str(out)],
         capture_output=True, text=True)
     if proc.returncode != 0 or not out.exists():
         log.warning("mkdssp failed on %s: %s", cif.name, proc.stderr.strip()[:200])

@@ -46,6 +46,28 @@ def test_parses_local_cif(tmp_path):
     assert (rsa >= 0).all() and (rsa <= 1.6).all()
 
 
+def test_sanitize_cif_strips_ma_categories():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location(
+        "dsspw", str(Path(__file__).resolve().parents[1] / "bin" / "create_dssp_worker.py"))
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+
+    cif = (
+        "data_AFTEST\n#\n"
+        "_atom_site.group_PDB\nATOM\n#\n"
+        "_ma_qa_metric.id\n1\n#\n"
+        "_ma_qa_metric_local.label_asym_id\nA\n#\n"
+        "_entity_poly_seq.mon_id\nMET\n#\n"
+    )
+    out = mod._sanitize_cif(cif)
+    assert "_ma_qa_metric" not in out
+    assert "_ma_qa_metric_local" not in out
+    assert "_atom_site" in out
+    assert "_entity_poly_seq" in out
+    assert out.startswith("data_AFTEST")
+
+
 def test_missing_structure_skipped(tmp_path):
     seq = tmp_path / "seq.tsv"
     pd.DataFrame(
