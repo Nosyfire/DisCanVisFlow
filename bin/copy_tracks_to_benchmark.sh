@@ -18,6 +18,7 @@ RELPATHS=(
     "final/phase_separation/catgranule.tsv"
     "final/phase_separation/plaac.tsv"
     "final/pathogenicity/finches_saturation.tsv"
+    "final/disorder/disprot.tsv"
 )
 
 copied=0

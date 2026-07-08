@@ -115,6 +115,8 @@ include { FETCH_ELM;
           HOMOLOGY_MANIFEST        } from './modules/annotation_backbone'
 include { FETCH_MOBIDB;
           MOBIDB_MAP;
+          FETCH_DISPROT;
+          DISPROT_MAP;
           PARSE_ALPHAFOLD_PLDDT;
           DISORDER_MAP;
           POSITION_BASED_MAP       } from './modules/disorder'
@@ -882,6 +884,15 @@ After copying/downloading the files, rerun the same command with -resume.
         DSSP_MAP.out.dssp.view { f -> "\n✔  DSSP SS + true RSA: ${f}\n" }
     }
 
+    // ── DisProt curated disorder regions ────────────────────────────────────
+    if ( (mods == null || mods.contains('disprot')) && !params.skip_disprot ) {
+        def _disprot_ch = params.disprot_tsv
+            ? Channel.value( file(params.disprot_tsv, checkIfExists: true) )
+            : FETCH_DISPROT().disprot_tsv.first()
+        DISPROT_MAP( SEQUENCE_PROCESS.out.loc_chrom_seq, _disprot_ch )
+        DISPROT_MAP.out.disprot.view { f -> "\n✔  DisProt curated disorder regions: ${f}\n" }
+    }
+
     // ── Step 5f: GO Term annotation ───────────────────────────────────────────
     if ( (mods == null || mods.contains('go')) ) {
         def go_refs = FETCH_GO()
@@ -1279,6 +1290,7 @@ After copying/downloading the files, rerun the same command with -resume.
     if ( (mods == null || mods.contains('plaac')) && !params.skip_plaac )                  report_gate = report_gate.mix( PLAAC_MAP.out.plaac )
     if ( (mods == null || mods.contains('lcr')) && !params.skip_lcr )                     report_gate = report_gate.mix( LCR_MAP.out.lcr )
     if ( (mods == null || mods.contains('dssp')) && !params.skip_dssp )                   report_gate = report_gate.mix( DSSP_MAP.out.dssp )
+    if ( (mods == null || mods.contains('disprot')) && !params.skip_disprot )             report_gate = report_gate.mix( DISPROT_MAP.out.disprot )
 
     MAPPING_REPORT(
         SEQUENCE_PROCESS.out.loc_chrom_seq,

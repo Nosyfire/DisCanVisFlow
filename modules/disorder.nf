@@ -99,6 +99,91 @@ PYEOF
 
 
 // ──────────────────────────────────────────────────────────────────────────
+// DISPROT_MAP  — DisProt curated disorder regions → Protein_ID TSV.
+//
+// Maps DisProt manually-curated intrinsic-disorder regions (UniProt-accession
+// keyed, IDPO/GO ontology terms) onto every GENCODE isoform, validating the
+// canonical coordinates against each isoform's sequence.
+// ──────────────────────────────────────────────────────────────────────────
+process DISPROT_MAP {
+    tag  { "disprot_map" }
+    label 'process_low'
+
+    publishDir(
+        path: { params.gene_dir ? "${params.outdir}/${params.gene_dir}/final/disorder"
+                                : "${params.outdir}/final/disorder" },
+        mode: 'copy'
+    )
+
+    input:
+    path loc_chrom
+    path disprot_tsv   // disprot_regions.tsv from FETCH_DISPROT (or NO_FILE)
+
+    output:
+    path "disprot.tsv", emit: disprot
+
+    script:
+    """
+    create_disprot_worker.py \\
+        --seq_table   ${loc_chrom} \\
+        --disprot_tsv ${disprot_tsv} \\
+        --outdir      . \\
+        --only_main_isoforms
+    """
+
+    stub:
+    """
+    echo -e "Protein_ID\tEntry_Isoform\tdisprot_id\tregion_id\tstart\tend\tterm_namespace\tterm_id\tterm_name\teco_id\tpmid" > disprot.tsv
+    """
+}
+
+
+// ──────────────────────────────────────────────────────────────────────────
+// FETCH_DISPROT  — bulk DisProt release (IDPO + GO term ontologies), cached.
+// ──────────────────────────────────────────────────────────────────────────
+process FETCH_DISPROT {
+    tag  { "disprot_current" }
+    label 'process_low'
+    storeDir { workflow.stubRun ? "${params.ref_dir}/_stub/disprot" : "${params.ref_dir}/disprot" }
+
+    output:
+    path "disprot_regions.tsv", emit: disprot_tsv
+
+    script:
+    """
+    python3 - << 'PYEOF'
+import urllib.request, sys, time
+
+url = ('https://disprot.org/api/v2/download?format=tsv&release=current'
+       '&term_ontology=IDPO&term_ontology=GO')
+out = 'disprot_regions.tsv'
+for attempt in range(1, 4):
+    try:
+        req = urllib.request.Request(url, headers={'User-Agent': 'DisCanVisFlow/0.6.0'})
+        with urllib.request.urlopen(req, timeout=1800) as resp, open(out, 'wb') as fh:
+            fh.write(resp.read())
+        lines = sum(1 for _ in open(out))
+        if lines < 2:
+            print(f'ERROR: {out} has only {lines} line(s) — server returned no data', file=sys.stderr)
+            sys.exit(1)
+        print(f'{out}: {lines} lines OK')
+        break
+    except Exception as exc:
+        print(f'Attempt {attempt}/3 failed for {out}: {exc}', file=sys.stderr)
+        if attempt == 3:
+            sys.exit(1)
+        time.sleep(10)
+PYEOF
+    """
+
+    stub:
+    """
+    printf 'UniProt ACC\\tDisProt ID\\tRegion ID\\tStart\\tEnd\\tTerm namespace\\tTerm ID\\tTerm name\\tECO Term ID\\tPMID\\tRegion sequence\\tObsolete\\n' > disprot_regions.tsv
+    """
+}
+
+
+// ──────────────────────────────────────────────────────────────────────────
 // PARSE_ALPHAFOLD_PLDDT — extract per-residue pLDDT scores from the EBI
 // AlphaFold human-proteome bulk tar (UP000005640_9606_HUMAN_v*.tar).
 // Replaces per-accession EBI API calls in DISORDER_MAP.

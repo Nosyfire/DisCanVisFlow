@@ -64,9 +64,9 @@ nextflow run main.nf --project discanvis --data local --machine slurm -resume
 # Example: RAF1 with cBioPortal + ClinVar mutations + AIUPred disorder/binding + ELM
 nextflow run main.nf --project test_one_protein --data local --machine hard --target_gene RAF1 \
     --modules mutations,disorder --fetch_cbioportal true --skip_iupred true -resume
-# Available module names: mutations, disorder, mobidb, pdb, go, polymorphism, pem,
+# Available module names: mutations, disorder, mobidb, disprot, pdb, go, polymorphism, pem,
 # coiledcoils, ppi, conservation, scansite, clinvar_disease, omim, cancer_drivers,
-# alphamissense, depmap, mavedb, proteingym, dbnsfp, finches
+# alphamissense, depmap, mavedb, proteingym, dbnsfp, finches, lcr, dssp, catgranule, plaac
 # ELM + Pfam + DIBS/MFIB/PhasePro/PTM always run as backbone regardless of --modules
 
 # Skip individual predictors within a module
@@ -183,7 +183,7 @@ Show the exact command, ask "Shall I run this?", wait for confirmation, then exe
 ### IDP-relevant outputs (all in `results/<project>/final/`)
 | Directory | Contents |
 |-----------|----------|
-| `disorder/` | IUPred3, ANCHOR2, AIUPred, AlphaFold pLDDT, MobiDB, CombinedDisorder |
+| `disorder/` | IUPred3, ANCHOR2, AIUPred, AlphaFold pLDDT, MobiDB, DisProt, CombinedDisorder |
 | `annotations/` | ELM, DIBS, MFIB, PhasePro, PTM, Pfam, PEM, GO, coiled-coils, PPI |
 | `sequence/` | Isoform table with sequences + genomic coordinates |
 | `position/` | RSA scores, position-based annotations |
@@ -292,6 +292,7 @@ python bin/extract_gene_from_results.py --source results/discanvis --gene RAF1 -
 | 5m — Position-Based | `modules/disorder.nf` | `create_position_based_worker.py` | `position_based_annotations.tsv`, `rsa_scores.tsv` |
 | 5n — ELM Classes | `modules/annotation_backbone.nf` | `create_elm_class_worker.py` | `elm_classes.tsv` |
 | 5o — MobiDB | `modules/disorder.nf` | `create_mobidb_worker.py` | `mobidb_disorder.tsv` |
+| 5p — DisProt | `modules/disorder.nf` | `create_disprot_worker.py` | `final/disorder/disprot.tsv` (curated disorder regions, IDPO/GO terms; coordinate-validated per isoform) |
 | 7 — Conservation | `modules/functional.nf` | `create_conservation_worker.py` | `conservation_multiple_level.tsv`, `conservation_phastcons.tsv` |
 | 8a — ClinVar disease | `modules/disease.nf` | `create_clinvar_disease_build_worker.py` | `final/disease/clinvar_disease.tsv` |
 | 8f — Pathogenicity | `modules/pathogenicity.nf` | `create_dbnsfp_map_worker.py` | `final/pathogenicity/pathogenicity_scores.tsv` |
@@ -343,6 +344,7 @@ If direct import fails, `create_disorder_worker.py` falls back to subprocess via
 | PTM (PTMdb + PhosphoSitePlus) | `legacy_data/ptm/ptmdb/` + `legacy_data/ptm/ptmphs/` — **not in git** (licensed; provide manually) |
 | Cancer drivers | `legacy_data/drivers/` (CGC census + Compendium) |
 | MobiDB | `FETCH_MOBIDB` (API, cached via `storeDir`) |
+| DisProt | `FETCH_DISPROT` (disprot.org API, `term_ontology=IDPO+GO`, cached in `references/disprot/`) |
 | GO | `FETCH_GO` (`goa_human.gaf.gz` + `go.obo`, cached) |
 | ClinVar | `FETCH_CLINVAR` (NCBI FTP, cached in `references/clinvar/`) |
 | PPI | `FETCH_INTACT/BIOGRID/HIPPIE` → `PPI_PREPROCESS` (cached in `references/ppi/`) |
