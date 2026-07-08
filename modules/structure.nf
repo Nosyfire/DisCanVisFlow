@@ -14,8 +14,8 @@ process PDB_MAP {
     tag  { "pdb_map" }
     label 'process_medium'
     publishDir(
-        path: { params.gene_dir ? "${params.outdir}/${params.gene_dir}/final/pdb"
-                                : "${params.outdir}/final/pdb" },
+        path: { params.gene_dir ? "${params.outdir}/${params.gene_dir}/final/structure"
+                                : "${params.outdir}/final/structure" },
         mode: 'copy'
     )
 
@@ -86,8 +86,8 @@ process PDB_BULK_MAP {
     tag  { "pdb_bulk_map" }
     label 'process_low'
     publishDir(
-        path: { params.gene_dir ? "${params.outdir}/${params.gene_dir}/final/pdb"
-                                : "${params.outdir}/final/pdb" },
+        path: { params.gene_dir ? "${params.outdir}/${params.gene_dir}/final/structure"
+                                : "${params.outdir}/final/structure" },
         mode: 'copy'
     )
 

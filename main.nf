@@ -823,14 +823,18 @@ After copying/downloading the files, rerun the same command with -resume.
 
         def _dis_pub = params.gene_dir ? "${params.outdir}/${params.gene_dir}/final/disorder"
                                        : "${params.outdir}/final/disorder"
-        def _mergeDis = { ch, fname -> ( scatter_n > 1
-            ? ch.collectFile(name: fname, keepHeader: true, skip: 1, sort: true, storeDir: _dis_pub)
+        def _struct_pub = params.gene_dir ? "${params.outdir}/${params.gene_dir}/final/structure"
+                                          : "${params.outdir}/final/structure"
+        def _mergeTo = { ch, fname, pub -> ( scatter_n > 1
+            ? ch.collectFile(name: fname, keepHeader: true, skip: 1, sort: true, storeDir: pub)
             : ch ).first() }
+        def _mergeDis = { ch, fname -> _mergeTo.call( ch, fname, _dis_pub ) }
         disorder_iupred  = _mergeDis.call( DISORDER_MAP.out.iupred,           'IUPredscores.tsv' )
         disorder_anchor  = _mergeDis.call( DISORDER_MAP.out.anchor,           'Anchorscores.tsv' )
         disorder_aiupred = _mergeDis.call( DISORDER_MAP.out.aiupred,          'AIUPredscores.tsv' )
         disorder_aiubind = _mergeDis.call( DISORDER_MAP.out.aiupred_binding,  'AIUPredBinding.tsv' )
-        disorder_plddt   = _mergeDis.call( DISORDER_MAP.out.plddt,            'AlphaFoldTable.tsv' )
+        // AlphaFoldTable is a structural feature → final/structure
+        disorder_plddt   = _mergeTo.call( DISORDER_MAP.out.plddt, 'AlphaFoldTable.tsv', _struct_pub )
         disorder_regions = _mergeDis.call( DISORDER_MAP.out.disorder_regions, 'CombinedDisorderNew.tsv' )
         disorder_pos     = _mergeDis.call( DISORDER_MAP.out.disorder_pos,     'CombinedDisorderNew_Pos.tsv' )
 

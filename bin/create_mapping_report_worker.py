@@ -88,13 +88,13 @@ COVERAGE_LABELS = {
     "disorder/Anchorscores.tsv": ("ANCHOR2 binding", "isoforms scored"),
     "disorder/AIUPredscores.tsv": ("AIUPred disorder", "isoforms scored"),
     "disorder/AIUPredBinding.tsv": ("AIUPred-Binding", "isoforms scored"),
-    "disorder/AlphaFoldTable.tsv": ("AlphaFold pLDDT", "isoforms scored"),
-    "disorder/rsa_scores.tsv": ("RSA (from pLDDT)", "isoforms scored"),
+    "structure/AlphaFoldTable.tsv": ("AlphaFold pLDDT", "isoforms scored"),
+    "structure/rsa_scores.tsv": ("RSA (from pLDDT)", "isoforms scored"),
     "disorder/CombinedDisorderNew.tsv": ("Combined disorder regions", "regions"),
     "disorder/CombinedDisorderNew_Pos.tsv": ("Combined disorder (per-residue)", "positions"),
     # pdb
-    "pdb/pdb_structures.tsv": ("PDB structures", "rows"),
-    "pdb/pdb_missing.tsv": ("PDB missing residues (disorder)", "rows"),
+    "structure/pdb_structures.tsv": ("PDB structures", "rows"),
+    "structure/pdb_missing.tsv": ("PDB missing residues (disorder)", "rows"),
     # conservation
     "conservation/conservation_multiple_level.tsv": ("GOPHER conservation (multi-level)", "rows"),
     "conservation/conservation_phastcons.tsv": ("phastCons conservation", "isoforms scored"),
@@ -154,12 +154,12 @@ SOURCE_REGISTRY = {
     "disorder/Anchorscores.tsv": ("computed", "ANCHOR2"),
     "disorder/AIUPredscores.tsv": ("computed", "AIUPred"),
     "disorder/AIUPredBinding.tsv": ("computed", "AIUPred-Binding"),
-    "disorder/AlphaFoldTable.tsv": ("downloaded", "AlphaFold EBI API (pLDDT)"),
-    "disorder/rsa_scores.tsv": ("derived", "from pLDDT"),
+    "structure/AlphaFoldTable.tsv": ("downloaded", "AlphaFold EBI API (pLDDT)"),
+    "structure/rsa_scores.tsv": ("derived", "from pLDDT"),
     "disorder/CombinedDisorderNew.tsv": ("derived", "MobiDB + RSA + IUPred + Pfam"),
     "disorder/CombinedDisorderNew_Pos.tsv": ("derived", "MobiDB + RSA + IUPred + Pfam"),
-    "pdb/pdb_structures.tsv": ("downloaded", "PDBe API"),
-    "pdb/pdb_missing.tsv": ("downloaded", "PDBe API"),
+    "structure/pdb_structures.tsv": ("downloaded", "PDBe API"),
+    "structure/pdb_missing.tsv": ("downloaded", "PDBe API"),
     "conservation/conservation_multiple_level.tsv": ("local", "GOPHER conservation_table"),
     "conservation/conservation_phastcons.tsv": ("local", "phastCons bigWig"),
     "position/position_based_annotations.tsv": ("derived", "aggregated per-residue"),
@@ -220,7 +220,7 @@ def source_cols(rel: str, overrides: dict):
 KEY_OVERRIDES = {
     "annotations/interactions.tsv": "Protein_ID_A",
 }
-CATEGORY_ORDER = ["annotations", "disorder", "pdb", "conservation", "position",
+CATEGORY_ORDER = ["annotations", "disorder", "structure", "conservation", "position",
                   "genome", "mutations", "disease", "drivers", "pathogenicity",
                   "sequence"]
 

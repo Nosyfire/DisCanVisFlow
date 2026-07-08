@@ -183,11 +183,11 @@ Show the exact command, ask "Shall I run this?", wait for confirmation, then exe
 ### IDP-relevant outputs (all in `results/<project>/final/`)
 | Directory | Contents |
 |-----------|----------|
-| `disorder/` | IUPred3, ANCHOR2, AIUPred, AlphaFold pLDDT, MobiDB, DisProt, CombinedDisorder |
+| `disorder/` | IUPred3, ANCHOR2, AIUPred, MobiDB, DisProt, CombinedDisorder |
 | `annotations/` | ELM, DIBS, MFIB, PhasePro, PTM, Pfam, PEM, GO, coiled-coils, PPI |
 | `sequence/` | Isoform table with sequences + genomic coordinates |
-| `position/` | RSA scores, position-based annotations |
-| `pdb/` | PDB coverage + unobserved/disordered regions |
+| `structure/` | AlphaFold pLDDT (`AlphaFoldTable.tsv`), RSA (`rsa_scores.tsv`), DSSP, PDB coverage + unobserved/disordered regions (`pdb_structures.tsv`, `pdb_missing.tsv`) |
+| `position/` | Position-based annotations |
 
 ## Agentic Behavior & Autonomous TDD Protocol
 
@@ -253,7 +253,8 @@ DisCanVisFlow/
 │   ├── intermediate/    Entry_Isoform-keyed staging inputs to TRANSCRIPT_MAP
 │   └── final/           ALL DB-ready outputs (Protein_ID-keyed)
 │       ├── sequence/, genome/, mutations/, annotations/, disorder/
-│       ├── pdb/, conservation/, position/, disease/, pathogenicity/, drivers/
+│       ├── structure/ (AlphaFold pLDDT + RSA + DSSP + PDB), conservation/,
+│       ├── position/, disease/, pathogenicity/, drivers/, phase_separation/
 │       └── mapping_reports/
 └── config/
     ├── data/            local.config | discanvis_data.config
@@ -279,8 +280,8 @@ python bin/extract_gene_from_results.py --source results/discanvis --gene RAF1 -
 | 3 — Genome Mapping | `modules/genome_mapping.nf` | `create_genome_map_worker.py` | `combined_map.map` |
 | 4 — Mutation Mapping | `modules/mutation_mapping.nf` | `create_mutation_map_worker.py` | `Missense/Frameshift/Nonsense/Indel_filter_mutations_mapped.tsv` |
 | 5a — Annotation | `modules/annotation_backbone.nf` | `create_annotation_worker.py` | `elm.tsv`, `dibs.tsv`, `mfib.tsv`, `phasepro.tsv`, `ptm_merged.tsv`, `pfam_domains.tsv` |
-| 5b — Disorder | `modules/disorder.nf` | `create_disorder_worker.py` | `IUPredscores.tsv`, `AIUPredscores.tsv`, `AIUPredBinding.tsv`, `AlphaFoldTable.tsv`, `CombinedDisorderNew.tsv` |
-| 5c — PDB | `modules/structure.nf` | `create_pdb_worker.py` | `pdb_structures.tsv`, `pdb_missing.tsv` |
+| 5b — Disorder | `modules/disorder.nf` | `create_disorder_worker.py` | `IUPredscores.tsv`, `AIUPredscores.tsv`, `AIUPredBinding.tsv`, `CombinedDisorderNew.tsv` (all → `final/disorder/`); `AlphaFoldTable.tsv` → `final/structure/` |
+| 5c — PDB | `modules/structure.nf` | `create_pdb_worker.py` | `final/structure/pdb_structures.tsv`, `final/structure/pdb_missing.tsv` |
 | 5d — Exon | `modules/structure.nf` | `create_exon_worker.py` | `exon.tsv` |
 | 5e — Transcript Map | `modules/annotation_backbone.nf` | `create_transcript_map_worker.py` | Protein_ID-keyed mapped copies of all annotation TSVs |
 | 5f — GO Terms | `modules/functional.nf` | `create_go_worker.py` | `go_terms.tsv` |
@@ -289,7 +290,7 @@ python bin/extract_gene_from_results.py --source results/discanvis --gene RAF1 -
 | 5i — Coiled Coils | `modules/functional.nf` | `create_coiledcoils_worker.py` | `coiled_coils.tsv`, `DeepCoil.tsv` |
 | 5j — PPI | `modules/functional.nf` | `create_ppi_worker.py` | `interactions.tsv` |
 | 5k — ScanSite | `modules/functional.nf` | `create_scansite_worker.py` | `scansite.tsv` |
-| 5m — Position-Based | `modules/disorder.nf` | `create_position_based_worker.py` | `position_based_annotations.tsv`, `rsa_scores.tsv` |
+| 5m — Position-Based | `modules/disorder.nf` | `create_position_based_worker.py` | `final/position/position_based_annotations.tsv`; `rsa_scores.tsv` → `final/structure/` |
 | 5n — ELM Classes | `modules/annotation_backbone.nf` | `create_elm_class_worker.py` | `elm_classes.tsv` |
 | 5o — MobiDB | `modules/disorder.nf` | `create_mobidb_worker.py` | `mobidb_disorder.tsv` |
 | 5p — DisProt | `modules/disorder.nf` | `create_disprot_worker.py` | `final/disorder/disprot.tsv` (curated disorder regions, IDPO/GO terms + DisProt dataset; coordinate-validated per isoform) |

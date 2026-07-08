@@ -75,12 +75,12 @@ _FILE_MAP = [
     # ── Disorder ──────────────────────────────────────────────────────────────
     ("final/disorder/IUPredscores.tsv",        "IUPred3 residues",          None),
     ("final/disorder/CombinedDisorderNew.tsv", "Combined disorder regions", None),
-    ("final/disorder/AlphaFoldTable.tsv",      "AlphaFold pLDDT residues",  None),
-    ("final/disorder/rsa_scores.tsv",          "RSA residues (from pLDDT)", None),
 
-    # ── PDB ───────────────────────────────────────────────────────────────────
-    ("final/pdb/pdb_structures.tsv",  "PDB structures",   None),
-    ("final/pdb/pdb_missing.tsv",     "PDB missing residues (disorder)", None),
+    # ── Structure (AlphaFold pLDDT + RSA + PDB) ───────────────────────────────
+    ("final/structure/AlphaFoldTable.tsv",  "AlphaFold pLDDT residues",  None),
+    ("final/structure/rsa_scores.tsv",      "RSA residues (from pLDDT)", None),
+    ("final/structure/pdb_structures.tsv",  "PDB structures",   None),
+    ("final/structure/pdb_missing.tsv",     "PDB missing residues (disorder)", None),
 
     # ── Conservation (mapped/) ────────────────────────────────────────────────
     ("final/conservation/conservation_multiple_level.tsv",

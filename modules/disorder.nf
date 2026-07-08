@@ -275,11 +275,21 @@ process DISORDER_MAP {
     label 'process_medium'
     // When scattering (scatter_chunks > 1) this runs per-chunk and a MERGE step
     // publishes the combined tables, so per-task publishing is disabled.
+    // AlphaFoldTable.tsv is a structural feature → final/structure; all other
+    // disorder tables → final/disorder.
     publishDir(
         path: { params.gene_dir ? "${params.outdir}/${params.gene_dir}/final/disorder"
                                 : "${params.outdir}/final/disorder" },
         mode: 'copy',
-        enabled: ( ((params.scatter_chunks ?: 1) as Integer) <= 1 )
+        enabled: ( ((params.scatter_chunks ?: 1) as Integer) <= 1 ),
+        saveAs: { fn -> fn == "AlphaFoldTable.tsv" ? null : fn }
+    )
+    publishDir(
+        path: { params.gene_dir ? "${params.outdir}/${params.gene_dir}/final/structure"
+                                : "${params.outdir}/final/structure" },
+        mode: 'copy',
+        enabled: ( ((params.scatter_chunks ?: 1) as Integer) <= 1 ),
+        saveAs: { fn -> fn == "AlphaFoldTable.tsv" ? fn : null }
     )
 
     input:
@@ -350,7 +360,7 @@ process POSITION_BASED_MAP {
     tag  { "position_based_map" }
     label 'process_medium'
 
-    // position_based_annotations.tsv → final/position ; rsa_scores.tsv → final/disorder
+    // position_based_annotations.tsv → final/position ; rsa_scores.tsv → final/structure
     publishDir(
         path: { params.gene_dir ? "${params.outdir}/${params.gene_dir}/final/position"
                                 : "${params.outdir}/final/position" },
@@ -358,8 +368,8 @@ process POSITION_BASED_MAP {
         pattern: "position_based_annotations.tsv"
     )
     publishDir(
-        path: { params.gene_dir ? "${params.outdir}/${params.gene_dir}/final/disorder"
-                                : "${params.outdir}/final/disorder" },
+        path: { params.gene_dir ? "${params.outdir}/${params.gene_dir}/final/structure"
+                                : "${params.outdir}/final/structure" },
         mode: 'copy',
         pattern: "rsa_scores.tsv"
     )

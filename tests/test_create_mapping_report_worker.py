@@ -15,7 +15,7 @@ def _build_run(tmp_path):
     inter = base / "intermediate" / "annotations"
     (final / "annotations").mkdir(parents=True)
     (final / "disorder").mkdir(parents=True)
-    (final / "pdb").mkdir(parents=True)
+    (final / "structure").mkdir(parents=True)
     (final / "pathogenicity").mkdir(parents=True)
     (final / "genome").mkdir(parents=True)
     (final / "mutations" / "ClinVar").mkdir(parents=True)
@@ -58,10 +58,10 @@ def _build_run(tmp_path):
     pd.DataFrame({"Protein_ID": ["GENE-201"],
                   "AIUPredBinding": ["0.1,0.2,0.3"]}).to_csv(
         final / "disorder" / "AIUPredBinding.tsv", sep="\t", index=False)
-    # pdb: both isoforms
+    # structure/pdb: both isoforms
     pd.DataFrame({"Protein_ID": ["GENE-201", "GENE-202"],
                   "pdb_id": ["1abc", "1abc"]}).to_csv(
-        final / "pdb" / "pdb_structures.tsv", sep="\t", index=False)
+        final / "structure" / "pdb_structures.tsv", sep="\t", index=False)
     # pathogenicity (mavedb lives here)
     pd.DataFrame({"Protein_ID": ["GENE-201"], "score": ["1.5"]}).to_csv(
         final / "pathogenicity" / "mavedb.tsv", sep="\t", index=False)
