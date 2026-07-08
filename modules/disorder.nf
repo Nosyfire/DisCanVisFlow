@@ -133,7 +133,7 @@ process DISPROT_MAP {
 
     stub:
     """
-    echo -e "Protein_ID\tEntry_Isoform\tdisprot_id\tregion_id\tstart\tend\tterm_namespace\tterm_id\tterm_name\teco_id\tpmid" > disprot.tsv
+    echo -e "Protein_ID\tEntry_Isoform\tdisprot_id\tregion_id\tstart\tend\tterm_namespace\tterm_id\tterm_name\teco_id\tpmid\tdataset" > disprot.tsv
     """
 }
 

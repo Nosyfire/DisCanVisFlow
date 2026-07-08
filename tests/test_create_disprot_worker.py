@@ -17,7 +17,7 @@ SEQ2 = "GSHMASMTGGQQMGRGSEFMKRISTTITTTITITTGNGAGKALEEVLSKGNITTPTQINSS"
 DISPROT_HEADER = (
     "UniProt ACC\tDisProt ID\tRegion ID\tStart\tEnd\t"
     "Term namespace\tTerm ID\tTerm name\tECO Term ID\tPMID\t"
-    "Region sequence\tObsolete\n"
+    "Region sequence\tObsolete\tDataset\n"
 )
 
 
@@ -40,10 +40,11 @@ def _seq(tmpdir):
 
 def _region(acc, dpid, rid, start, end, seq, term_ns="Structural state",
             term_id="IDPO:0000002", term_name="disorder",
-            eco="ECO:0006220", pmid="pmid:123", obsolete="false"):
+            eco="ECO:0006220", pmid="pmid:123", obsolete="false",
+            dataset="Human proteins"):
     region_seq = seq[start - 1:end]
     return (f"{acc}\t{dpid}\t{rid}\t{start}\t{end}\t{term_ns}\t{term_id}\t"
-            f"{term_name}\t{eco}\t{pmid}\t{region_seq}\t{obsolete}\n")
+            f"{term_name}\t{eco}\t{pmid}\t{region_seq}\t{obsolete}\t{dataset}\n")
 
 
 def _disprot(tmpdir, rows):
@@ -65,7 +66,7 @@ class TestBasicOutput:
         df = _out(tmp_path)
         for col in ["Protein_ID", "Entry_Isoform", "disprot_id", "region_id",
                     "start", "end", "term_namespace", "term_id", "term_name",
-                    "eco_id", "pmid"]:
+                    "eco_id", "pmid", "dataset"]:
             assert col in df.columns, f"Missing: {col}"
 
     def test_region_mapped_to_pid(self, tmp_path):
@@ -81,7 +82,8 @@ class TestBasicOutput:
         dis = _disprot(tmp_path, [_region(
             "P22222", "DP02", "DP02r001", 5, 25, SEQ2,
             term_ns="Disorder function", term_id="GO:0005515",
-            term_name="protein binding", eco="ECO:0000269", pmid="pmid:999")])
+            term_name="protein binding", eco="ECO:0000269", pmid="pmid:999",
+            dataset="Viral proteins")])
         _run(["--seq_table", str(_seq(tmp_path)), "--disprot_tsv", str(dis),
               "--outdir", str(tmp_path)], tmp_path)
         row = _out(tmp_path).iloc[0]
@@ -90,6 +92,7 @@ class TestBasicOutput:
         assert row["term_name"] == "protein binding"
         assert row["eco_id"] == "ECO:0000269"
         assert row["pmid"] == "pmid:999"
+        assert row["dataset"] == "Viral proteins"
 
 
 class TestCoordinateValidation:
@@ -115,7 +118,7 @@ class TestCoordinateValidation:
     def test_out_of_range_skipped(self, tmp_path):
         """End beyond sequence length → skipped (no crash)."""
         row = ("P22222\tDP02\tDP02r001\t50\t200\tStructural state\tIDPO:0000002\t"
-               "disorder\tECO:0006220\tpmid:1\t\tfalse\n")
+               "disorder\tECO:0006220\tpmid:1\t\tfalse\tHuman proteins\n")
         dis = _disprot(tmp_path, [row])
         r = _run(["--seq_table", str(_seq(tmp_path)), "--disprot_tsv", str(dis),
                   "--outdir", str(tmp_path)], tmp_path)

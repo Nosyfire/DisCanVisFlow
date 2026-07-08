@@ -17,7 +17,7 @@ IDPO+GO), relevant columns (matched by name):
 
 Output (disprot.tsv):
     Protein_ID | Entry_Isoform | disprot_id | region_id | start | end |
-    term_namespace | term_id | term_name | eco_id | pmid
+    term_namespace | term_id | term_name | eco_id | pmid | dataset
 
 Usage:
     create_disprot_worker.py
@@ -44,7 +44,7 @@ log = logging.getLogger(__name__)
 _OUT_COLS = [
     "Protein_ID", "Entry_Isoform", "disprot_id", "region_id",
     "start", "end", "term_namespace", "term_id", "term_name",
-    "eco_id", "pmid",
+    "eco_id", "pmid", "dataset",
 ]
 
 # DisProt column name → canonical key used internally. Matched case-insensitively
@@ -62,6 +62,7 @@ _DISPROT_COLS = {
     "pmid":            "pmid",
     "region sequence": "region_seq",
     "obsolete":        "obsolete",
+    "dataset":         "dataset",
 }
 
 
@@ -70,6 +71,12 @@ def _resolve_columns(df: pd.DataFrame) -> dict:
     lower = {c.lower().strip(): c for c in df.columns}
     return {key: lower[name] for name, key in _DISPROT_COLS.items()
             if name in lower}
+
+
+def _s(val) -> str:
+    """Stringify a cell, normalising pandas NaN / 'N/A' placeholders to ''."""
+    s = str(val).strip()
+    return "" if s.lower() in ("nan", "none", "n/a", "<na>") else s
 
 
 def build_disprot_table(
@@ -125,13 +132,14 @@ def build_disprot_table(
             region_seq = ""
 
         rec = {
-            "disprot_id":     str(r.get(cols.get("disprot_id", ""), "")).strip(),
-            "region_id":      str(r.get(cols.get("region_id", ""), "")).strip(),
-            "term_namespace": str(r.get(cols.get("term_namespace", ""), "")).strip(),
-            "term_id":        str(r.get(cols.get("term_id", ""), "")).strip(),
-            "term_name":      str(r.get(cols.get("term_name", ""), "")).strip(),
-            "eco_id":         str(r.get(cols.get("eco_id", ""), "")).strip(),
-            "pmid":           str(r.get(cols.get("pmid", ""), "")).strip(),
+            "disprot_id":     _s(r.get(cols.get("disprot_id", ""), "")),
+            "region_id":      _s(r.get(cols.get("region_id", ""), "")),
+            "term_namespace": _s(r.get(cols.get("term_namespace", ""), "")),
+            "term_id":        _s(r.get(cols.get("term_id", ""), "")),
+            "term_name":      _s(r.get(cols.get("term_name", ""), "")),
+            "eco_id":         _s(r.get(cols.get("eco_id", ""), "")),
+            "pmid":           _s(r.get(cols.get("pmid", ""), "")),
+            "dataset":        _s(r.get(cols.get("dataset", ""), "")),
         }
 
         for pid, entry_iso, seq in acc_to_pids[acc]:

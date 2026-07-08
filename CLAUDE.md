@@ -292,7 +292,7 @@ python bin/extract_gene_from_results.py --source results/discanvis --gene RAF1 -
 | 5m — Position-Based | `modules/disorder.nf` | `create_position_based_worker.py` | `position_based_annotations.tsv`, `rsa_scores.tsv` |
 | 5n — ELM Classes | `modules/annotation_backbone.nf` | `create_elm_class_worker.py` | `elm_classes.tsv` |
 | 5o — MobiDB | `modules/disorder.nf` | `create_mobidb_worker.py` | `mobidb_disorder.tsv` |
-| 5p — DisProt | `modules/disorder.nf` | `create_disprot_worker.py` | `final/disorder/disprot.tsv` (curated disorder regions, IDPO/GO terms; coordinate-validated per isoform) |
+| 5p — DisProt | `modules/disorder.nf` | `create_disprot_worker.py` | `final/disorder/disprot.tsv` (curated disorder regions, IDPO/GO terms + DisProt dataset; coordinate-validated per isoform) |
 | 7 — Conservation | `modules/functional.nf` | `create_conservation_worker.py` | `conservation_multiple_level.tsv`, `conservation_phastcons.tsv` |
 | 8a — ClinVar disease | `modules/disease.nf` | `create_clinvar_disease_build_worker.py` | `final/disease/clinvar_disease.tsv` |
 | 8f — Pathogenicity | `modules/pathogenicity.nf` | `create_dbnsfp_map_worker.py` | `final/pathogenicity/pathogenicity_scores.tsv` |
