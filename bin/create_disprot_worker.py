@@ -139,7 +139,7 @@ def build_disprot_table(
             "term_name":      _s(r.get(cols.get("term_name", ""), "")),
             "eco_id":         _s(r.get(cols.get("eco_id", ""), "")),
             "pmid":           _s(r.get(cols.get("pmid", ""), "")),
-            "dataset":        _s(r.get(cols.get("dataset", ""), "")),
+            "dataset":        _s(r.get(cols.get("dataset", ""), "")) or "non-specific",
         }
 
         for pid, entry_iso, seq in acc_to_pids[acc]:

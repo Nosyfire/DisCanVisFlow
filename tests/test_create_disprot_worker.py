@@ -146,6 +146,14 @@ class TestFiltering:
         assert "GENE1-201" not in pids
         assert "GENE2-201" in pids
 
+    def test_empty_dataset_becomes_non_specific(self, tmp_path):
+        """A region with no Dataset tag → dataset column reads 'non-specific'."""
+        dis = _disprot(tmp_path, [_region("P22222", "DP02", "DP02r001", 5, 25,
+                                           SEQ2, dataset="")])
+        _run(["--seq_table", str(_seq(tmp_path)), "--disprot_tsv", str(dis),
+              "--outdir", str(tmp_path)], tmp_path)
+        assert _out(tmp_path).iloc[0]["dataset"] == "non-specific"
+
     def test_only_main_isoforms(self, tmp_path):
         """--only_main_isoforms drops GENE1-204 (main_isoform=no) as a candidate."""
         dis = _disprot(tmp_path, [_region("P11111", "DP01", "DP01r001", 1, 8, SEQ1)])
