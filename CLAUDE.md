@@ -184,9 +184,10 @@ Show the exact command, ask "Shall I run this?", wait for confirmation, then exe
 | Directory | Contents |
 |-----------|----------|
 | `disorder/` | IUPred3, ANCHOR2, AIUPred, MobiDB, DisProt, CombinedDisorder |
-| `annotations/` | ELM, DIBS, MFIB, PhasePro, PTM, Pfam, PEM, GO, coiled-coils, PPI |
+| `annotations/` | ELM (+ classes, switches), DIBS, MFIB, PhasePro, PTM, Pfam, UniProt ROI/binding, PEM, GO, coiled-coils, PPI, low-complexity (SEG) |
 | `sequence/` | Isoform table with sequences + genomic coordinates |
-| `structure/` | AlphaFold pLDDT (`AlphaFoldTable.tsv`), RSA (`rsa_scores.tsv`), DSSP, PDB coverage + unobserved/disordered regions (`pdb_structures.tsv`, `pdb_missing.tsv`) |
+| `structure/` | AlphaFold pLDDT (`AlphaFoldTable.tsv`), RSA (`rsa_scores.tsv`), DSSP (`dssp.tsv`), PDB coverage + unobserved/disordered regions (`pdb_structures.tsv`, `pdb_missing.tsv`) |
+| `phase_separation/` | catGRANULE (`catgranule.tsv`), PLAAC (`plaac.tsv`) |
 | `position/` | Position-based annotations |
 
 ## Agentic Behavior & Autonomous TDD Protocol
@@ -279,7 +280,7 @@ python bin/extract_gene_from_results.py --source results/discanvis --gene RAF1 -
 | 2 — Sequence Process | `modules/sequence_process.nf` | `create_sequence_table_worker.py` | `loc_chrom_with_names_isoforms_with_seq.tsv` |
 | 3 — Genome Mapping | `modules/genome_mapping.nf` | `create_genome_map_worker.py` | `combined_map.map` |
 | 4 — Mutation Mapping | `modules/mutation_mapping.nf` | `create_mutation_map_worker.py` | `Missense/Frameshift/Nonsense/Indel_filter_mutations_mapped.tsv` |
-| 5a — Annotation | `modules/annotation_backbone.nf` | `create_annotation_worker.py` | `elm.tsv`, `dibs.tsv`, `mfib.tsv`, `phasepro.tsv`, `ptm_merged.tsv`, `pfam_domains.tsv` |
+| 5a — Annotation | `modules/annotation_backbone.nf` | `create_annotation_worker.py` | `elm.tsv`, `dibs.tsv`, `mfib.tsv`, `phasepro.tsv`, `ptm_merged.tsv`, `pfam_domains.tsv`, `uniprot_roi.tsv`, `uniprot_binding.tsv` |
 | 5b — Disorder | `modules/disorder.nf` | `create_disorder_worker.py` | `IUPredscores.tsv`, `AIUPredscores.tsv`, `AIUPredBinding.tsv`, `CombinedDisorderNew.tsv` (all → `final/disorder/`); `AlphaFoldTable.tsv` → `final/structure/` |
 | 5c — PDB | `modules/structure.nf` | `create_pdb_worker.py` | `final/structure/pdb_structures.tsv`, `final/structure/pdb_missing.tsv` |
 | 5d — Exon | `modules/structure.nf` | `create_exon_worker.py` | `exon.tsv` |
@@ -294,11 +295,16 @@ python bin/extract_gene_from_results.py --source results/discanvis --gene RAF1 -
 | 5n — ELM Classes | `modules/annotation_backbone.nf` | `create_elm_class_worker.py` | `elm_classes.tsv` |
 | 5o — MobiDB | `modules/disorder.nf` | `create_mobidb_worker.py` | `mobidb_disorder.tsv` |
 | 5p — DisProt | `modules/disorder.nf` | `create_disprot_worker.py` | `final/disorder/disprot.tsv` (curated disorder regions, IDPO/GO terms + DisProt dataset; coordinate-validated per isoform) |
+| 5q — ELM Switches | `modules/annotation_backbone.nf` | `create_elm_switches_worker.py` | `final/annotations/elmswitches_mapped.tsv` (ELM molecular switches) |
+| 5r — LCR | `modules/structure.nf` | `create_lcr_worker.py` | `final/annotations/low_complexity.tsv` (SEG low-complexity regions via `segmasker`) |
+| 5s — DSSP | `modules/structure.nf` | `create_dssp_worker.py` | `final/structure/dssp.tsv` (8/3-state secondary structure + RSA from AlphaFold model) |
 | 7 — Conservation | `modules/functional.nf` | `create_conservation_worker.py` | `conservation_multiple_level.tsv`, `conservation_phastcons.tsv` |
 | 8a — ClinVar disease | `modules/disease.nf` | `create_clinvar_disease_build_worker.py` | `final/disease/clinvar_disease.tsv` |
-| 8f — Pathogenicity | `modules/pathogenicity.nf` | `create_dbnsfp_map_worker.py` | `final/pathogenicity/pathogenicity_scores.tsv` |
+| 8f — dbNSFP / Pathogenicity | `modules/pathogenicity.nf` | `create_dbnsfp_map_worker.py` (raw) / `create_pathogenicity_worker.py` (pre-mapped) | `final/pathogenicity/dbnsfp_scores.tsv` (raw `chr*.gz` → `DBNSFP_MAP`) or `pathogenicity_scores.tsv` (pre-mapped → `PATHOGENICITY_MAP`) |
 | 8g — ProteinGym | `modules/pathogenicity.nf` | `create_proteingym_worker.py` | `proteingym.tsv` |
 | 8h — FINCHES | `modules/pathogenicity.nf` | `create_finches_worker.py` | `finches_saturation.tsv` (off by default; `--skip_finches false` to enable; CC BY-NC 4.0) |
+| 8i — catGRANULE | `modules/pathogenicity.nf` | `create_catgranule_worker.py` | `final/phase_separation/catgranule.tsv` (per-residue LLPS propensity) |
+| 8j — PLAAC | `modules/pathogenicity.nf` | `create_plaac_worker.py` | `final/phase_separation/plaac.tsv` (prion-like domain score) |
 | Report | `modules/report.nf` | `create_mapping_report_worker.py` | `mapping_reports/` (runs last) |
 | Scatter | `modules/annotation_backbone.nf` (`SPLIT_SEQ_TABLE`) | `split_seq_table.py` | N gene-balanced seq-table chunks (`--scatter_chunks N`) |
 | Reference fetches | `modules/fetch_references.nf` | — | UniProt/GENCODE/ClinVar/GO/MobiDB/MONDO/AlphaMissense/IntAct/BioGRID/HIPPIE (cached via `storeDir`) |
@@ -357,6 +363,9 @@ If direct import fails, `create_disorder_worker.py` falls back to subprocess via
 
 | Module | Data Source | Status |
 |--------|-------------|--------|
-| ELM Switches | elm.eu.org/switches | pending |
 | FuzDrop LLPS probability | fuzdrop.bio.unipd.it API | pending |
-| Complexity tracks (SEG/DUST/TRF) | local tools | pending |
+| Complexity tracks (DUST/TRF) | local tools | pending (SEG done — see Module 5r LCR) |
+
+Recently completed (previously pending): ELM Switches (Module 5q), SEG
+low-complexity regions (Module 5r LCR), DSSP secondary structure (Module 5s),
+catGRANULE + PLAAC phase-separation predictors (Modules 8i/8j).

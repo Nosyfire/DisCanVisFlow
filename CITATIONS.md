@@ -38,6 +38,7 @@ If you publish results produced by DisCanVisFlow, please cite the relevant entri
 | **AlphaFold2** (pLDDT scores) | Jumper J *et al.* (2021) Highly accurate protein structure prediction with AlphaFold. *Nature* 596, 583–589. https://doi.org/10.1038/s41586-021-03819-2 | CC BY 4.0 |
 | **AlphaFold EBI database** | Varadi M *et al.* (2022) AlphaFold Protein Structure Database. *Nucleic Acids Research* 50, D439–D444. https://doi.org/10.1093/nar/gkab1061 | CC BY 4.0 |
 | **MobiDB** | Piovesan D *et al.* (2023) MobiDB: 10 years of intrinsically disordered proteins. *Nucleic Acids Research* 51, D438–D444. https://doi.org/10.1093/nar/gkac1065 | CC BY 4.0 |
+| **DisProt** | Aspromonte MC *et al.* (2024) DisProt in 2024: improving function annotation of intrinsically disordered proteins. *Nucleic Acids Research* 52, D434–D441. https://doi.org/10.1093/nar/gkad928 | CC BY 4.0 |
 
 ---
 
@@ -54,14 +55,17 @@ If you publish results produced by DisCanVisFlow, please cite the relevant entri
 | **ScanSite 4** | Obenauer JC, Cantley LC & Yaffe MB (2003) Scansite 2.0: proteome-wide prediction of cell signaling interactions using short sequence motifs. *Nucleic Acids Research* 31, 3635–3641. https://doi.org/10.1093/nar/gkg584 | Free, academic; cite required |
 | **Gene Ontology (GO)** | Gene Ontology Consortium (2023) The Gene Ontology knowledgebase in 2023. *Genetics* 224, iyad031. https://doi.org/10.1093/genetics/iyad031 | CC BY 4.0 |
 | **DeepCoil** (coiled-coils) | Ludwiczak J *et al.* (2019) DeepCoil — a fast and accurate prediction of coiled-coil domains in protein sequences. *Bioinformatics* 35, 2790–2795. https://doi.org/10.1093/bioinformatics/bty1062 | Free, academic |
+| **SEG / segmasker** (low-complexity regions) | Wootton JC & Federhen S (1993) Statistics of local complexity in amino acid sequences and sequence databases. *Computers & Chemistry* 17, 149–163. https://doi.org/10.1016/0097-8485(93)85006-X | Public domain (NCBI BLAST+) |
 
 ---
 
-## 5. LLPS predictor
+## 5. LLPS predictors
 
 | Tool | Citation | License / Terms |
 |------|----------|-----------------|
 | **FINCHES** (saturation mutagenesis, Δε) ⚠️ | Ginell GM *et al.* (2024) FINCHES: predicting heterotypic and homotypic interaction specificity in disordered regions. *bioRxiv* 2024.06.03.597104. https://doi.org/10.1101/2024.06.03.597104 | **CC BY-NC 4.0 — non-commercial only.** Disabled by default (`--skip_finches false` to enable). |
+| **catGRANULE** | Bolognesi B *et al.* (2016) A concentration-dependent liquid phase separation can cause toxicity upon increased protein expression. *Cell Reports* 16, 222–231. https://doi.org/10.1016/j.celrep.2016.05.076 | Free, academic |
+| **PLAAC** | Lancaster AK *et al.* (2014) PLAAC: a web and command-line application to identify proteins with prion-like amino acid composition. *Bioinformatics* 30, 2501–2502. https://doi.org/10.1093/bioinformatics/btu310 | MIT |
 
 ---
 
@@ -72,6 +76,7 @@ If you publish results produced by DisCanVisFlow, please cite the relevant entri
 | **PDB** | Berman HM *et al.* (2000) The Protein Data Bank. *Nucleic Acids Research* 28, 235–242. https://doi.org/10.1093/nar/28.1.235 | CC0 |
 | **SIFTS** | Velankar S *et al.* (2013) SIFTS: Structure Integration with Function, Taxonomy and Sequences. *Nucleic Acids Research* 41, D483–D489. https://doi.org/10.1093/nar/gks1258 | CC0 |
 | **PDBe REST API** | Varadi M *et al.* (2020) PDBe: improved findability of macromolecular structure data in the PDB. *Nucleic Acids Research* 48, D335–D343. https://doi.org/10.1093/nar/gkz990 | CC0 |
+| **DSSP** (secondary structure) | Kabsch W & Sander C (1983) Dictionary of protein secondary structure. *Biopolymers* 22, 2577–2637. https://doi.org/10.1002/bip.360221211 | Free, academic |
 
 ---
 
@@ -132,4 +137,4 @@ If you publish results produced by DisCanVisFlow, please cite the relevant entri
 | TCGA (GDC) | TCGA somatic MAFs | https://portal.gdc.cancer.gov |
 | OMIM | Disease ontology + mutations | https://omim.org/downloads |
 
-Everything else (UniProt, GENCODE, AlphaFold, ClinVar, MobiDB, GO, ELM, IntAct, BioGRID, HIPPIE, PDB/SIFTS, MaveDB, ProteinGym, DepMap, cBioPortal, dbSNP, MONDO, AlphaMissense, phastCons) is open or auto-downloaded without an account.
+Everything else (UniProt, GENCODE, AlphaFold, ClinVar, MobiDB, DisProt, GO, ELM, IntAct, BioGRID, HIPPIE, PDB/SIFTS, MaveDB, ProteinGym, DepMap, cBioPortal, dbSNP, MONDO, AlphaMissense, phastCons) is open or auto-downloaded without an account. Local prediction tools (DSSP/`mkdssp`, SEG/`segmasker`, catGRANULE, PLAAC) run from the conda environment or `External_Programs/`.

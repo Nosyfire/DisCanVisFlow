@@ -56,11 +56,16 @@ _FILE_MAP = [
 
     # ── Mapped annotations (Protein_ID-keyed) ────────────────────────────────
     ("final/annotations/elm.tsv",           "ELM motifs",           None),
+    ("final/annotations/elm_classes.tsv",   "ELM classes",          None),
+    ("final/annotations/elmswitches_mapped.tsv", "ELM switches",    None),
     ("final/annotations/dibs.tsv",          "DIBS sites",           None),
     ("final/annotations/mfib.tsv",          "MFIB sites",           None),
     ("final/annotations/phasepro.tsv",      "PhasePro entries",     None),
     ("final/annotations/ptm_merged.tsv",    "PTM sites",            None),
     ("final/annotations/pfam_domains.tsv",  "Pfam domains",         None),
+    ("final/annotations/uniprot_roi.tsv",   "UniProt regions of interest", None),
+    ("final/annotations/uniprot_binding.tsv","UniProt binding sites", None),
+    ("final/annotations/low_complexity.tsv","Low-complexity regions (SEG)", None),
     ("final/annotations/go_terms.tsv",      "GO terms",             None),
     ("final/annotations/polymorphism.tsv",  "Polymorphisms (all + allele freq)", None),
     ("final/annotations/pem_core_motifs.tsv","PEM core motifs",     None),
@@ -71,16 +76,26 @@ _FILE_MAP = [
     # ── Pathogenicity / functional scores ─────────────────────────────────────
     ("final/pathogenicity/mavedb.tsv",       "MaveDB functional scores", None),
     ("final/pathogenicity/proteingym.tsv",   "ProteinGym DMS scores", None),
+    ("final/pathogenicity/finches_saturation.tsv", "FINCHES saturation scores", None),
 
     # ── Disorder ──────────────────────────────────────────────────────────────
     ("final/disorder/IUPredscores.tsv",        "IUPred3 residues",          None),
+    ("final/disorder/AIUPredscores.tsv",       "AIUPred disorder residues", None),
+    ("final/disorder/AIUPredBinding.tsv",      "AIUPred binding residues",  None),
     ("final/disorder/CombinedDisorderNew.tsv", "Combined disorder regions", None),
+    ("final/disorder/mobidb_disorder.tsv",     "MobiDB disorder features",  None),
+    ("final/disorder/disprot.tsv",             "DisProt curated regions",   None),
 
     # ── Structure (AlphaFold pLDDT + RSA + PDB) ───────────────────────────────
     ("final/structure/AlphaFoldTable.tsv",  "AlphaFold pLDDT residues",  None),
     ("final/structure/rsa_scores.tsv",      "RSA residues (from pLDDT)", None),
     ("final/structure/pdb_structures.tsv",  "PDB structures",   None),
     ("final/structure/pdb_missing.tsv",     "PDB missing residues (disorder)", None),
+    ("final/structure/dssp.tsv",            "DSSP secondary-structure residues", None),
+
+    # ── Phase separation ──────────────────────────────────────────────────────
+    ("final/phase_separation/catgranule.tsv", "catGRANULE LLPS residues", None),
+    ("final/phase_separation/plaac.tsv",      "PLAAC prion-like residues", None),
 
     # ── Conservation (mapped/) ────────────────────────────────────────────────
     ("final/conservation/conservation_multiple_level.tsv",
@@ -98,7 +113,8 @@ _FILE_MAP = [
 
     # ── Pathogenicity (mapped/) ───────────────────────────────────────────────
     ("final/pathogenicity/alphamissense.tsv",        "AlphaMissense variants",   None),
-    ("final/pathogenicity/pathogenicity_scores.tsv", "dbNSFP scored variants",   None),
+    ("final/pathogenicity/dbnsfp_scores.tsv",        "dbNSFP scored variants (raw mode)", None),
+    ("final/pathogenicity/pathogenicity_scores.tsv", "dbNSFP scored variants (pre-mapped mode)", None),
 ]
 
 

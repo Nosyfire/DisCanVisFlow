@@ -57,9 +57,10 @@ Per-residue intrinsic disorder from multiple predictors.
 |-------|--------|------|
 | IUPred3 + ANCHOR2 | `disorder/IUPredscores.tsv`, `Anchorscores.tsv` | [disorder.md](disorder/disorder.md) |
 | AIUPred disorder + binding | `disorder/AIUPredscores.tsv`, `AIUPredBinding.tsv` | [disorder.md](disorder/disorder.md) |
-| AlphaFold pLDDT | `disorder/AlphaFoldTable.tsv` | [disorder.md](disorder/disorder.md) |
+| AlphaFold pLDDT | `structure/AlphaFoldTable.tsv` | [disorder.md](disorder/disorder.md) |
 | Combined disorder | `disorder/CombinedDisorderNew.tsv` | [disorder.md](disorder/disorder.md) |
 | MobiDB consensus disorder | `disorder/mobidb_disorder.tsv` | [mobidb.md](disorder/mobidb.md) |
+| DisProt curated disorder regions | `disorder/disprot.tsv` | [disprot.md](disorder/disprot.md) |
 
 ## Disorder-associated function — [`disorder_function/`](disorder_function)
 
@@ -96,9 +97,23 @@ Functional features of structured / folded regions.
 
 | Track | Output | Page |
 |-------|--------|------|
-| PDB coverage + unobserved regions | `pdb/pdb_structures.tsv`, `pdb_missing.tsv` | [pdb.md](structure/pdb.md) |
+| PDB coverage + unobserved regions | `structure/pdb_structures.tsv`, `pdb_missing.tsv` | [pdb.md](structure/pdb.md) |
 | Coiled coils (DeepCoil) | `annotations/coiled_coils.tsv` | [coiled_coils.md](structure/coiled_coils.md) |
-| RSA & position-based annotations | `disorder/rsa_scores.tsv`, `position/position_based_annotations.tsv` | [rsa.md](structure/rsa.md) |
+| DSSP secondary structure (8/3-state + RSA) | `structure/dssp.tsv` | [dssp.md](structure/dssp.md) |
+| RSA & position-based annotations | `structure/rsa_scores.tsv`, `position/position_based_annotations.tsv` | [rsa.md](structure/rsa.md) |
+| Low-complexity regions (SEG) | `annotations/low_complexity.tsv` | [lcr.md](structure/lcr.md) |
+
+## Phase separation — [`phase_separation/`](phase_separation)
+
+Per-residue liquid-liquid phase separation (LLPS) propensity predictors.
+
+| Track | Output | Page |
+|-------|--------|------|
+| catGRANULE (RNA-granule propensity) | `phase_separation/catgranule.tsv` | [catgranule.md](phase_separation/catgranule.md) |
+| PLAAC (prion-like amino-acid composition) | `phase_separation/plaac.tsv` | [plaac.md](phase_separation/plaac.md) |
+
+See also [PhasePro](disorder_function/phasepro.md) (curated LLPS drivers) and
+[FINCHES](disorder_function/finches.md) (LLPS saturation mutagenesis).
 
 ## Interactions — [`interactions/`](interactions)
 

@@ -76,8 +76,8 @@ flowchart TD
 | Sub | Process | Worker | Output |
 |-----|---------|--------|--------|
 | 5a | `ANNOTATION_MAP` | `create_annotation_worker.py` | ELM, DIBS, MFIB, PhasePro, PTM, Pfam, UniProt ROI/binding |
-| 5b | `DISORDER_MAP` | `create_disorder_worker.py` | IUPredscores, AnchorScores, AIUPredscores, AIUPredBinding, AlphaFoldTable, CombinedDisorderNew |
-| 5c | `PDB_MAP` | `create_pdb_worker.py` | pdb_structures.tsv, pdb_missing.tsv |
+| 5b | `DISORDER_MAP` | `create_disorder_worker.py` | IUPredscores, AnchorScores, AIUPredscores, AIUPredBinding, CombinedDisorderNew; AlphaFoldTable → `final/structure/` |
+| 5c | `PDB_MAP` | `create_pdb_worker.py` | pdb_structures.tsv, pdb_missing.tsv → `final/structure/` |
 | 5d | `EXON_MAP` | `create_exon_worker.py` | exon.tsv |
 | 5e | `TRANSCRIPT_MAP` | `create_transcript_map_worker.py` | Protein_ID-keyed mapped copies of all annotation TSVs |
 | 5f | `GO_MAP` | `create_go_worker.py` | go_terms.tsv |
@@ -86,9 +86,13 @@ flowchart TD
 | 5i | `COILEDCOILS_MAP` | `create_coiledcoils_worker.py` | coiled_coils.tsv, DeepCoil.tsv |
 | 5j | `PPI_MAP` | `create_ppi_worker.py` | interactions.tsv (IntAct + BioGRID + HIPPIE) |
 | 5k | `SCANSITE_MAP` | `create_scansite_worker.py` | scansite.tsv |
-| 5m | `POSITION_MAP` | `create_position_based_worker.py` | position_based_annotations.tsv, rsa_scores.tsv |
+| 5m | `POSITION_MAP` | `create_position_based_worker.py` | position_based_annotations.tsv; rsa_scores.tsv → `final/structure/` |
 | 5n | `ELM_CLASS_MAP` | `create_elm_class_worker.py` | elm_classes.tsv |
 | 5o | `MOBIDB_MAP` | `create_mobidb_worker.py` | mobidb_disorder.tsv |
+| 5p | `DISPROT_MAP` | `create_disprot_worker.py` | disprot.tsv (curated disorder regions, coordinate-validated) |
+| 5q | `ELM_SWITCHES_MAP` | `create_elm_switches_worker.py` | elmswitches_mapped.tsv |
+| 5r | `LCR_MAP` | `create_lcr_worker.py` | low_complexity.tsv (SEG via `segmasker`) |
+| 5s | `DSSP_MAP` | `create_dssp_worker.py` | dssp.tsv → `final/structure/` (8/3-state SS + RSA) |
 
 ---
 
@@ -140,12 +144,15 @@ final/
 ├── mutations/       ClinVar/, TCGA/, CBioportal/, DepMap/ — per-mutation-source TSVs
 ├── annotations/     ELM, DIBS, MFIB, PhasePro, PTM, Pfam, GO, polymorphism, PEM,
 │                    coiled_coils, interactions, scansite, elm_classes,
-│                    homology_similarity_manifest.tsv
+│                    elmswitches_mapped, uniprot_roi, uniprot_binding,
+│                    low_complexity, homology_similarity_manifest.tsv
 ├── disorder/        IUPredscores, AnchorScores, AIUPredscores, AIUPredBinding,
-│                    AlphaFoldTable, CombinedDisorderNew, rsa_scores
-├── pdb/             pdb_structures.tsv, pdb_missing.tsv
+│                    CombinedDisorderNew, mobidb_disorder, disprot
+├── structure/       AlphaFoldTable, rsa_scores, dssp,
+│                    pdb_structures.tsv, pdb_missing.tsv
+├── phase_separation/ catgranule.tsv, plaac.tsv
 ├── pathogenicity/   dbnsfp_scores.tsv, alphamissense.tsv,
-│                    mavedb.tsv, proteingym.tsv
+│                    mavedb.tsv, proteingym.tsv, finches_saturation.tsv
 ├── disease/         clinvar_disease.tsv, omim_disease.tsv,
 │                    clinvar_disease_mutations.tsv, omim_mutations.tsv
 ├── drivers/         cancer_driver.tsv, census_driver.tsv, compendium_driver.tsv

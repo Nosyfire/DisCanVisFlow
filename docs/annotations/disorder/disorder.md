@@ -17,17 +17,18 @@ Intrinsic disorder predictions are computed per isoform using four tools: IUPred
 
 ## Output files
 
-All files are placed under `final/disorder/`:
+Predictor tracks are placed under `final/disorder/`, except AlphaFold pLDDT
+which is grouped with the other structure-derived tracks in `final/structure/`:
 
-| File | Description |
-|------|-------------|
-| `IUPredscores.tsv` | IUPred3 per-residue scores for all isoforms |
-| `Anchorscores.tsv` | ANCHOR2 per-residue binding scores |
-| `AIUPredscores.tsv` | AIUPred disorder scores |
-| `AIUPredBinding.tsv` | AIUPred binding region scores |
-| `AlphaFoldTable.tsv` | AlphaFold pLDDT scores and model metadata |
-| `CombinedDisorderNew.tsv` | Consensus disorder regions (start/end, per isoform) |
-| `CombinedDisorderNew_Pos.tsv` | Per-position binary disorder flag |
+| File | Location | Description |
+|------|----------|-------------|
+| `IUPredscores.tsv` | `final/disorder/` | IUPred3 per-residue scores for all isoforms |
+| `Anchorscores.tsv` | `final/disorder/` | ANCHOR2 per-residue binding scores |
+| `AIUPredscores.tsv` | `final/disorder/` | AIUPred disorder scores |
+| `AIUPredBinding.tsv` | `final/disorder/` | AIUPred binding region scores |
+| `AlphaFoldTable.tsv` | `final/structure/` | AlphaFold pLDDT scores and model metadata |
+| `CombinedDisorderNew.tsv` | `final/disorder/` | Consensus disorder regions (start/end, per isoform) |
+| `CombinedDisorderNew_Pos.tsv` | `final/disorder/` | Per-position binary disorder flag |
 
 ## Output columns (IUPredscores.tsv example)
 

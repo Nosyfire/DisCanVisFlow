@@ -79,7 +79,8 @@ mutation inputs (MAF/VCF), gene lists, SLURM, Docker, and every flag — is in t
 results/<project>/
 ├── final/               ALL DB-ready, Protein_ID-keyed TSVs, grouped by category:
 │                        annotations/ disorder/ genome/ mutations/ pathogenicity/
-│                        pdb/ disease/ drivers/ conservation/ position/ sequence/
+│                        structure/ phase_separation/ disease/ drivers/
+│                        conservation/ position/ sequence/
 ├── intermediate/        Entry_Isoform-keyed staging TSVs (input to TRANSCRIPT_MAP)
 └── mapping_reports/     mapping_summary.md · release.json · mapping_coverage.tsv
 ```

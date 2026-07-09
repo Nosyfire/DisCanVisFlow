@@ -20,8 +20,8 @@ SIFTS UniProt ↔ PDB residue mapping.
 
 | File | Contents |
 |------|----------|
-| `final/pdb/pdb_structures.tsv` | PDB entries mapped to isoform residue ranges (coverage) |
-| `final/pdb/pdb_missing.tsv` | Residues within a mapped range that are unobserved in the structure |
+| `final/structure/pdb_structures.tsv` | PDB entries mapped to isoform residue ranges (coverage) |
+| `final/structure/pdb_missing.tsv` | Residues within a mapped range that are unobserved in the structure |
 
 ## Output columns (`pdb_structures.tsv`)
 

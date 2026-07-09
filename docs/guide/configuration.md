@@ -258,7 +258,7 @@ IUPred/AIUPred without re-fetching:
 
 ```bash
 nextflow run main.nf --project discanvis --machine hard \
-    --alphafold_precomputed_table results/discanvis/final/disorder/AlphaFoldTable.tsv \
+    --alphafold_precomputed_table results/discanvis/final/structure/AlphaFoldTable.tsv \
     --skip_alphafold true \
     -resume
 ```

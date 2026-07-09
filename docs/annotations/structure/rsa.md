@@ -23,7 +23,7 @@ Two per-residue structural tracks:
 
 | File | Location | Contents |
 |------|----------|----------|
-| `rsa_scores.tsv` | `final/disorder/` | Per-residue RSA array |
+| `rsa_scores.tsv` | `final/structure/` | Per-residue RSA array |
 | `position_based_annotations.tsv` | `final/position/` | One row per residue with all per-position features |
 
 ## Output columns
