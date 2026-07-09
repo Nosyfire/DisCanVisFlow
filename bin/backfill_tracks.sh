@@ -34,6 +34,7 @@ CATGRANULE_PYTHON="${CATGRANULE_PYTHON:-/opt/anaconda3/envs/catgranule/bin/pytho
 CATGRANULE_LIB="${CATGRANULE_LIB:-/dlab/home/norbi/PycharmProjects/catGRANULE2.0}"
 FINCHES_PYTHON="${FINCHES_PYTHON:-/opt/anaconda3/envs/finches/bin/python}"
 DISPROT_TSV="${DISPROT_TSV:-references/disprot/disprot_regions.tsv}"
+MOBIDB_TSV="${MOBIDB_TSV:-references/mobidb/mobidb_human.tsv}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FINAL="$RESULTS_DIR/final"
@@ -67,6 +68,11 @@ run_track() {
             "$PYTHON" "$SCRIPT_DIR/create_disprot_worker.py" \
                 --seq_table "$SEQ" --disprot_tsv "$DISPROT_TSV" \
                 --outdir "$FINAL/disorder" --only_main_isoforms ;;
+        mobidb)
+            [[ -f "$MOBIDB_TSV" ]] || { echo "MobiDB TSV not found: $MOBIDB_TSV (set MOBIDB_TSV)" >&2; return 1; }
+            "$PYTHON" "$SCRIPT_DIR/create_mobidb_worker.py" \
+                --seq_table "$SEQ" --mobidb_tsv "$MOBIDB_TSV" \
+                --outdir "$FINAL/disorder" ;;
         *) echo "unknown track: $1" >&2; return 1 ;;
     esac
 }

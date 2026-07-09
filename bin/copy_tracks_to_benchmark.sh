@@ -19,6 +19,7 @@ RELPATHS=(
     "final/phase_separation/plaac.tsv"
     "final/pathogenicity/finches_saturation.tsv"
     "final/disorder/disprot.tsv"
+    "final/disorder/mobidb_disorder.tsv"
 )
 
 copied=0

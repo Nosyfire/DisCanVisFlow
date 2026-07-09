@@ -19,8 +19,8 @@ process MOBIDB_MAP {
     label 'process_low'
 
     publishDir(
-        path: { params.gene_dir ? "${params.outdir}/${params.gene_dir}/intermediate/disorder"
-                                : "${params.outdir}/intermediate/disorder" },
+        path: { params.gene_dir ? "${params.outdir}/${params.gene_dir}/final/disorder"
+                                : "${params.outdir}/final/disorder" },
         mode: 'copy'
     )
 

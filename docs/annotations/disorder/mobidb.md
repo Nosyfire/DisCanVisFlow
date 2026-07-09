@@ -25,7 +25,7 @@ MobiDB disorder features per isoform.
 |--------|-------------|
 | `Protein_ID` | Gencode transcript name |
 | `Entry_Isoform` | UniProt accession |
-| `feature` | MobiDB disorder feature type (e.g. `prediction-disorder-th_50`, `curated-disorder`) |
+| `feature` | MobiDB disorder feature type (`curated-disorder-merge` or `homology-disorder-merge`) |
 | `start_end` | Region span(s) as `start-end` (comma-separated for multiple regions) |
 | `content_fraction` | Fraction of the sequence covered by the feature (0–1) |
 | `content_count` | Number of residues covered |

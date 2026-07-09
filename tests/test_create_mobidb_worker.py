@@ -30,12 +30,13 @@ def _seq(tmpdir: Path) -> Path:
 
 
 def _mobidb(tmpdir: Path) -> Path:
+    """Real FETCH_MOBIDB layout: headerless, 6 columns, comma-separated regions,
+    with the stray `sort -u` header row buried in the middle (must be skipped)."""
     p = tmpdir / "mobidb.tsv"
     p.write_text(
-        "acc\tfeature\tsource\tstart..end\n"
-        "P11111\tcurated-disorder-merge\tmobidb_curated\t10-50\n"
-        "P11111\tcurated-disorder-merge\tmobidb_curated\t70-90\n"
-        "P22222\thomology-disorder-merge\tmobidb_homol\t1-20\n",
+        "P11111\tcurated-disorder-merge\t10..50,70..90\t0.62\t62\t100\n"
+        "acc\tfeature\tstart..end\tcontent_fraction\tcontent_count\tlength\n"
+        "P22222\thomology-disorder-merge\t1..20\t0.40\t20\t50\n",
         encoding="utf-8",
     )
     return p
@@ -69,7 +70,7 @@ class TestBasicOutput:
 
 class TestRegionAggregation:
     def test_start_end_string_format(self, tmp_path):
-        """Two regions for same protein → combined 'start-end,start-end' string."""
+        """Comma-separated regions in one cell → 'start-end,start-end' string."""
         _run(["--seq_table", str(_seq(tmp_path)),
               "--mobidb_tsv", str(_mobidb(tmp_path)),
               "--outdir", str(tmp_path)], tmp_path)
@@ -79,22 +80,22 @@ class TestRegionAggregation:
         assert "70-90" in str(row["start_end"])
 
     def test_content_count(self, tmp_path):
-        """Two regions → content_count = 2."""
+        """content_count = covered residues: 10-50 (41) + 70-90 (21) = 62."""
         _run(["--seq_table", str(_seq(tmp_path)),
               "--mobidb_tsv", str(_mobidb(tmp_path)),
               "--outdir", str(tmp_path)], tmp_path)
         df = pd.read_csv(tmp_path / "mobidb_disorder.tsv", sep="\t")
         row = df[(df["Protein_ID"] == "GENE1-201") & (df["feature"] == "curated-disorder-merge")].iloc[0]
-        assert int(row["content_count"]) == 2
+        assert int(row["content_count"]) == 62
 
-    def test_length_sum(self, tmp_path):
-        """10-50 = 41 residues, 70-90 = 21 residues → total 62."""
+    def test_length_is_isoform_sequence_length(self, tmp_path):
+        """length = isoform sequence length (GENE1-201 = 100), not covered residues."""
         _run(["--seq_table", str(_seq(tmp_path)),
               "--mobidb_tsv", str(_mobidb(tmp_path)),
               "--outdir", str(tmp_path)], tmp_path)
         df = pd.read_csv(tmp_path / "mobidb_disorder.tsv", sep="\t")
         row = df[(df["Protein_ID"] == "GENE1-201") & (df["feature"] == "curated-disorder-merge")].iloc[0]
-        assert int(row["length"]) == 62
+        assert int(row["length"]) == 100
 
     def test_content_fraction(self, tmp_path):
         """62 disordered / 100 total = 0.62."""
@@ -140,7 +141,7 @@ class TestEdgeCases:
     def test_protein_not_in_mobidb_excluded(self, tmp_path):
         """Proteins not in MobiDB produce no rows (not empty rows)."""
         mob = tmp_path / "mob_partial.tsv"
-        mob.write_text("acc\tfeature\tsource\tstart..end\nP22222\tcurated-disorder-merge\tx\t1-20\n",
+        mob.write_text("P22222\tcurated-disorder-merge\t1..20\t0.40\t20\t50\n",
                        encoding="utf-8")
         _run(["--seq_table", str(_seq(tmp_path)),
               "--mobidb_tsv", str(mob),
@@ -148,3 +149,23 @@ class TestEdgeCases:
         df = pd.read_csv(tmp_path / "mobidb_disorder.tsv", sep="\t")
         assert "GENE1-201" not in df["Protein_ID"].values
         assert "GENE2-201" in df["Protein_ID"].values
+
+    def test_buried_header_row_skipped(self, tmp_path):
+        """The stray 'acc\\tfeature\\t...' header buried by `sort -u` must not
+        become a spurious protein row."""
+        _run(["--seq_table", str(_seq(tmp_path)),
+              "--mobidb_tsv", str(_mobidb(tmp_path)),
+              "--outdir", str(tmp_path)], tmp_path)
+        df = pd.read_csv(tmp_path / "mobidb_disorder.tsv", sep="\t")
+        assert "acc" not in df["Entry_Isoform"].astype(str).values
+        # Real data still maps: both P11111 and P22222 proteins are present.
+        assert {"GENE1-201", "GENE2-201"} <= set(df["Protein_ID"].values)
+
+    def test_headerless_real_format_not_empty(self, tmp_path):
+        """Regression: the real headerless 6-column file must map proteins
+        (the old worker returned empty because it expected an 'acc' header)."""
+        _run(["--seq_table", str(_seq(tmp_path)),
+              "--mobidb_tsv", str(_mobidb(tmp_path)),
+              "--outdir", str(tmp_path)], tmp_path)
+        df = pd.read_csv(tmp_path / "mobidb_disorder.tsv", sep="\t")
+        assert len(df) > 0

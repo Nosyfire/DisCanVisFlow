@@ -5,10 +5,15 @@ Module 5o — MobiDBDisorder standalone TSV output.
 Converts the bulk MobiDB TSV (from FETCH_MOBIDB) to a per-protein feature
 summary for the MobiDBDisorder Django model.
 
-Input MobiDB bulk TSV format (from mobidb.bio.unipd.it):
-    acc   feature   source   start..end
-    P12345  curated-disorder-merge  mobidb_curated  35-120
-    ...
+Input MobiDB bulk TSV format (from FETCH_MOBIDB / mobidb.bio.unipd.it):
+    Headerless, tab-separated, one aggregated row per (acc, feature):
+      acc          feature                  start..end                content_fraction  content_count  length
+      P04637       curated-disorder-merge   1..96,288..312,361..393   0.392             154            393
+    The `start..end` field may hold several comma-separated regions.
+    FETCH_MOBIDB concatenates two per-feature downloads with `sort -u`, which
+    leaves the source header row buried among the data (col 0 == "acc"); such
+    rows are skipped. A legacy 4-column `acc/feature/source/start..end` layout
+    is also accepted.
 
 Output (mobidb_disorder.tsv):
     Protein_ID | Entry_Isoform | feature | start_end | content_fraction | content_count | length
@@ -40,15 +45,57 @@ _OUT_COLS = [
 
 
 def _parse_region(s: str) -> tuple[int, int] | None:
-    """Parse '35-120' or '35..120' into (35, 120)."""
-    for sep in ("-", ".."):
-        if sep in str(s):
-            parts = str(s).split(sep, 1)
+    """Parse a single '35-120' or '35..120' into (35, 120)."""
+    s = str(s).strip()
+    for sep in ("..", "-"):
+        if sep in s:
+            parts = s.split(sep, 1)
             try:
                 return int(parts[0]), int(parts[1])
             except (ValueError, IndexError):
                 pass
     return None
+
+
+def _parse_regions(s: str) -> list[tuple[int, int]]:
+    """Parse a possibly comma-separated region field.
+
+    '1..96,288..312,361..393' → [(1, 96), (288, 312), (361, 393)].
+    """
+    out = []
+    for chunk in str(s).split(","):
+        chunk = chunk.strip()
+        if not chunk:
+            continue
+        reg = _parse_region(chunk)
+        if reg:
+            out.append(reg)
+    return out
+
+
+def _read_mobidb(path: Path) -> pd.DataFrame:
+    """Read the headerless MobiDB bulk TSV into acc/feature/region columns.
+
+    Real FETCH_MOBIDB output is 6 columns with no header:
+        acc, feature, start..end, content_fraction, content_count, length
+    A legacy 4-column layout (acc, feature, source, start..end) is also read.
+    A stray header row buried by `sort -u` (col 0 == "acc") is dropped later.
+    """
+    raw = pd.read_csv(path, sep="\t", dtype=str, header=None)
+    ncol = raw.shape[1]
+    if ncol >= 6:
+        names = ["acc", "feature", "region", "content_fraction",
+                 "content_count", "length"]
+    elif ncol == 4:
+        names = ["acc", "feature", "source", "region"]
+    elif ncol == 3:
+        names = ["acc", "feature", "region"]
+    else:
+        return pd.DataFrame(columns=["acc", "feature", "region"])
+    # Keep only the leading named columns (ignore any extra trailing columns).
+    raw = raw.iloc[:, :len(names)]
+    raw.columns = names
+    return raw
 
 
 def build_mobidb_table(
@@ -79,40 +126,39 @@ def build_mobidb_table(
     if mob_df.empty or "acc" not in mob_df.columns:
         return pd.DataFrame(columns=_OUT_COLS)
 
-    # Normalise start..end column name (may have dots in header)
-    region_col = next((c for c in mob_df.columns if "end" in c.lower()), None)
+    region_col = "region" if "region" in mob_df.columns else None
     if region_col is None:
         return pd.DataFrame(columns=_OUT_COLS)
 
-    # Group by (acc, feature) → list of (start, end) regions
-    feature_col = "feature" if "feature" in mob_df.columns else mob_df.columns[1]
+    # Group by (acc, feature) → list of (start, end) regions. Each cell may hold
+    # several comma-separated regions, and an (acc, feature) pair may recur.
     regions_by_af: dict[tuple[str, str], list[tuple[int, int]]] = defaultdict(list)
     for _, row in mob_df.iterrows():
         acc  = str(row.get("acc", "")).strip().split("-")[0]
-        feat = str(row.get(feature_col, "")).strip()
-        reg  = _parse_region(row.get(region_col, ""))
-        if acc and feat and reg:
-            regions_by_af[(acc, feat)].append(reg)
+        feat = str(row.get("feature", "")).strip()
+        if not acc or acc.lower() == "acc" or not feat:
+            continue
+        regions_by_af[(acc, feat)].extend(_parse_regions(row.get(region_col, "")))
 
     rows = []
     for (acc, feat), regions in regions_by_af.items():
-        if acc not in acc_to_pids:
+        if acc not in acc_to_pids or not regions:
             continue
-        # Build start_end string: "1-50,100-150"
-        sorted_regions = sorted(regions, key=lambda x: x[0])
+        # De-duplicate and order regions; build "1-50,100-150" string.
+        sorted_regions = sorted(set(regions), key=lambda x: x[0])
         start_end_str  = ",".join(f"{s}-{e}" for s, e in sorted_regions)
-        total_len      = sum(e - s + 1 for s, e in sorted_regions)
+        covered        = sum(e - s + 1 for s, e in sorted_regions)
 
         for pid, full_acc, seq_len in acc_to_pids[acc]:
-            cf = round(total_len / seq_len, 4) if seq_len > 0 else 0.0
+            cf = round(covered / seq_len, 4) if seq_len > 0 else 0.0
             rows.append({
                 "Protein_ID":       pid,
                 "Entry_Isoform":    full_acc,
                 "feature":          feat,
                 "start_end":        start_end_str,
-                "content_fraction": cf,
-                "content_count":    len(sorted_regions),
-                "length":           total_len,
+                "content_fraction": cf,          # covered residues / isoform length
+                "content_count":    covered,     # covered (disordered) residues
+                "length":           seq_len,     # isoform sequence length
             })
 
     return pd.DataFrame(rows, columns=_OUT_COLS) if rows \
@@ -140,7 +186,7 @@ def main():
         pd.DataFrame(columns=_OUT_COLS).to_csv(out, sep="\t", index=False)
         return
 
-    mob_df = pd.read_csv(mob_path, sep="\t", dtype=str)
+    mob_df = _read_mobidb(mob_path)
     log.info("Loaded %d MobiDB region rows", len(mob_df))
 
     result = build_mobidb_table(seq_df, mob_df)
