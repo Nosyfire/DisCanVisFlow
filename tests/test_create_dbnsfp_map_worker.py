@@ -181,6 +181,39 @@ class TestEndToEndMergedFile:
         df = pd.read_csv(tmp_path / "dbnsfp_scores.tsv", sep="\t", dtype=str)
         assert "SIFT_pred" not in df.columns
 
+    def test_no_cross_isoform_coordinate_inflation(self, tmp_path):
+        """A variant at one isoform's genomic position must NOT be homology-
+        transferred onto a sibling isoform (which has its own genome mapping).
+        Each isoform gets only its own codon coordinates."""
+        seq = tmp_path / "seq2.tsv"
+        seq.write_text(
+            "Protein_ID\tEntry_Isoform\tGene_Gencode\tChromosome\tSequence\n"
+            "GENE1-201\tP11111\tGENE1\t1\tMKALLV\n"
+            "GENE1-204\tP11111-2\tGENE1\t1\tMKALLV\n",   # identical seq, sibling isoform
+            encoding="utf-8",
+        )
+        cmap = tmp_path / "cmap2.map"
+        cmap.write_text(
+            "# GENE1|x|x|x|GENE1-201\n"
+            "2\tA\t7\tGCT\tA\t1000,\tGCT\tA\n"          # 201 residue 3 -> pos 1000
+            "# GENE1|x|x|x|GENE1-204\n"
+            "2\tA\t7\tGCT\tA\t5000,\tGCT\tA\n",         # 204 residue 3 -> pos 5000 (different!)
+            encoding="utf-8",
+        )
+        gz = tmp_path / "d2.gz"
+        header = "\t".join(["#chr", "pos(1-based)", "ref", "alt", "aaref",
+                            "aaalt", "rs_dbSNP", "aapos", "REVEL_score",
+                            "gnomAD4.1_joint_AF"])
+        row = "\t".join(["1", "1000", "G", "A", "A", "V", "rs1", "3", "0.5", "0.01"])
+        with gzip.open(gz, "wt") as fh:
+            fh.write(header + "\n" + row + "\n")
+        _run(["--seq_table", str(seq), "--combined_map", str(cmap),
+              "--dbnsfp_raw_dir", str(gz), "--outdir", str(tmp_path)], tmp_path)
+        df = pd.read_csv(tmp_path / "dbnsfp_scores.tsv", sep="\t", dtype=str)
+        # only GENE1-201 (whose genomic pos 1000 the variant is at) — NOT GENE1-204
+        assert set(df["Protein_ID"]) == {"GENE1-201"}, df.to_dict("records")
+        assert len(df) == 1
+
     def test_aaref_mismatch_filtered(self, tmp_path):
         """A dbNSFP row whose aaref disagrees with the mapped residue is dropped."""
         gz = tmp_path / "bad.gz"

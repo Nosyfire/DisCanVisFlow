@@ -416,9 +416,6 @@ def _open_dbnsfp(path: Path):
 def stream_merged_dbnsfp(
     gz_path: Path,
     gpos_index: dict,
-    gene_to_rows: dict,
-    pid_to_seq: dict,
-    pid_to_gene: dict,
     out_path: Path,
 ) -> tuple[int, int]:
     """Stream a single merged dbNSFP gzip once, writing mapped rows directly to
@@ -478,22 +475,29 @@ def stream_merged_dbnsfp(
                 pos_s = str(pos)
                 end_s = str(pos + 1)
                 seen: set = set()
+                # Emit index entries DIRECTLY. combined_map already contains every
+                # curated isoform independently genome-mapped, so each isoform gets
+                # its own true codon coordinates here. We deliberately do NOT run
+                # expand_protein_position_to_isoforms (homology transfer): it is
+                # redundant when all isoforms are already in combined_map, and in
+                # low-complexity/repeat regions its naive context find() collapses
+                # many source residues onto one target residue — attributing dozens
+                # of foreign genomic positions to a single residue (25-100x row
+                # inflation). Direct mapping caps a residue at 3 codon positions x
+                # alt alleles.
                 for pid, prot_pos, map_aa in entries:
                     if (aaref and aaref != "." and not validate_hgvsp_aa(
                             f"p.{aaref}{prot_pos}", map_aa, prot_pos)):
                         continue
-                    gene = pid_to_gene.get(pid, "")
-                    for tgt_pid, tgt_pos, _tr in expand_protein_position_to_isoforms(
-                            pid, prot_pos, gene, gene_to_rows, pid_to_seq):
-                        key = (tgt_pid, tgt_pos)
-                        if key in seen:
-                            continue
-                        seen.add(key)
-                        out.write("\t".join(
-                            [tgt_pid, str(tgt_pos), chrom, pos_s, end_s] + file_vals
-                        ) + "\n")
-                        n_written += 1
-                        proteins_seen.add(tgt_pid)
+                    key = (pid, prot_pos)
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    out.write("\t".join(
+                        [pid, str(prot_pos), chrom, pos_s, end_s] + file_vals
+                    ) + "\n")
+                    n_written += 1
+                    proteins_seen.add(pid)
     finally:
         try:
             fh.close()
@@ -565,8 +569,7 @@ def main():
         gpos_index = build_gpos_index(pid_map, pid_to_chrom)
         log.info("Index built: %d (chr,pos) keys — streaming %s …",
                  len(gpos_index), raw_dir.name)
-        n, n_prot = stream_merged_dbnsfp(
-            raw_dir, gpos_index, gene_to_rows, pid_to_seq, pid_to_gene, out)
+        n, n_prot = stream_merged_dbnsfp(raw_dir, gpos_index, out)
         log.info("dbNSFP (merged map): %d rows for %d proteins", n, n_prot)
         return
 
