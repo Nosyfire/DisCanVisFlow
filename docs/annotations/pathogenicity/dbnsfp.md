@@ -40,8 +40,44 @@ dbNSFP has **two mutually-exclusive input modes** (raw takes priority):
 | Pre-mapped (`--dbnsfp_tsv`) | `final/pathogenicity/pathogenicity_scores.tsv` |
 
 The raw single-file mode emits **~110 columns** (5 identity + 6 variant + all
-predictor scores & rankscores + CADD + conservation + gnomAD AF). It is large
-(tens of GB for the full proteome — one row per isoform residue × alternate allele).
+predictor scores & rankscores + CADD + conservation + gnomAD AF), one row per
+isoform residue × alternate allele. For the full proteome that is **~100M rows /
+~170 GB uncompressed**, so it is delivered as a compressed, randomly-sliceable
+bundle (see below) rather than a plain TSV.
+
+### Mapping semantics (important)
+
+Each isoform is mapped **directly** from its own genomic coordinates in
+`combined_map.map` — there is **no homology/sequence transfer** between isoforms
+in the merged path. combined_map already contains every curated isoform
+independently genome-mapped, so a variant is attributed only to isoforms whose
+own codon sits at that genomic position (a residue therefore has at most its 3
+codon positions × alternate alleles). Note dbNSFP itself may list the *same*
+genomic variant under several amino-acid changes (different transcript reading
+frames); rows are kept when the reference amino acid matches, so a residue can
+show a few extra alternate-allele rows — each is a valid per-variant score.
+
+### Packed, sliceable bundle
+
+For the full proteome the raw output is post-processed by `bin/dbnsfp_pack.sh`
+into four files sharing the `dbnsfp_scores` stem in `final/pathogenicity/`:
+
+| File | Contents |
+|------|----------|
+| `dbnsfp_scores.tsv.gz` | BGZF (block-gzip) body, sorted by `Protein_ID` then `Protein_position` (~12 GB) |
+| `dbnsfp_scores.tsv.gz.gzi` | bgzip random-access index |
+| `dbnsfp_scores.pidx` | `Protein_ID  offset  length` — byte range of each isoform |
+| `dbnsfp_scores.header` | the single header line |
+
+Slice one (or several) isoforms without reading the whole file:
+
+```bash
+bin/slice_dbnsfp.py --bgz final/pathogenicity/dbnsfp_scores.tsv.gz --id RAF1-201
+bin/slice_dbnsfp.py --bgz .../dbnsfp_scores.tsv.gz --id RAF1-201,BRAF-201 --out out.tsv
+```
+
+It looks up the `.pidx` and asks `bgzip -b <offset> -s <length>` to decompress
+only that isoform's bytes (a few KB). Requires `bgzip` (htslib) on PATH.
 
 ## Output columns
 
