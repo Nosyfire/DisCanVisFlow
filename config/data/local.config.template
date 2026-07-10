@@ -84,8 +84,10 @@ params {
     depmap_raw_csv = null
 
     // ── dbNSFP (two mutually exclusive modes) ────────────────────────────────
-    // Option 1: Raw chr*.gz → DBNSFP_MAP (slower, always current)
-    dbnsfp_raw_dir = null   // '/PATH/TO/dbNSFP4.8a/'
+    // Option 1: Raw dbNSFP → DBNSFP_MAP (always current). Accepts either a single
+    //   merged dbNSFP 5.x gzip (all scores+rankscores+CADD+conservation+gnomAD AF,
+    //   fast inverted-index stream) or a directory of legacy per-chr chr*.gz files.
+    dbnsfp_raw_dir = null   // '/PATH/TO/dbNSFP5.3.1a_grch38.gz'  or  '/PATH/TO/dbNSFP4.8a/'
     // Option 2: Pre-mapped Protein_ID-keyed TSV → PATHOGENICITY_MAP (fast)
     dbnsfp_tsv     = null   // '/PATH/TO/mapped_filtered_mutations.tsv'
 

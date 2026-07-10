@@ -24,7 +24,7 @@ used by a completed run are recorded in
 | ELM instances | [elm.eu.org](http://elm.eu.org/) | `legacy_data/elm/elm_instances-2023.tsv` | Frozen 2023 snapshot |
 | dbSNP bigBed | [UCSC dbSnp155Common](https://hgdownload.soe.ucsc.edu/gbdb/hg38/snp/) | `bin/refresh_refs.sh dbsnp` (manual) | Large; rarely updated |
 | AlphaMissense | [Zenodo 8208688](https://zenodo.org/records/8208688) | `bin/refresh_refs.sh alphamissense` | v2023 frozen |
-| dbNSFP | [dbnsfp.org](https://www.dbnsfp.org/) | `--dbnsfp_raw_dir` or `--dbnsfp_tsv` | External; update manually |
+| dbNSFP (5.3.1a; incl. gnomAD 4.1 AF) | [dbnsfp.org](https://www.dbnsfp.org/) | `--dbnsfp_raw_dir` (merged 5.x `.gz` or per-chr) or `--dbnsfp_tsv` | External; update manually. Supplies gnomAD allele frequency |
 | PPI (IntAct / BioGRID / HIPPIE) | [IntAct](https://www.ebi.ac.uk/intact/) · [BioGRID](https://thebiogrid.org/) · [HIPPIE](http://cbdm-01.zdv.uni-mainz.de/~mschaefer/hippie/) | auto (`FETCH_INTACT/BIOGRID/HIPPIE` + `PPI_PREPROCESS`) | Auto on first run |
 
 Licences and citation requirements for every source are in

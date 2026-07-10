@@ -24,7 +24,7 @@ Full-proteome stage costs (all tracks, 20 scatter chunks):
 |-------|-------------|-----|
 | BLAST (reciprocal, full proteome) | ~2 h | one-time; cached and reused across projects |
 | `DISORDER_MAP` (IUPred + AIUPred + AlphaFold) | ~8 h | model inference per isoform + AlphaFold API fetch |
-| `DBNSFP_MAP` (raw `chr*.gz`) | ~3 h | scans large per-chromosome files |
+| `DBNSFP_MAP` (merged 5.x `.gz`) | ~15 min | streams one ~50 GB file once via an inverted `(chr,pos)` index (`pigz`); per-chr `chr*.gz` mode is slower (~3 h) |
 | Everything else | remainder | mostly sub-minute per gene, parallelized |
 
 ---
@@ -35,7 +35,9 @@ The genome-anchored and large-reference stages grow with the number of
 transcripts and are where full-proteome time goes:
 
 - **`DISORDER_MAP`** — per-isoform model inference plus AlphaFold pLDDT fetch.
-- **`DBNSFP_MAP`** — scans raw dbNSFP `chr*.gz` unless a pre-mapped TSV is used.
+- **`DBNSFP_MAP`** — streams the merged dbNSFP 5.x `.gz` (or legacy `chr*.gz`)
+  unless a pre-mapped TSV is used; emits scores + rankscores + CADD +
+  conservation + gnomAD 4.1 joint AF.
 - **`MUTATION_MAP`** — scans the mutation source (ClinVar VCF / MAF) against the
   genome map; peak RAM ~5 GB for ClinVar.
 - **`POLYMORPHISM_MAP`** — extracts dbSNP intervals from the bigBed file.
@@ -54,7 +56,7 @@ faster than the first.
 | `scatter_chunks` | Splits the sequence table into N gene-balanced chunks so `DISORDER_MAP`, `DBNSFP_MAP`, and `COILEDCOILS_MAP` run concurrently. Full proteome: 20 |
 | `blat_chunks` | Parallel BLAT jobs; each loads the ~4 GB hg38.2bit, so cap at your CPU/RAM budget. `test_one_protein` forces 1 |
 | `pdb_bulk = true` | Maps PDB coverage from one SIFTS download instead of per-protein PDBe API calls (~10 min vs ~9 h at full proteome). Default in both data configs |
-| `--dbnsfp_tsv` | Uses a pre-mapped, Protein_ID-keyed dbNSFP TSV instead of scanning raw `chr*.gz` — seconds instead of hours. Build it once, reuse everywhere |
+| `--dbnsfp_tsv` | Uses a pre-mapped, Protein_ID-keyed dbNSFP TSV instead of scanning the raw dbNSFP file — seconds instead of minutes. Build it once, reuse everywhere |
 | `--alphafold_precomputed_table` | Reuses AlphaFold pLDDT scores from a prior run so `DISORDER_MAP` skips the ~8 h EBI fetch while still recomputing IUPred/AIUPred |
 
 ---

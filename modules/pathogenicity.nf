@@ -114,7 +114,7 @@ process DEPMAP_MAP {
 }
 
 // ──────────────────────────────────────────────────────────────────────────
-// DBNSFP_MAP  — Module 8f: map raw dbNSFP chr*.gz via combined_map.map
+// DBNSFP_MAP  — Module 8f: map raw dbNSFP (merged 5.x .gz or per-chr chr*.gz) via combined_map.map
 // ──────────────────────────────────────────────────────────────────────────
 process DBNSFP_MAP {
     tag  { "dbnsfp_map" }

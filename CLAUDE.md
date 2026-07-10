@@ -236,7 +236,7 @@ MAKEBLASTDB × 2 ──► BLASTP × 2 (reciprocal) ──► MERGE_BLAST_HITS �
     MUTATION_MAP ◄── ClinVar/MAF/VCF      POLYMORPHISM_MAP ◄── dbSnp155Common.bb
          │                                PEM_MAP + PEM_TRANSFER_MAP
     CLINVAR_DISEASE_BUILD ◄── MONDO OBO   COILEDCOILS_MAP, PPI_MAP, CONSERVATION_MAP
-    + mapped mutations                    DBNSFP_MAP (raw chr*.gz) / PATHOGENICITY_MAP (pre-mapped)
+    + mapped mutations                    DBNSFP_MAP (raw dbNSFP 5.x/chr*.gz) / PATHOGENICITY_MAP (pre-mapped)
     DEPMAP_MAP ◄── DepMap TSV             TRANSCRIPT_MAP ◄── annotation + disorder
 ```
 
@@ -300,7 +300,7 @@ python bin/extract_gene_from_results.py --source results/discanvis --gene RAF1 -
 | 5s — DSSP | `modules/structure.nf` | `create_dssp_worker.py` | `final/structure/dssp.tsv` (8/3-state secondary structure + RSA from AlphaFold model) |
 | 7 — Conservation | `modules/functional.nf` | `create_conservation_worker.py` | `conservation_multiple_level.tsv`, `conservation_phastcons.tsv` |
 | 8a — ClinVar disease | `modules/disease.nf` | `create_clinvar_disease_build_worker.py` | `final/disease/clinvar_disease.tsv` |
-| 8f — dbNSFP / Pathogenicity | `modules/pathogenicity.nf` | `create_dbnsfp_map_worker.py` (raw) / `create_pathogenicity_worker.py` (pre-mapped) | `final/pathogenicity/dbnsfp_scores.tsv` (raw `chr*.gz` → `DBNSFP_MAP`) or `pathogenicity_scores.tsv` (pre-mapped → `PATHOGENICITY_MAP`) |
+| 8f — dbNSFP / Pathogenicity | `modules/pathogenicity.nf` | `create_dbnsfp_map_worker.py` (raw) / `create_pathogenicity_worker.py` (pre-mapped) | `final/pathogenicity/dbnsfp_scores.tsv` (raw merged 5.x `.gz` or per-chr `chr*.gz` → `DBNSFP_MAP`; ~110 cols: 37 predictor scores+rankscores, CADD, conservation, gnomAD 4.1 joint AF) or `pathogenicity_scores.tsv` (pre-mapped → `PATHOGENICITY_MAP`) |
 | 8g — ProteinGym | `modules/pathogenicity.nf` | `create_proteingym_worker.py` | `proteingym.tsv` |
 | 8h — FINCHES | `modules/pathogenicity.nf` | `create_finches_worker.py` | `finches_saturation.tsv` (off by default; `--skip_finches false` to enable; CC BY-NC 4.0) |
 | 8i — catGRANULE | `modules/pathogenicity.nf` | `create_catgranule_worker.py` | `final/phase_separation/catgranule.tsv` (per-residue LLPS propensity) |
@@ -317,7 +317,7 @@ python bin/extract_gene_from_results.py --source results/discanvis --gene RAF1 -
 - **Mutation input is mutually exclusive**: `--clinvar_vcf` OR `--mutation_maf` OR `--mutation_vcf`, not combined
 - **TCGA MAF QC**: `--mutation_source TCGA` truncates barcodes to 12 chars; `--mutation_hypermutation_threshold 1500` drops hot samples; `--no_hgvsp_validation` disables ref-AA check
 - **ClinVar disease build**: when `hg38_2bit` + `clinvar_disease_from_mutations=true` + `mondo_obo` set, `CLINVAR_DISEASE_BUILD` runs from `MUTATION_MAP` outputs (not a static filter table)
-- **dbNSFP dual mode**: `--dbnsfp_raw_dir` → `DBNSFP_MAP` (raw `chr*.gz` via `combined_map.map`); `--dbnsfp_tsv` → `PATHOGENICITY_MAP` (pre-mapped Protein_ID-keyed TSV). Mutually exclusive; raw takes priority.
+- **dbNSFP dual mode**: `--dbnsfp_raw_dir` → `DBNSFP_MAP` (via `combined_map.map`); `--dbnsfp_tsv` → `PATHOGENICITY_MAP` (pre-mapped Protein_ID-keyed TSV). Mutually exclusive; raw takes priority. Raw mode accepts either a **single merged dbNSFP 5.x gzip** (e.g. `dbNSFP5.3.1a_grch38.gz`, ~50 GB — detected automatically, streamed once via an inverted `(chr,pos)` index built from `combined_map.map`, `pigz`-accelerated) or a **directory of legacy per-chr `chr*.gz`** files. Kept columns are pattern-selected (`select_keep_columns`): all `_score` + `_rankscore` predictors + CADD + GERP/phyloP/phastCons + `gnomAD4.1_joint_AF`/`_POPMAX_AF`. **gnomAD allele frequency comes from dbNSFP** here — no separate gnomAD fetch needed.
 - **Polymorphisms (Module 5g)**: `--dbsnp_bb` (`dbSnp155Common.bb`) → `create_polymorphism_worker.py` runs `bigBedToBed` over each isoform's genomic region from `combined_map.map`, maps every SNV to a protein residue, emits `rsid + ref/alt + allele_frequency + Type` for all isoforms containing the codon.
 - **PEM isoform transfer**: `--pem_transfer true` (default) writes `final/annotations/pem_core_motifs_mapped.tsv` via sequence homology
 - **Module 3+ requires `hg38_2bit`**: Genome/Mutation/Exon/Polymorphism mapping is skipped when `params.hg38_2bit` is not set

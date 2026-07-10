@@ -1,20 +1,25 @@
 #!/usr/bin/env python3
 """
-Module 8f — Map raw dbNSFP chr*.gz variants to Protein_ID via combined_map.map.
+Module 8f — Map raw dbNSFP variants to Protein_ID via combined_map.map.
 
-Reads per-chromosome gzipped dbNSFP files, validates reference AA against
-combined_map.map (legacy dbNSFP_custom parity), and filters to proteins in run.
+Two raw input shapes are supported:
+  * a single merged dbNSFP 5.x gzip (e.g. dbNSFP5.3.1a_grch38.gz, ~50 GB, 505
+    cols) — auto-detected; streamed once via an inverted (chr, genomic_pos)
+    index built from combined_map.map, keeping all predictor scores + rankscores
+    + CADD + conservation + gnomAD 4.1 joint AF (see select_keep_columns).
+  * a directory of legacy per-chromosome chr*.gz files (dbNSFP 4.x).
+Validates reference AA against combined_map.map and filters to proteins in run.
 
 Usage:
   create_dbnsfp_map_worker.py
       --seq_table       <loc_chrom_with_names_isoforms_with_seq.tsv>
       --combined_map    <combined_map.map>
-      --dbnsfp_raw_dir  <directory with dbNSFP chr*.gz files>
+      --dbnsfp_raw_dir  <merged dbNSFP 5.x .gz file OR directory of chr*.gz>
       --outdir          <output directory>
-      --n_cpu           <number of parallel chromosome workers (default: 1)>
+      --n_cpu           <number of parallel chromosome workers, per-chr mode (default: 1)>
 
 Output:
-  pathogenicity_scores.tsv
+  dbnsfp_scores.tsv
 """
 
 import argparse
@@ -23,6 +28,8 @@ import logging
 import multiprocessing as mp
 import os
 import re
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -312,6 +319,196 @@ def _process_one_file(gz_path_str: str) -> list[dict]:
     )
 
 
+# ─────────────────────────────────────────────────────────────────────────
+# Single merged dbNSFP file path (dbNSFP 5.x academic release: one 50 GB gzip,
+# 505 columns, no per-chr split, no tabix). We stream it once against an
+# inverted (chr, genomic_pos) index built from combined_map.map — O(1) per line
+# instead of O(#proteins) — and keep all predictor scores + rankscores + CADD +
+# conservation + gnomAD 4.1 joint AF.
+# ─────────────────────────────────────────────────────────────────────────
+
+# Identity columns carried through from the dbNSFP row (in output-friendly names).
+_ID_KEEP = {
+    "ref": "ref", "alt": "alt", "aaref": "aaref", "aaalt": "aaalt",
+    "aapos": "aapos", "rs_dbSNP": "rs_dbSNP",
+}
+# Synthesized columns (computed from the mapping, not read from the file).
+_SYNTH_COLS = ["Protein_ID", "Protein_position", "chr", "Start_Position", "End_Position"]
+# gnomAD allele-frequency columns kept (modern joint release only).
+_GNOMAD_KEEP = {"gnomAD4.1_joint_AF", "gnomAD4.1_joint_POPMAX_AF"}
+
+
+def _keep_column(name: str) -> bool:
+    """Pattern rule: predictor scores + rankscores + CADD + conservation + gnomAD AF."""
+    return (
+        name.endswith("_score")
+        or name.endswith("_rankscore")
+        or name in ("CADD_raw", "CADD_phred")
+        or name.startswith(("GERP", "phyloP", "phastCons"))
+        or name in _GNOMAD_KEEP
+    )
+
+
+def select_keep_columns(raw_header: list[str]):
+    """Given the dbNSFP header, return (chr_idx, pos_idx, aaref_idx, file_cols).
+
+    file_cols is an ordered list of (out_name, col_index) for every column kept
+    from the file (identity cols + all scores/rankscores/CADD/conservation/gnomAD
+    AF), excluding the chr/pos columns which are emitted via the synthesized block.
+    """
+    cols = [c.lstrip("#").strip() for c in raw_header]
+    chr_idx = pos_idx = aaref_idx = None
+    for i, c in enumerate(cols):
+        if c in ("chr", "#chr") and chr_idx is None:
+            chr_idx = i
+        elif c == "pos(1-based)":
+            pos_idx = i
+        if c == "aaref":
+            aaref_idx = i
+
+    file_cols: list[tuple[str, int]] = []
+    for i, c in enumerate(cols):
+        if i == chr_idx or i == pos_idx:
+            continue
+        if c in _ID_KEEP:
+            file_cols.append((_ID_KEEP[c], i))
+        elif _keep_column(c):
+            file_cols.append((c, i))
+    return chr_idx, pos_idx, aaref_idx, file_cols
+
+
+def _pid_to_chrom_from_seq(seq_df: pd.DataFrame) -> dict[str, str]:
+    if "Chromosome" not in seq_df.columns or "Protein_ID" not in seq_df.columns:
+        return {}
+    out: dict[str, str] = {}
+    for pid, chrom in zip(seq_df["Protein_ID"], seq_df["Chromosome"]):
+        pid = str(pid).strip()
+        chrom = str(chrom).strip()
+        if not pid or not chrom or chrom.lower() == "nan":
+            continue
+        out[pid] = chrom if chrom.startswith("chr") else f"chr{chrom}"
+    return out
+
+
+def build_gpos_index(pid_map: dict, pid_to_chrom: dict) -> dict:
+    """Invert combined_map: {(chrom, genomic_pos): [(pid, protein_pos, aa), ...]}."""
+    index: dict = {}
+    for pid, posmap in pid_map.items():
+        chrom = pid_to_chrom.get(pid)
+        if not chrom:
+            continue
+        for gpos, (ppos, aa) in posmap.items():
+            index.setdefault((chrom, gpos), []).append((pid, ppos, aa))
+    return index
+
+
+def _open_dbnsfp(path: Path):
+    """Yield decompressed text lines, using pigz when available (much faster)."""
+    if shutil.which("pigz"):
+        proc = subprocess.Popen(
+            ["pigz", "-dc", str(path)],
+            stdout=subprocess.PIPE, text=True, bufsize=1 << 20,
+        )
+        return proc.stdout, proc
+    return gzip.open(path, "rt"), None
+
+
+def stream_merged_dbnsfp(
+    gz_path: Path,
+    gpos_index: dict,
+    gene_to_rows: dict,
+    pid_to_seq: dict,
+    pid_to_gene: dict,
+    out_path: Path,
+) -> tuple[int, int]:
+    """Stream a single merged dbNSFP gzip once, writing mapped rows directly to
+    out_path. Returns (rows_written, distinct_proteins). Memory stays flat — the
+    only accumulator is the small set of Protein_IDs seen (~20 k), so the caller
+    never has to re-read the (potentially >100 GB) output to count proteins."""
+    fh, proc = _open_dbnsfp(gz_path)
+    n_written = 0
+    proteins_seen: set = set()
+    try:
+        # First non-comment-consumed line is the header (starts with '#chr').
+        header_line = fh.readline()
+        while header_line and not header_line.lstrip().startswith("#"):
+            header_line = fh.readline()
+        if not header_line:
+            _write_empty(out_path)
+            return 0, 0
+        raw_header = header_line.rstrip("\n").split("\t")
+        chr_idx, pos_idx, aaref_idx, file_cols = select_keep_columns(raw_header)
+        if chr_idx is None or pos_idx is None:
+            log.error("dbNSFP header missing #chr / pos(1-based) — aborting")
+            _write_empty(out_path)
+            return 0, 0
+        fast = (chr_idx == 0 and pos_idx == 1)
+        col_idxs = [idx for _, idx in file_cols]
+        out_header = _SYNTH_COLS + [name for name, _ in file_cols]
+
+        with open(out_path, "w", encoding="utf-8") as out:
+            out.write("\t".join(out_header) + "\n")
+            for line in fh:
+                if not line or line[0] == "#":
+                    continue
+                if fast:
+                    pre = line.split("\t", 2)
+                    if len(pre) < 3:
+                        continue
+                    chrom_raw, pos_raw = pre[0], pre[1]
+                else:
+                    parts0 = line.split("\t")
+                    if len(parts0) <= max(chr_idx, pos_idx):
+                        continue
+                    chrom_raw, pos_raw = parts0[chr_idx], parts0[pos_idx]
+                try:
+                    pos = int(pos_raw)
+                except ValueError:
+                    continue
+                chrom = chrom_raw if chrom_raw.startswith("chr") else f"chr{chrom_raw}"
+                entries = gpos_index.get((chrom, pos))
+                if not entries:
+                    continue
+
+                full = line.rstrip("\n").split("\t")
+                nfull = len(full)
+                file_vals = [full[j] if j < nfull else "" for j in col_idxs]
+                aaref = (full[aaref_idx].strip()
+                         if aaref_idx is not None and aaref_idx < nfull else "")
+                pos_s = str(pos)
+                end_s = str(pos + 1)
+                seen: set = set()
+                for pid, prot_pos, map_aa in entries:
+                    if (aaref and aaref != "." and not validate_hgvsp_aa(
+                            f"p.{aaref}{prot_pos}", map_aa, prot_pos)):
+                        continue
+                    gene = pid_to_gene.get(pid, "")
+                    for tgt_pid, tgt_pos, _tr in expand_protein_position_to_isoforms(
+                            pid, prot_pos, gene, gene_to_rows, pid_to_seq):
+                        key = (tgt_pid, tgt_pos)
+                        if key in seen:
+                            continue
+                        seen.add(key)
+                        out.write("\t".join(
+                            [tgt_pid, str(tgt_pos), chrom, pos_s, end_s] + file_vals
+                        ) + "\n")
+                        n_written += 1
+                        proteins_seen.add(tgt_pid)
+    finally:
+        try:
+            fh.close()
+        except Exception:
+            pass
+        if proc is not None:
+            proc.wait()
+    return n_written, len(proteins_seen)
+
+
+def _write_empty(out_path: Path) -> None:
+    with open(out_path, "w", encoding="utf-8") as out:
+        out.write("\t".join(_SYNTH_COLS) + "\n")
+
+
 def main():
     global _g_pid_map, _g_gene_to_rows, _g_pid_to_seq, _g_pid_to_gene
     global _g_chr_to_pids, _g_protein_ids, _g_chromosomes, _g_bed_header
@@ -353,6 +550,25 @@ def main():
 
     log.info("Loading combined_map …")
     pid_map = load_combined_map_by_protein(args.combined_map)
+
+    # Fast path — single self-describing merged dbNSFP gzip (dbNSFP 5.x academic
+    # release). Stream once against an inverted (chr, pos) index; keep all
+    # scores + rankscores + CADD + conservation + gnomAD 4.1 joint AF.
+    is_merged_gz = (
+        raw_dir.is_file()
+        and str(raw_dir).endswith(".gz")
+        and not args.dbnsfp_bed_header
+    )
+    if is_merged_gz:
+        log.info("Merged dbNSFP file detected — building inverted (chr,pos) index …")
+        pid_to_chrom = _pid_to_chrom_from_seq(seq_df)
+        gpos_index = build_gpos_index(pid_map, pid_to_chrom)
+        log.info("Index built: %d (chr,pos) keys — streaming %s …",
+                 len(gpos_index), raw_dir.name)
+        n, n_prot = stream_merged_dbnsfp(
+            raw_dir, gpos_index, gene_to_rows, pid_to_seq, pid_to_gene, out)
+        log.info("dbNSFP (merged map): %d rows for %d proteins", n, n_prot)
+        return
 
     all_rows: list[dict] = []
     header = None

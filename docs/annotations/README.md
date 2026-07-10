@@ -31,7 +31,7 @@ Predicted and experimentally measured variant effects.
 | Track | Output | Page |
 |-------|--------|------|
 | AlphaMissense | `pathogenicity/alphamissense.tsv` | [alphamissense.md](pathogenicity/alphamissense.md) |
-| dbNSFP (14 predictors) | `pathogenicity/dbnsfp_scores.tsv` | [dbnsfp.md](pathogenicity/dbnsfp.md) |
+| dbNSFP (37 predictors + rankscores, CADD, conservation, gnomAD 4.1 AF) | `pathogenicity/dbnsfp_scores.tsv` | [dbnsfp.md](pathogenicity/dbnsfp.md) |
 | MaveDB (MAVE assays) | `pathogenicity/mavedb.tsv` | [mavedb.md](pathogenicity/mavedb.md) |
 | ProteinGym (DMS benchmarks) | `pathogenicity/proteingym.tsv` | [proteingym.md](pathogenicity/proteingym.md) |
 

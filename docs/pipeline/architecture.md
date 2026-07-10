@@ -126,7 +126,7 @@ flowchart TD
 | `--clinvar_vcf` | ClinVar VCF | auto-download |
 | `--dbsnp_bb` | dbSNP 155 bigBed (polymorphism) | auto-download (`--fetch_dbsnp true`) |
 | `--alphamissense_gz` | AlphaMissense isoforms TSV.gz | auto-download |
-| `--dbnsfp_raw_dir` | dbNSFP chr*.gz directory | `local.config` |
+| `--dbnsfp_raw_dir` | dbNSFP merged 5.x `.gz` file or per-chr `chr*.gz` directory | `local.config` |
 | `--target_gene` | Gene filter (`null` = full proteome) | null |
 | `--gene_list_file` | Plain-text gene list (one HGNC name per line) | null |
 | `--mutation_maf` | TCGA / cBioPortal MAF (alternative to ClinVar) | null |
