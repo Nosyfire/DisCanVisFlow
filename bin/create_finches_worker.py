@@ -76,7 +76,6 @@ logging.basicConfig(level=logging.INFO,
 log = logging.getLogger(__name__)
 
 AMINO_ACIDS = list("ACDEFGHIKLMNPQRSTVWY")
-_AA_SET = frozenset(AMINO_ACIDS)
 COLS = ["Protein_ID", "Position", "WT_AA", "Mut_AA",
         "WT_Epsilon", "Mut_Epsilon", "Delta_Epsilon"]
 
@@ -195,13 +194,10 @@ _VALIDATE_IDS: set = set()
 
 def _process(args):
     pid, seq = args
-    # Mpipi has no parameters for U (selenocysteine) or X (unknown), so epsilon
-    # is undefined for the whole sequence, not just that site — skip the protein.
-    odd = set(seq) - _AA_SET
-    if odd:
-        log.warning("%s contains non-parameterised residue(s) %s — skipping",
-                    pid, ",".join(sorted(odd)))
-        return pid, []
+    # Sequences outside the incremental engine's alphabet fall back to the
+    # reference path, which skips the protein if the forcefield has no
+    # parameters for a residue (X) and scores it if it does (U). Deciding that
+    # here instead would hardcode the forcefield's alphabet in the driver.
     try:
         if _ENGINE == "full":
             return _rows_full(pid, seq)

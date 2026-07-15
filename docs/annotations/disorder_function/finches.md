@@ -51,15 +51,29 @@ test cases and real proteins). Benchmark: **RAF1-201 (648 aa) ≈ 32 min (`full`
 
 Set the engine via `--finches_engine full` to force the reference path.
 
-## Skipped isoforms
+## Non-standard residues
 
-The Mpipi forcefield has no parameters for **U** (selenocysteine) or **X**
-(unknown residue), so ε is undefined for the entire sequence — not just that
-site — and neither engine can score it. Those isoforms are skipped with a
-warning and appear nowhere in the output. On the current SwissProt/GENCODE
-reference that is **136 of 19,360 main isoforms** (111 with X, 25 with U);
-they are mostly very short fragments (median length ~21 aa). Isoforms longer
-than `--max_seq_len` (default 3000 aa) are skipped as well.
+The substitution alphabet is the standard 20, so a position is only mutated if
+its wild-type residue is one of them. Residues outside that alphabet still count
+as **sequence context** and contribute to ε.
+
+**U (selenocysteine)** *is* parameterised by Mpipi. Selenoproteins are scored
+normally, except that the U positions themselves are never mutated — so their
+blocks hold `19 × (number of standard residues)` rows rather than `19 × length`.
+The incremental engine's cached matrices cover the standard 20 only, so a
+U-containing isoform falls back to the `full` engine and pays its ~90× cost;
+with 25 such isoforms proteome-wide (the longest ~670 aa) this adds roughly half
+an hour to the tail of a full run, in parallel with everything else.
+
+**X (unknown residue)** has no parameters, so `calculate_epsilon_value` raises
+and ε is undefined for the entire sequence — not just that site. Those isoforms
+are skipped with a `WT epsilon failed … ('X')` warning and appear nowhere in the
+output: **111 of 19,360** main isoforms on the current SwissProt/GENCODE
+reference, mostly very short fragments (median ~21 aa).
+
+The driver does not hardcode which residues are parameterised — it asks the
+forcefield and skips a protein only if the reference path actually fails.
+Isoforms longer than `--max_seq_len` (default 3000 aa) are skipped as well.
 
 ## Running / resuming
 

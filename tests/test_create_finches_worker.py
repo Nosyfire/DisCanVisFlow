@@ -15,8 +15,8 @@ OUT_COLS = ["Protein_ID", "Position", "WT_AA", "Mut_AA",
 def _fake_finches(libdir: Path):
     """Write a minimal fake `finches` package: epsilon = -(# of F/Y/W).
 
-    Like the real Mpipi forcefield, it has no parameters for residues outside
-    the standard 20 and raises KeyError when it meets one.
+    Mirrors the real Mpipi forcefield's alphabet: it parameterises the standard
+    20 plus U (selenocysteine), and raises KeyError on anything else (e.g. X).
     """
     pkg = libdir / "finches"
     (pkg / "forcefields").mkdir(parents=True, exist_ok=True)
@@ -28,7 +28,7 @@ def _fake_finches(libdir: Path):
                 self.p = parameters
             def calculate_epsilon_value(self, a, b):
                 for c in a:
-                    if c not in 'ACDEFGHIKLMNPQRSTVWY':
+                    if c not in 'ACDEFGHIKLMNPQRSTVWYU':
                         raise KeyError(c)
                 return -float(sum(a.count(x) for x in 'FYW'))
     """))
@@ -72,11 +72,11 @@ def test_delta_epsilon_and_main_filter(tmp_path):
     assert float(f_to_a.iloc[0]["Delta_Epsilon"]) == 1.0
 
 
-def test_non_parameterised_residue_is_skipped_not_fatal(tmp_path):
-    """U/X have no Mpipi parameters: skip that protein, keep going.
+def test_unparameterised_residue_is_skipped_not_fatal(tmp_path):
+    """X has no Mpipi parameters: skip that protein, keep going.
 
     Regression: the worker used to let the KeyError escape the pool, killing a
-    whole proteome run because of one selenoprotein.
+    whole proteome run because of one bad isoform.
     """
     lib = tmp_path / "lib"
     lib.mkdir()
@@ -84,8 +84,7 @@ def test_non_parameterised_residue_is_skipped_not_fatal(tmp_path):
 
     seq = tmp_path / "seq.tsv"
     pd.DataFrame(
-        [["SEL-201", "yes", "AFUA"],   # U — selenocysteine
-         ["UNK-201", "yes", "AFXA"],   # X — unknown residue
+        [["UNK-201", "yes", "AFXA"],   # X — unknown residue, no parameters
          ["OK-201",  "yes", "AFA"]],
         columns=["Protein_ID", "main_isoform", "Sequence"]
     ).to_csv(seq, sep="\t", index=False)
@@ -99,8 +98,42 @@ def test_non_parameterised_residue_is_skipped_not_fatal(tmp_path):
     assert res.returncode == 0, res.stderr
 
     out = pd.read_csv(tmp_path / "finches_saturation.tsv", sep="\t")
-    # the clean protein is still scanned; the U/X ones are dropped entirely
+    # the clean protein is still scanned; the X one is dropped entirely
     assert set(out["Protein_ID"]) == {"OK-201"}
+
+
+def test_selenoprotein_is_scored_at_standard_positions(tmp_path):
+    """Mpipi DOES parameterise U, so selenoproteins must be scored, not skipped.
+
+    Regression: a blanket 'any non-standard residue → skip the protein' guard
+    wrongly dropped all 25 U-containing main isoforms. U is kept in the sequence
+    context (it contributes to epsilon) but is not itself mutated, since the
+    substitution alphabet is the standard 20.
+    """
+    lib = tmp_path / "lib"
+    lib.mkdir()
+    _fake_finches(lib)
+
+    seq = tmp_path / "seq.tsv"
+    pd.DataFrame([["SEL-201", "yes", "AFUA"]],   # U at position 3
+                 columns=["Protein_ID", "main_isoform", "Sequence"]).to_csv(
+        seq, sep="\t", index=False)
+
+    res = subprocess.run(
+        [sys.executable, str(BIN),
+         "--loc_chrom", str(seq), "--output_dir", str(tmp_path),
+         "--finches_lib", str(lib), "--only_main_isoforms", "--n_cpu", "1",
+         "--engine", "full"],
+        capture_output=True, text=True)
+    assert res.returncode == 0, res.stderr
+
+    out = pd.read_csv(tmp_path / "finches_saturation.tsv", sep="\t")
+    assert set(out["Protein_ID"]) == {"SEL-201"}
+    # 3 standard positions (1, 2, 4) x 19 substitutions; U at 3 is never mutated
+    assert sorted(out["Position"].unique()) == [1, 2, 4]
+    assert len(out) == 19 * 3
+    # U still counts as context: WT epsilon reflects the single F
+    assert (out["WT_Epsilon"] == -1.0).all()
 
 
 def test_unusable_engine_fails_fast_instead_of_hanging(tmp_path):
