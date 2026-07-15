@@ -263,6 +263,8 @@ process FINCHES_MAP {
     def n_cpu           = task.cpus                  ?: 1
     def only_main_arg   = params.only_main_isoforms  ? '--only_main_isoforms'                              : ''
     def max_len_arg     = params.finches_max_seq_len ? "--max_seq_len ${params.finches_max_seq_len}"        : '--max_seq_len 3000'
+    // engine: 'incremental' (default, exact + ~90x faster) or 'full' (reference)
+    def engine_arg      = params.finches_engine      ? "--engine ${params.finches_engine}"                 : ''
     // Use finches_python when set (needs finches + aiupred conda env); else fall
     // back to the script on PATH (assumes finches importable from default python3).
     def py              = params.finches_python       ?: null
@@ -274,6 +276,7 @@ process FINCHES_MAP {
         --n_cpu      ${n_cpu} \\
         ${finches_lib_arg} \\
         ${only_main_arg} \\
+        ${engine_arg} \\
         ${max_len_arg}
     """
 

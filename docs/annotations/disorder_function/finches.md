@@ -30,6 +30,40 @@ in-silico saturation-mutagenesis scan of condensate-forming propensity.
 | `Mut_Epsilon` | Interaction energy (ε) after the substitution |
 | `Delta_Epsilon` | Δε = Mut − WT |
 
+## Compute engines (`--finches_engine`)
+
+The saturation scan touches every position × 19 substitutions, so speed matters
+at proteome scale. Two engines produce **byte-identical** output:
+
+| Engine | How | Cost / protein | Speed |
+|--------|-----|----------------|-------|
+| `incremental` (**default**) | rebuilds only the band of the L×L interaction matrix a point mutation actually changes | O(20·L²) | reference |
+| `full` | one `calculate_epsilon_value(mut,mut)` per variant (rebuilds the whole matrix each time) | O(19·L³) | ~90× slower |
+
+The FINCHES self-epsilon reduces to a normalised sum of an elementwise function of
+the weighted matrix, `ε = (1/L)·Σ_ij h(w_ij)`, and a single substitution at
+position *p* only perturbs row/col *p* plus the ±1 charge-window and any
+aliphatic-cluster it changes. The incremental engine (`bin/finches_incremental.py`)
+recomputes just that band and updates the cached WT sum. It is validated
+bit-for-bit against `full` (max abs Δε ≈ 1e-14 across charged/aliphatic/terminal
+test cases and real proteins). Benchmark: **RAF1-201 (648 aa) ≈ 32 min (`full`) →
+≈ 22 s (`incremental`)** single-core.
+
+Set the engine via `--finches_engine full` to force the reference path; the
+worker also auto-falls back to `full` for any isoform containing a non-standard
+residue.
+
+## Running / resuming
+
+- Parallelism is **per protein** (`imap_unordered` over a length-sorted stream),
+  so all workers stay saturated; a single **tqdm** progress bar reports
+  proteins done / skipped / ETA.
+- The run is **resumable**: `Protein_ID`s already present in
+  `finches_saturation.tsv` are skipped and new results appended. Re-invoke the
+  same command to continue an interrupted run (use `--no_resume` to recompute).
+- `--order short_first` (default) front-loads short isoforms for fast early
+  coverage; `--validate N` cross-checks the first *N* proteins against `full`.
+
 ## Notes
 
 - **Positive Δε** = the mutation *increases* LLPS tendency; **negative Δε** =
@@ -37,4 +71,5 @@ in-silico saturation-mutagenesis scan of condensate-forming propensity.
 - Complements the curated [PhasePro](phasepro.md) phase-separation
   regions with a per-mutation quantitative scan.
 - Non-commercial licence (CC BY-NC 4.0); disabled by default for that reason.
-- Worker: `bin/create_finches_worker.py` (Module 8h).
+- Workers: `bin/create_finches_worker.py` (driver, Module 8h) +
+  `bin/finches_incremental.py` (exact incremental engine).
