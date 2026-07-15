@@ -18,6 +18,21 @@ in-silico saturation-mutagenesis scan of condensate-forming propensity.
 
 `final/pathogenicity/finches_saturation.tsv`
 
+On the current SwissProt/GENCODE reference the full-proteome run holds **19,249
+main isoforms** (9.2 GB, ~121 M variant rows). Every isoform is either present
+with a complete block or accounted for by one of the two exclusions below:
+
+| | Count |
+|---|---|
+| Main isoforms in the sequence table | 19,512 |
+| − longer than `--max_seq_len` (3000 aa) | 152 |
+| − containing X (no forcefield parameters) | 111 |
+| **= scored, each with a complete block** | **19,249** |
+
+Each block holds exactly `19 × (number of standard residues)` rows, which is the
+invariant to check the file against — note it is *not* `19 × length` for the 25
+selenoproteins (see below).
+
 ## Output columns
 
 | Column | Description |
@@ -38,16 +53,21 @@ at proteome scale. Two engines produce **byte-identical** output:
 | Engine | How | Cost / protein | Speed |
 |--------|-----|----------------|-------|
 | `incremental` (**default**) | rebuilds only the band of the L×L interaction matrix a point mutation actually changes | O(20·L²) | reference |
-| `full` | one `calculate_epsilon_value(mut,mut)` per variant (rebuilds the whole matrix each time) | O(19·L³) | ~90× slower |
+| `full` | one `calculate_epsilon_value(mut,mut)` per variant (rebuilds the whole matrix each time) | O(19·L³) | ~66× slower |
 
 The FINCHES self-epsilon reduces to a normalised sum of an elementwise function of
 the weighted matrix, `ε = (1/L)·Σ_ij h(w_ij)`, and a single substitution at
 position *p* only perturbs row/col *p* plus the ±1 charge-window and any
 aliphatic-cluster it changes. The incremental engine (`bin/finches_incremental.py`)
 recomputes just that band and updates the cached WT sum. It is validated
-bit-for-bit against `full` (max abs Δε ≈ 1e-14 across charged/aliphatic/terminal
-test cases and real proteins). Benchmark: **RAF1-201 (648 aa) ≈ 32 min (`full`) →
-≈ 22 s (`incremental`)** single-core.
+bit-for-bit against `full` (max abs Δε ≈ 7e-15 across charged/aliphatic/terminal
+test cases and real proteins).
+
+Measured on RAF1-201 (648 aa, 12,312 variants), single-core, end to end:
+**`full` 25.0 min → `incremental` 23 s (66×)**, and the two outputs are
+byte-identical. Roughly 11 s of the incremental run is one-off model
+initialisation, so the per-variant compute ratio is nearer 90×; the 66× is what
+you actually save on a protein this size.
 
 Set the engine via `--finches_engine full` to force the reference path.
 
