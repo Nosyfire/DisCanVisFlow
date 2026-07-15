@@ -39,11 +39,41 @@ dbNSFP has **two mutually-exclusive input modes** (raw takes priority):
 | Raw (`--dbnsfp_raw_dir`) | `final/pathogenicity/dbnsfp_scores.tsv` |
 | Pre-mapped (`--dbnsfp_tsv`) | `final/pathogenicity/pathogenicity_scores.tsv` |
 
-The raw single-file mode emits **~110 columns** (5 identity + 6 variant + all
-predictor scores & rankscores + CADD + conservation + gnomAD AF), one row per
-isoform residue × alternate allele. For the full proteome that is **~100M rows /
-~170 GB uncompressed**, so it is delivered as a compressed, randomly-sliceable
-bundle (see below) rather than a plain TSV.
+The raw single-file mode emits **110 columns** (2 identity + 3 genomic + 6
+variant + 81 predictor score/rankscore + 16 conservation + 2 gnomAD AF), one row
+per isoform residue × alternate allele. For the full proteome that is
+**~100M rows / ~173 GiB uncompressed**, so it is delivered as a compressed,
+randomly-sliceable bundle (see below) rather than a plain TSV.
+
+### Where the processed output lives (for benchmarking)
+
+The full-proteome (`--project discanvis`) processed dbNSFP is a **BGZF bundle**
+under `results/discanvis/final/pathogenicity/`, sharing the `dbnsfp_scores` stem:
+
+```
+results/discanvis/final/pathogenicity/dbnsfp_scores.tsv.gz       # BGZF body (~12 GB), sorted by Protein_ID,Protein_position
+results/discanvis/final/pathogenicity/dbnsfp_scores.tsv.gz.gzi   # bgzip random-access index
+results/discanvis/final/pathogenicity/dbnsfp_scores.pidx         # Protein_ID <tab> offset <tab> length
+results/discanvis/final/pathogenicity/dbnsfp_scores.header       # the single 110-column header line
+```
+
+Consume it in a benchmark **without decompressing the whole file** — slice the
+isoform(s) you need (a slice reads a few KB):
+
+```bash
+# one isoform → stdout (with header)
+bin/slice_dbnsfp.py --bgz results/discanvis/final/pathogenicity/dbnsfp_scores.tsv.gz --id RAF1-201
+
+# a benchmark gene set → one TSV
+bin/slice_dbnsfp.py --bgz results/discanvis/final/pathogenicity/dbnsfp_scores.tsv.gz \
+    --id_file benchmark_genes_transcripts.txt --out bench_dbnsfp.tsv
+```
+
+`--id` takes GENCODE transcript names (`Protein_ID`, e.g. `RAF1-201`), the same
+primary key used across every other `final/` table, so a benchmark row keyed by
+`(Protein_ID, Protein_position)` joins directly against this file. The whole
+uncompressed body can be streamed with `bgzip -dc dbnsfp_scores.tsv.gz` if a tool
+needs the plain TSV.
 
 ### Mapping semantics (important)
 
@@ -51,11 +81,22 @@ Each isoform is mapped **directly** from its own genomic coordinates in
 `combined_map.map` — there is **no homology/sequence transfer** between isoforms
 in the merged path. combined_map already contains every curated isoform
 independently genome-mapped, so a variant is attributed only to isoforms whose
-own codon sits at that genomic position (a residue therefore has at most its 3
-codon positions × alternate alleles). Note dbNSFP itself may list the *same*
-genomic variant under several amino-acid changes (different transcript reading
-frames); rows are kept when the reference amino acid matches, so a residue can
-show a few extra alternate-allele rows — each is a valid per-variant score.
+own codon sits at that genomic position (a residue therefore spans **at most 3
+distinct `Start_Position` values** — its 3 codon positions).
+
+**On row counts / duplication.** A clean residue maps to 3 codon positions × 3
+alternate alleles = up to 9 SNV rows. In practice a residue shows ~8–12 rows.
+The cross-isoform coordinate inflation bug (a residue picking up dozens of
+foreign `Start_Position`s via homology transfer) was fixed in `f627e27` — every
+residue now correctly has ≤ 3 distinct `Start_Position`s (verified: `A1BG-201`
+residue 469 = 12 rows / 3 positions; `RAF1-201` residues likewise). The residual
+> 9 rows are **not a pipeline bug**: dbNSFP itself lists the *same* genomic SNV
+under several transcript reading-frame annotations (e.g. the same `C>A` at one
+position appears once with `aaref/aaalt = ./.` and once as `R>S`). Rows are kept
+whenever the reference amino acid matches (or is `.`), so each is a legitimate
+per-variant record carried verbatim from dbNSFP. If a benchmark wants exactly one
+row per `(Start_Position, ref, alt)`, deduplicate on those three columns keeping
+the row whose `aaref` equals the residue's amino acid.
 
 ### Packed, sliceable bundle
 
@@ -80,6 +121,14 @@ It looks up the `.pidx` and asks `bgzip -b <offset> -s <length>` to decompress
 only that isoform's bytes (a few KB). Requires `bgzip` (htslib) on PATH.
 
 ## Output columns
+
+> **Machine-readable column reference:** the full ordered
+> `index → column → category` map is in
+> [`dbnsfp_columns.tsv`](dbnsfp_columns.tsv) (repo-tracked), and the exact header
+> line ships next to the data as
+> `results/discanvis/final/pathogenicity/dbnsfp_scores.header`. Agents/tools should
+> read one of those two rather than hard-coding column order.
+
 
 ### Variant identifiers
 
@@ -106,7 +155,9 @@ MisFit_D, MisFit_S, MPC, PrimateAI, DEOGEN2, BayesDel_addAF, BayesDel_noAF,
 ClinPred, LIST-S2, VARITY_R, VARITY_ER, VARITY_R_LOO, VARITY_ER_LOO, ESM1b,
 AlphaMissense, PHACTboost, MutFormer, MutScore, popEVE, DANN, fathmm-XF_coding.
 
-Plus `CADD_raw`, `CADD_raw_rankscore`, `CADD_phred`.
+Plus `CADD_raw`, `CADD_raw_rankscore`, `CADD_phred`,
+`Eigen-raw_coding_rankscore`, `Eigen-PC-raw_coding_rankscore`, and
+`bStatistic_converted_rankscore` (rankscore-only columns from dbNSFP).
 
 ### Conservation
 

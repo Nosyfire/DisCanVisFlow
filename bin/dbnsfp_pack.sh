@@ -16,7 +16,14 @@ set -euo pipefail
 
 IN="${1:?usage: dbnsfp_pack.sh <input_map.tsv> <outdir>}"
 OUTDIR="${2:?usage: dbnsfp_pack.sh <input_map.tsv> <outdir>}"
-command -v bgzip >/dev/null || { echo "bgzip not found (install htslib)" >&2; exit 2; }
+# $BGZIP overrides; require htslib >= 1.11 (older `bgzip -b` overflows >2GB offsets)
+BGZIP="${BGZIP:-bgzip}"
+command -v "$BGZIP" >/dev/null || { echo "bgzip not found (set \$BGZIP or install htslib)" >&2; exit 2; }
+BGZ_VER="$("$BGZIP" --version | head -1 | grep -oE '[0-9]+\.[0-9]+' | head -1)"
+BGZ_MAJ="${BGZ_VER%%.*}"; BGZ_MIN="${BGZ_VER##*.}"
+if [ "$BGZ_MAJ" -lt 1 ] || { [ "$BGZ_MAJ" -eq 1 ] && [ "$BGZ_MIN" -lt 11 ]; }; then
+  echo "WARN: bgzip $BGZ_VER is old — 'bgzip -b' overflows offsets > 2 GB. A full-proteome bundle needs htslib >= 1.11 (set \$BGZIP)." >&2
+fi
 
 mkdir -p "$OUTDIR"
 export TMPDIR="${TMPDIR:-$OUTDIR/sorttmp}"; mkdir -p "$TMPDIR"
@@ -43,8 +50,12 @@ awk -F'\t' 'BEGIN{OFS="\t"; off=0}
 END{ if(cur!="") print cur, start, off-start }' "$SORTED" > "$PIDX"
 echo "[$(date)] indexed $(wc -l < "$PIDX") proteins"
 
-echo "[$(date)] bgzip (block-gzip + random-access index) …"
-bgzip -i -I "$OUTDIR/dbnsfp_scores.tsv.gz.gzi" -c "$SORTED" > "$OUTDIR/dbnsfp_scores.tsv.gz"
+echo "[$(date)] bgzip (block-gzip) …"
+"$BGZIP" -@ "${BGZIP_THREADS:-8}" -c "$SORTED" > "$OUTDIR/dbnsfp_scores.tsv.gz"
+# build the random-access index explicitly: `-i -c` (stdout) leaves an empty .gzi
+# on some htslib builds, whereas `bgzip -r` always reindexes the finished file.
+echo "[$(date)] bgzip -r (random-access .gzi index) …"
+"$BGZIP" -r "$OUTDIR/dbnsfp_scores.tsv.gz"
 rm -f "$SORTED"
 rmdir "$TMPDIR" 2>/dev/null || true
 

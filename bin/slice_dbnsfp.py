@@ -22,10 +22,31 @@ Usage:
 """
 
 import argparse
+import os
+import re
 import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+
+def resolve_bgzip():
+    """Return a path to a bgzip new enough for 64-bit random access.
+
+    htslib < 1.11 truncates `bgzip -b` offsets to signed 32-bit, silently
+    breaking any slice past ~2 GB uncompressed. Prefer $BGZIP, then PATH.
+    """
+    cand = os.environ.get("BGZIP") or shutil.which("bgzip")
+    if not cand:
+        return None, None
+    try:
+        out = subprocess.run([cand, "--version"], capture_output=True,
+                             text=True).stdout
+        m = re.search(r"(\d+)\.(\d+)", out)
+        ver = (int(m.group(1)), int(m.group(2))) if m else (0, 0)
+    except Exception:
+        ver = (0, 0)
+    return cand, ver
 
 
 def _stem_paths(bgz: Path):
@@ -61,9 +82,15 @@ def main() -> int:
     ap.add_argument("--no_header", action="store_true", help="omit the header line")
     args = ap.parse_args()
 
-    if not shutil.which("bgzip"):
-        sys.stderr.write("ERROR: bgzip not found on PATH (install htslib)\n")
+    bgzip, ver = resolve_bgzip()
+    if not bgzip:
+        sys.stderr.write("ERROR: bgzip not found (set $BGZIP or install htslib)\n")
         return 2
+    if ver < (1, 11):
+        sys.stderr.write(
+            f"WARN: bgzip {ver[0]}.{ver[1]} is old — `bgzip -b` overflows offsets "
+            "> 2 GB (signed 32-bit); slices into a large bundle will fail. Install "
+            "htslib >= 1.11 and/or set $BGZIP to it.\n")
 
     bgz = Path(args.bgz)
     pidx_path, header_path = _stem_paths(bgz)
@@ -95,7 +122,7 @@ def main() -> int:
             off, length = idx[pid]
             # bgzip random access by uncompressed offset (needs the .gzi index)
             proc = subprocess.run(
-                ["bgzip", "-b", str(off), "-s", str(length), str(bgz)],
+                [bgzip, "-b", str(off), "-s", str(length), str(bgz)],
                 stdout=subprocess.PIPE, check=True,
             )
             out.write(proc.stdout.decode("utf-8", "replace"))
