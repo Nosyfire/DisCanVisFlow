@@ -55,10 +55,20 @@ import os
 import random
 import sys
 import warnings
-from multiprocessing import Pool, cpu_count
-from pathlib import Path
 
-import pandas as pd
+# Parallelism here is one process per protein, so BLAS must stay single-threaded.
+# This also stops OpenBLAS pinning every forked worker onto one core: it sets the
+# affinity mask when its thread pool starts, which collapsed a 64-worker run onto
+# 2 logical CPUs. Must precede the numpy import (via pandas) to take effect.
+for _v in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS",
+           "NUMEXPR_NUM_THREADS", "VECLIB_MAXIMUM_THREADS"):
+    os.environ.setdefault(_v, "1")
+os.environ.setdefault("OPENBLAS_MAIN_FREE", "1")
+
+from multiprocessing import Pool, cpu_count       # noqa: E402
+from pathlib import Path                          # noqa: E402
+
+import pandas as pd                               # noqa: E402
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -82,6 +92,12 @@ _VALIDATE_TOL = 1e-6
 def _init_worker(finches_lib, engine):
     global _MODEL, _ENG, _ENGINE
     _ENGINE = engine
+    # Belt and braces for the OpenBLAS pinning above: if a library narrowed this
+    # process's affinity mask, hand the whole machine back.
+    try:
+        os.sched_setaffinity(0, range(os.cpu_count()))
+    except (AttributeError, OSError):              # not Linux / not permitted
+        pass
     if finches_lib and finches_lib not in sys.path:
         sys.path.insert(0, finches_lib)
     # make bin/ importable for finches_incremental regardless of cwd

@@ -1,4 +1,5 @@
 """Tests for bin/create_finches_worker.py using a mocked finches backend."""
+import os
 import subprocess
 import sys
 import textwrap
@@ -168,3 +169,30 @@ def test_resume_appends_and_skips_completed(tmp_path):
     assert set(both["Protein_ID"]) == {"A-201", "B-201"}
     # A-201's rows are the originals, not recomputed duplicates
     assert len(both[both["Protein_ID"] == "A-201"]) == len(first)
+
+
+def test_blas_threading_pinned_before_numpy_import(tmp_path):
+    """BLAS env vars must be set before numpy is imported, or the affinity fix is dead.
+
+    Regression: OpenBLAS pins every forked worker to the core its thread pool
+    starts on, which collapsed a 64-worker proteome run onto 2 logical CPUs
+    (3.4% CPU each, 27x slower). Setting these before the numpy import stops the
+    thread pool — and the pinning — from ever happening.
+    """
+    probe = tmp_path / "probe.py"
+    probe.write_text(
+        "import importlib.util, os, sys\n"
+        f"spec = importlib.util.spec_from_file_location('cfw', {str(BIN)!r})\n"
+        "m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)\n"
+        "print(os.environ.get('OPENBLAS_NUM_THREADS'), os.environ.get('OMP_NUM_THREADS'))\n"
+        "print(len(os.sched_getaffinity(0)), os.cpu_count())\n"
+    )
+    env = {k: v for k, v in os.environ.items()
+           if k not in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS")}
+    res = subprocess.run([sys.executable, str(probe)], capture_output=True,
+                         text=True, env=env)
+    assert res.returncode == 0, res.stderr
+    threads, affinity = res.stdout.strip().splitlines()[:2]
+    assert threads == "1 1", f"BLAS threading not pinned: {threads}"
+    visible, total = affinity.split()
+    assert visible == total, f"module import narrowed affinity: {visible}/{total}"
