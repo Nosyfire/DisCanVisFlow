@@ -49,9 +49,17 @@ bit-for-bit against `full` (max abs Δε ≈ 1e-14 across charged/aliphatic/term
 test cases and real proteins). Benchmark: **RAF1-201 (648 aa) ≈ 32 min (`full`) →
 ≈ 22 s (`incremental`)** single-core.
 
-Set the engine via `--finches_engine full` to force the reference path; the
-worker also auto-falls back to `full` for any isoform containing a non-standard
-residue.
+Set the engine via `--finches_engine full` to force the reference path.
+
+## Skipped isoforms
+
+The Mpipi forcefield has no parameters for **U** (selenocysteine) or **X**
+(unknown residue), so ε is undefined for the entire sequence — not just that
+site — and neither engine can score it. Those isoforms are skipped with a
+warning and appear nowhere in the output. On the current SwissProt/GENCODE
+reference that is **136 of 19,360 main isoforms** (111 with X, 25 with U);
+they are mostly very short fragments (median length ~21 aa). Isoforms longer
+than `--max_seq_len` (default 3000 aa) are skipped as well.
 
 ## Running / resuming
 

@@ -66,6 +66,7 @@ logging.basicConfig(level=logging.INFO,
 log = logging.getLogger(__name__)
 
 AMINO_ACIDS = list("ACDEFGHIKLMNPQRSTVWY")
+_AA_SET = frozenset(AMINO_ACIDS)
 COLS = ["Protein_ID", "Position", "WT_AA", "Mut_AA",
         "WT_Epsilon", "Mut_Epsilon", "Delta_Epsilon"]
 
@@ -103,7 +104,11 @@ def _init_worker(finches_lib, engine):
 def _rows_full(pid, seq):
     """Reference engine: one epsilon call per variant."""
     import numpy as np
-    wt_eps = float(_MODEL.calculate_epsilon_value(seq, seq))
+    try:
+        wt_eps = float(_MODEL.calculate_epsilon_value(seq, seq))
+    except Exception as exc:
+        log.warning("WT epsilon failed for %s (%s) — skipping", pid, exc)
+        return pid, []
     if np.isnan(wt_eps):
         return pid, []
     rows = []
@@ -174,6 +179,13 @@ _VALIDATE_IDS: set = set()
 
 def _process(args):
     pid, seq = args
+    # Mpipi has no parameters for U (selenocysteine) or X (unknown), so epsilon
+    # is undefined for the whole sequence, not just that site — skip the protein.
+    odd = set(seq) - _AA_SET
+    if odd:
+        log.warning("%s contains non-parameterised residue(s) %s — skipping",
+                    pid, ",".join(sorted(odd)))
+        return pid, []
     try:
         if _ENGINE == "full":
             return _rows_full(pid, seq)
@@ -252,6 +264,11 @@ def main():
 
     global _VALIDATE_IDS
     _VALIDATE_IDS = {pid for pid, _ in todo[:max(0, args.validate)]}
+
+    # Build the model once in the parent first. The same failure inside a Pool
+    # initializer makes multiprocessing respawn workers forever, so a broken
+    # env or engine would hang instead of reporting anything.
+    _init_worker(args.finches_lib, args.engine)
 
     try:
         from tqdm import tqdm
