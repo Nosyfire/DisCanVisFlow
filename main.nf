@@ -149,6 +149,9 @@ include { PROTEINGYM_MAP;
           FINCHES_MAP;
           CATGRANULE_MAP;
           PLAAC_MAP                } from './modules/pathogenicity'
+include { FETCH_LLPS_SOURCES;
+          LLPS_REGIONS_MAP;
+          LLPS_VARIANTS_MAP        } from './modules/llps'
 include { MAPPING_REPORT           } from './modules/report'
 
 // ---------------------------------------------------------------------------
@@ -1200,6 +1203,22 @@ After copying/downloading the files, rerun the same command with -resume.
         PLAAC_MAP.out.plaac.view { f -> "\n✔  PLAAC prion-like domains: ${f}\n" }
     }
 
+    // ── LLPS databases (PhaSepDB / LLPSDB / DisPhaseDB) ──────────────────────
+    // Regions + protein info → annotations; variants → mutations. One tolerant
+    // fetch normalises whatever endpoints are reachable (DisPhaseDB is often
+    // offline — supply --disphasedb_path). Runs when any of the three sources is
+    // requested and not all are skipped.
+    def llps_enabled = (mods == null || mods.contains('phasepdb') || mods.contains('llpsdb') ||
+                        mods.contains('disphasedb')) &&
+                       !(params.skip_phasepdb && params.skip_llpsdb && params.skip_disphasedb)
+    if ( llps_enabled ) {
+        def llps_norm = FETCH_LLPS_SOURCES().norm
+        LLPS_REGIONS_MAP( SEQUENCE_PROCESS.out.loc_chrom_seq, llps_norm )
+        LLPS_VARIANTS_MAP( SEQUENCE_PROCESS.out.loc_chrom_seq, llps_norm )
+        LLPS_REGIONS_MAP.out.regions.view  { f -> "\n✔  LLPS regions (PhaSepDB/LLPSDB/DisPhaseDB): ${f}\n" }
+        LLPS_VARIANTS_MAP.out.variants.view { f -> "\n✔  LLPS variants: ${f}\n" }
+    }
+
     // ── Step 5m: PositionBasedAnnotations + RSAscores ────────────────────────
     // Requires disorder outputs (IUPred + pLDDT). Skipped when disorder is not requested.
     if ( (mods == null || mods.contains('disorder')) ) {
@@ -1293,6 +1312,7 @@ After copying/downloading the files, rerun the same command with -resume.
     if ( (mods == null || mods.contains('catgranule')) && !params.skip_catgranule )        report_gate = report_gate.mix( CATGRANULE_MAP.out.catgranule )
     if ( (mods == null || mods.contains('plaac')) && !params.skip_plaac )                  report_gate = report_gate.mix( PLAAC_MAP.out.plaac )
     if ( (mods == null || mods.contains('lcr')) && !params.skip_lcr )                     report_gate = report_gate.mix( LCR_MAP.out.lcr )
+    if ( llps_enabled )                                                                   report_gate = report_gate.mix( LLPS_REGIONS_MAP.out.regions )
     if ( (mods == null || mods.contains('dssp')) && !params.skip_dssp )                   report_gate = report_gate.mix( DSSP_MAP.out.dssp )
     if ( (mods == null || mods.contains('disprot')) && !params.skip_disprot )             report_gate = report_gate.mix( DISPROT_MAP.out.disprot )
 

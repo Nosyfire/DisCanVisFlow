@@ -66,7 +66,8 @@ nextflow run main.nf --project test_one_protein --data local --machine hard --ta
     --modules mutations,disorder --fetch_cbioportal true --skip_iupred true -resume
 # Available module names: mutations, disorder, mobidb, disprot, pdb, go, polymorphism, pem,
 # coiledcoils, ppi, conservation, scansite, clinvar_disease, omim, cancer_drivers,
-# alphamissense, depmap, mavedb, proteingym, dbnsfp, finches, lcr, dssp, catgranule, plaac
+# alphamissense, depmap, mavedb, proteingym, dbnsfp, finches, lcr, dssp, catgranule, plaac,
+# phasepdb, llpsdb, disphasedb
 # ELM + Pfam + DIBS/MFIB/PhasePro/PTM always run as backbone regardless of --modules
 
 # Skip individual predictors within a module
@@ -305,6 +306,8 @@ python bin/extract_gene_from_results.py --source results/discanvis --gene RAF1 -
 | 8h — FINCHES | `modules/pathogenicity.nf` | `create_finches_worker.py` | `finches_saturation.tsv` (off by default; `--skip_finches false` to enable; CC BY-NC 4.0) |
 | 8i — catGRANULE | `modules/pathogenicity.nf` | `create_catgranule_worker.py` | `final/phase_separation/catgranule.tsv` (per-residue LLPS propensity) |
 | 8j — PLAAC | `modules/pathogenicity.nf` | `create_plaac_worker.py` | `final/phase_separation/plaac.tsv` (prion-like domain score) |
+| 8k — LLPS DBs (regions) | `modules/llps.nf` | `parse_llps_sources.py` + `create_llps_regions_worker.py` | `final/annotations/llps_regions.tsv` (PS/IDR/LCR regions), `final/annotations/llps_proteins.tsv` (MLO/localisation/material state) from PhaSepDB + LLPSDB (+ DisPhaseDB) |
+| 8l — LLPS DBs (variants) | `modules/llps.nf` | `parse_llps_sources.py` + `create_llps_variants_worker.py` | `final/mutations/llps_variants.tsv` (DisPhaseDB disease + PhaSepDB experimental variants, `variant_class`-tagged, residue-validated) |
 | Report | `modules/report.nf` | `create_mapping_report_worker.py` | `mapping_reports/` (runs last) |
 | Scatter | `modules/annotation_backbone.nf` (`SPLIT_SEQ_TABLE`) | `split_seq_table.py` | N gene-balanced seq-table chunks (`--scatter_chunks N`) |
 | Reference fetches | `modules/fetch_references.nf` | — | UniProt/GENCODE/ClinVar/GO/MobiDB/MONDO/AlphaMissense/IntAct/BioGRID/HIPPIE (cached via `storeDir`) |
@@ -358,6 +361,8 @@ If direct import fails, `create_disorder_worker.py` falls back to subprocess via
 | Conservation (GOPHER) | `params.gopher_conservation_table` — external pre-computed table |
 | Conservation (phastCons) | `params.phastcons_dir` — chr*.bw files; requires `bigWigToBedGraph` in PATH |
 | hg38.2bit | `params.hg38_2bit` or `--fetch_hg38_2bit true` |
+| LLPS DBs (PhaSepDB/LLPSDB) | `FETCH_LLPS_SOURCES` (auto-fetch `db2.phasep.pro` + `bio-comp.org.cn`, normalised via `parse_llps_sources.py`, cached in `references/llps/`) |
+| DisPhaseDB | `--disphasedb_path` local dump (server `disphasedb.leloir.org.ar` usually offline; no stable bulk URL) |
 
 ### Pending Modules (low priority)
 
@@ -368,4 +373,6 @@ If direct import fails, `create_disorder_worker.py` falls back to subprocess via
 
 Recently completed (previously pending): ELM Switches (Module 5q), SEG
 low-complexity regions (Module 5r LCR), DSSP secondary structure (Module 5s),
-catGRANULE + PLAAC phase-separation predictors (Modules 8i/8j).
+catGRANULE + PLAAC phase-separation predictors (Modules 8i/8j), LLPS curated
+databases PhaSepDB + LLPSDB + DisPhaseDB (Modules 8k/8l — regions/protein info →
+annotations, variants → mutations).

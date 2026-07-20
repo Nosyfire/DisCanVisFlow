@@ -37,6 +37,7 @@ dependencies:
   - tqdm>=4.64
   - pytest>=7.0           # for `pytest tests/`
   - obonet>=1.0           # MONDO OBO parsing (ClinVar disease build)
+  - openpyxl>=3.1         # PhaSepDB/LLPSDB .xlsx source parsing (LLPS databases)
 
   # ── BLAST+ (makeblastdb, blastp, tblastn) ────────────────────────────────
   # bioconda provides BLAST+ 2.13.0
