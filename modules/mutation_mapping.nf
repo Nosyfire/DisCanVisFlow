@@ -5,6 +5,12 @@
  * ─────────
  *  FETCH_CLINVAR      Download ClinVar VCF (GRCh38) from NCBI FTP (storeDir cached).
  *
+ *  FETCH_CLINVAR_SUBMISSIONS
+ *                     Download ClinVar submission_summary.txt.gz (storeDir cached).
+ *
+ *  CLINVAR_DATES      Aggregate per-SCV submission dates → one row per variant,
+ *                     keyed on CLNHGVS (the mapped TSVs' `Mutation` column).
+ *
  *  MUTATION_MAP       Map genomic mutations → protein positions on all isoforms.
  *                     Accepts ClinVar VCF, MAF, or generic VCF.
  *                     Outputs: Missense / Frameshift / Nonsense / Indel TSVs.
@@ -17,6 +23,8 @@
  *  MUTATION_MAP.out.nonsense      : path
  *  MUTATION_MAP.out.indel         : path
  *  MUTATION_MAP.out.stats         : path
+ *  FETCH_CLINVAR_SUBMISSIONS.out.submissions : path
+ *  CLINVAR_DATES.out.dates        : path
  */
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -41,6 +49,75 @@ process FETCH_CLINVAR {
     stub:
     """
     touch clinvar_grch38.vcf.gz
+    """
+}
+
+
+// ──────────────────────────────────────────────────────────────────────────
+// FETCH_CLINVAR_SUBMISSIONS
+//   submission_summary.txt.gz — one row per submitted record (SCV), carrying the
+//   per-submitter DateLastEvaluated the VCF does not have. Always the current
+//   release; joined by VariationID, so skew against a pinned VCF is harmless.
+// ──────────────────────────────────────────────────────────────────────────
+process FETCH_CLINVAR_SUBMISSIONS {
+
+    tag  { "clinvar_submissions" }
+    label 'process_low'
+
+    storeDir "${params.ref_dir}/clinvar"
+
+    output:
+    path "submission_summary.txt.gz", emit: submissions
+
+    script:
+    """
+    wget -q -O submission_summary.txt.gz \\
+        https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/submission_summary.txt.gz
+    """
+
+    stub:
+    """
+    touch submission_summary.txt.gz
+    """
+}
+
+
+// ──────────────────────────────────────────────────────────────────────────
+// CLINVAR_DATES
+//   One compact row per ClinVar variant with its submission-date summary.
+//   Keyed on CLNHGVS == the `Mutation` column of the mapped mutation TSVs, so
+//   it stays variant-keyed instead of being duplicated across every isoform.
+// ──────────────────────────────────────────────────────────────────────────
+process CLINVAR_DATES {
+
+    tag  { "clinvar_dates" }
+    label 'process_medium'
+
+    publishDir(
+        path: { params.gene_dir
+            ? "${params.outdir}/${params.gene_dir}/final/mutations/ClinVar"
+            : "${params.outdir}/final/mutations/ClinVar" },
+        mode: 'copy'
+    )
+
+    input:
+    path clinvar_vcf
+    path submissions
+
+    output:
+    path "clinvar_submission_dates.tsv", emit: dates
+
+    script:
+    """
+    create_clinvar_dates_worker.py \\
+        --clinvar_vcf        ${clinvar_vcf} \\
+        --submission_summary ${submissions} \\
+        --output             clinvar_submission_dates.tsv
+    """
+
+    stub:
+    """
+    echo -e "VariationID\tMutation\tChromosome\tPosition\tRef\tAlt\tGene\tlast_evaluated\tfirst_evaluated\tn_submissions\tlast_submitter\tlast_clinical_significance\tlast_review_status" > clinvar_submission_dates.tsv
     """
 }
 

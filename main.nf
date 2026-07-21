@@ -97,6 +97,8 @@ include { SPLIT_CDNA_FASTA;
           GENOME_MAP;
           GENOME_QUERY_MAP         } from './modules/genome_mapping'
 include { FETCH_CLINVAR;
+          FETCH_CLINVAR_SUBMISSIONS;
+          CLINVAR_DATES;
           MUTATION_MAP;
           MUTATION_MAP as MUTATION_MAP_CLINVAR;
           MUTATION_MAP as MUTATION_MAP_TCGA;
@@ -525,12 +527,16 @@ After copying/downloading the files, rerun the same command with -resume.
             }
         }
 
+        // Whichever branch supplies the ClinVar VCF also feeds CLINVAR_DATES below.
+        def clinvar_vcf_ch = null
+
         if ( (mods == null || mods.contains('mutations') || mods.contains('clinvar_disease'))
              && params.clinvar_vcf ) {
+            clinvar_vcf_ch = Channel.value( file(params.clinvar_vcf, checkIfExists: true) )
             MUTATION_MAP_CLINVAR(
                 GENOME_MAP.out.map_file,
                 SEQUENCE_PROCESS.out.loc_chrom_seq,
-                file(params.clinvar_vcf, checkIfExists: true),
+                clinvar_vcf_ch,
                 Channel.value('ClinVar'),
                 Channel.value('clinvar_vcf')
             )
@@ -540,15 +546,29 @@ After copying/downloading the files, rerun the same command with -resume.
         } else if ( (mods == null || mods.contains('mutations') || mods.contains('clinvar_disease'))
                     && !params.tcga_maf && !params.cbioportal_maf && !cancer_mut_specs ) {
             clinvar_ch = FETCH_CLINVAR()
+            clinvar_vcf_ch = clinvar_ch.vcf
             MUTATION_MAP_CLINVAR(
                 GENOME_MAP.out.map_file,
                 SEQUENCE_PROCESS.out.loc_chrom_seq,
-                clinvar_ch.vcf,
+                clinvar_vcf_ch,
                 Channel.value('ClinVar'),
                 Channel.value('clinvar_vcf')
             )
             MUTATION_MAP_CLINVAR.out.stats.view { f ->
                 "\n✔  Mutation mapping stats (ClinVar): ${f}\n"
+            }
+        }
+
+        // ── ClinVar submission dates: one compact row per variant, keyed on CLNHGVS
+        if ( clinvar_vcf_ch && !params.skip_clinvar_dates
+             && (mods == null || mods.contains('mutations')
+                 || mods.contains('clinvar_disease') || mods.contains('clinvar_dates')) ) {
+            def submissions_ch = params.clinvar_submission_summary
+                ? Channel.value( file(params.clinvar_submission_summary, checkIfExists: true) )
+                : FETCH_CLINVAR_SUBMISSIONS().submissions
+            CLINVAR_DATES( clinvar_vcf_ch, submissions_ch )
+            CLINVAR_DATES.out.dates.view { f ->
+                "\n✔  ClinVar submission dates: ${f}\n"
             }
         }
 

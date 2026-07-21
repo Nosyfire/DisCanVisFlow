@@ -67,7 +67,7 @@ nextflow run main.nf --project test_one_protein --data local --machine hard --ta
 # Available module names: mutations, disorder, mobidb, disprot, pdb, go, polymorphism, pem,
 # coiledcoils, ppi, conservation, scansite, clinvar_disease, omim, cancer_drivers,
 # alphamissense, depmap, mavedb, proteingym, dbnsfp, finches, lcr, dssp, catgranule, plaac,
-# phasepdb, llpsdb, disphasedb
+# phasepdb, llpsdb, disphasedb, clinvar_dates
 # ELM + Pfam + DIBS/MFIB/PhasePro/PTM always run as backbone regardless of --modules
 
 # Skip individual predictors within a module
@@ -281,6 +281,7 @@ python bin/extract_gene_from_results.py --source results/discanvis --gene RAF1 -
 | 2 — Sequence Process | `modules/sequence_process.nf` | `create_sequence_table_worker.py` | `loc_chrom_with_names_isoforms_with_seq.tsv` |
 | 3 — Genome Mapping | `modules/genome_mapping.nf` | `create_genome_map_worker.py` | `combined_map.map` |
 | 4 — Mutation Mapping | `modules/mutation_mapping.nf` | `create_mutation_map_worker.py` | `Missense/Frameshift/Nonsense/Indel_filter_mutations_mapped.tsv` |
+| 4b — ClinVar dates | `modules/mutation_mapping.nf` | `create_clinvar_dates_worker.py` | `final/mutations/ClinVar/clinvar_submission_dates.tsv` (per-variant last/first submission date, n_submissions, last submitter; keyed on `Mutation` = CLNHGVS, **not** Protein_ID) |
 | 5a — Annotation | `modules/annotation_backbone.nf` | `create_annotation_worker.py` | `elm.tsv`, `dibs.tsv`, `mfib.tsv`, `phasepro.tsv`, `ptm_merged.tsv`, `pfam_domains.tsv`, `uniprot_roi.tsv`, `uniprot_binding.tsv` |
 | 5b — Disorder | `modules/disorder.nf` | `create_disorder_worker.py` | `IUPredscores.tsv`, `AIUPredscores.tsv`, `AIUPredBinding.tsv`, `CombinedDisorderNew.tsv` (all → `final/disorder/`); `AlphaFoldTable.tsv` → `final/structure/` |
 | 5c — PDB | `modules/structure.nf` | `create_pdb_worker.py` | `final/structure/pdb_structures.tsv`, `final/structure/pdb_missing.tsv` |
@@ -319,6 +320,7 @@ python bin/extract_gene_from_results.py --source results/discanvis --gene RAF1 -
 - **`storeDir` caching**: Reference downloads cached in `references/`; if a storeDir file is 0 bytes (failed download), delete it and re-run. `-stub` writes to `references/_stub/` and never pollutes the real cache.
 - **Mutation input is mutually exclusive**: `--clinvar_vcf` OR `--mutation_maf` OR `--mutation_vcf`, not combined
 - **TCGA MAF QC**: `--mutation_source TCGA` truncates barcodes to 12 chars; `--mutation_hypermutation_threshold 1500` drops hot samples; `--no_hgvsp_validation` disables ref-AA check
+- **ClinVar submission dates**: `CLINVAR_DATES` aggregates `submission_summary.txt.gz` per VariationID (max/min `DateLastEvaluated`, submission count, last submitter) and joins it to the ClinVar VCF. Output is **variant-keyed on `Mutation` (CLNHGVS)**, not Protein_ID — join it to the mapped mutation TSVs rather than expecting one row per isoform. Joining by VariationID makes VCF-vs-submission release skew harmless. Disable with `--skip_clinvar_dates true`.
 - **ClinVar disease build**: when `hg38_2bit` + `clinvar_disease_from_mutations=true` + `mondo_obo` set, `CLINVAR_DISEASE_BUILD` runs from `MUTATION_MAP` outputs (not a static filter table)
 - **dbNSFP dual mode**: `--dbnsfp_raw_dir` → `DBNSFP_MAP` (via `combined_map.map`); `--dbnsfp_tsv` → `PATHOGENICITY_MAP` (pre-mapped Protein_ID-keyed TSV). Mutually exclusive; raw takes priority. Raw mode accepts either a **single merged dbNSFP 5.x gzip** (e.g. `dbNSFP5.3.1a_grch38.gz`, ~50 GB — detected automatically, streamed once via an inverted `(chr,pos)` index built from `combined_map.map`, `pigz`-accelerated) or a **directory of legacy per-chr `chr*.gz`** files. Kept columns are pattern-selected (`select_keep_columns`): all `_score` + `_rankscore` predictors + CADD + GERP/phyloP/phastCons + `gnomAD4.1_joint_AF`/`_POPMAX_AF`. **gnomAD allele frequency comes from dbNSFP** here — no separate gnomAD fetch needed.
 - **Polymorphisms (Module 5g)**: `--dbsnp_bb` (`dbSnp155Common.bb`) → `create_polymorphism_worker.py` runs `bigBedToBed` over each isoform's genomic region from `combined_map.map`, maps every SNV to a protein residue, emits `rsid + ref/alt + allele_frequency + Type` for all isoforms containing the codon.
@@ -357,6 +359,7 @@ If direct import fails, `create_disorder_worker.py` falls back to subprocess via
 | DisProt | `FETCH_DISPROT` (disprot.org API, `term_ontology=IDPO+GO`, cached in `references/disprot/`) |
 | GO | `FETCH_GO` (`goa_human.gaf.gz` + `go.obo`, cached) |
 | ClinVar | `FETCH_CLINVAR` (NCBI FTP, cached in `references/clinvar/`) |
+| ClinVar submissions | `FETCH_CLINVAR_SUBMISSIONS` (`submission_summary.txt.gz`, ~384 MB, cached in `references/clinvar/`) |
 | PPI | `FETCH_INTACT/BIOGRID/HIPPIE` → `PPI_PREPROCESS` (cached in `references/ppi/`) |
 | Conservation (GOPHER) | `params.gopher_conservation_table` — external pre-computed table |
 | Conservation (phastCons) | `params.phastcons_dir` — chr*.bw files; requires `bigWigToBedGraph` in PATH |
