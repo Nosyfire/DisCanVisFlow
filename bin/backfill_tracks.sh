@@ -3,7 +3,7 @@
 # results dir's sequence table (no Nextflow rerun). Writes into <results_dir>/final/.
 # Each track is routed to the interpreter that has its dependencies.
 #
-# Usage: bin/backfill_tracks.sh <results_dir> [--tracks lcr,dssp,catgranule,plaac,finches]
+# Usage: bin/backfill_tracks.sh <results_dir> [--tracks lcr,apr,dssp,catgranule,plaac,finches]
 #
 # Env overrides:
 #   PYTHON            interpreter for lcr/dssp/catgranule/plaac  (default: python)
@@ -16,12 +16,12 @@ set -euo pipefail
 
 RESULTS_DIR="${1:-}"
 if [[ -z "$RESULTS_DIR" ]]; then
-    echo "usage: $0 <results_dir> [--tracks lcr,dssp,catgranule,plaac,finches]" >&2
+    echo "usage: $0 <results_dir> [--tracks lcr,apr,dssp,catgranule,plaac,finches]" >&2
     exit 2
 fi
 shift || true
 
-TRACKS="lcr,dssp,catgranule,plaac"   # finches opt-in only
+TRACKS="lcr,apr,dssp,catgranule,plaac"   # finches opt-in only
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --tracks) TRACKS="$2"; shift 2 ;;
@@ -48,6 +48,9 @@ run_track() {
     case "$1" in
         lcr)
             "$PYTHON" "$SCRIPT_DIR/create_lcr_worker.py" \
+                --seq_table "$SEQ" --outdir "$FINAL/annotations" --only_main_isoforms ;;
+        apr)
+            "$PYTHON" "$SCRIPT_DIR/create_apr_worker.py" \
                 --seq_table "$SEQ" --outdir "$FINAL/annotations" --only_main_isoforms ;;
         dssp)
             "$PYTHON" "$SCRIPT_DIR/create_dssp_worker.py" \

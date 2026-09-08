@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# copy_tracks_to_benchmark.sh — copy the five generated track files from a source
+# copy_tracks_to_benchmark.sh — copy the generated track files from a source
 # results dir into a destination results dir at identical relative paths.
 # Protein sets are identical between discanvis and vep_benchmarking, so no filter.
 #
@@ -14,6 +14,7 @@ fi
 
 RELPATHS=(
     "final/annotations/low_complexity.tsv"
+    "final/annotations/aggregation_prone_regions.tsv"
     "final/structure/dssp.tsv"
     "final/phase_separation/catgranule.tsv"
     "final/phase_separation/plaac.tsv"
