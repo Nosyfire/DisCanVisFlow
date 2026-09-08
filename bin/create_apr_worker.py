@@ -43,9 +43,11 @@ A3V = {
     "Y": 1.159, "V": 1.594,
 }
 
-# PROVISIONAL — replaced by the measured proteome q90 in Task 5 of the plan.
-# Only used when the input is too small to calibrate (single-gene runs).
-DEFAULT_A3V_THRESHOLD = 0.5
+# Measured q90 of the AGGRESCAN a3v window-5 means over the SwissProt human
+# main-isoform proteome (results/discanvis, 19512 proteins / 11017060 windows,
+# 2026-09-08). Used only when the input is too small to calibrate its own
+# quantile — i.e. single-gene runs.
+DEFAULT_A3V_THRESHOLD = 0.5752
 MIN_PROTEINS_FOR_THRESHOLD = 1000
 
 OUT_COLS = ["Protein_ID", "start", "end", "length", "mean_a3v", "peak_a3v"]

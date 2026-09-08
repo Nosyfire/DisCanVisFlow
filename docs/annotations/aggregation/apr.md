@@ -38,8 +38,9 @@ In precedence order:
    the single-gene path: a run over one protein must not calibrate a quantile against
    itself.
 
-`DEFAULT_A3V_THRESHOLD` is the measured q90 over the SwissProt human main-isoform
-proteome. The worker always logs which branch it took and the value it used.
+`DEFAULT_A3V_THRESHOLD` is **0.5752** — the measured q90 over the SwissProt human
+main-isoform proteome (19,512 proteins, 11,017,060 window means; measured 2026-09-08).
+The worker always logs which branch it took and the value it used.
 
 ## Output file
 
