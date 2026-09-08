@@ -103,6 +103,14 @@ Functional features of structured / folded regions.
 | RSA & position-based annotations | `structure/rsa_scores.tsv`, `position/position_based_annotations.tsv` | [rsa.md](structure/rsa.md) |
 | Low-complexity regions (SEG) | `annotations/low_complexity.tsv` | [lcr.md](structure/lcr.md) |
 
+## Aggregation — [`aggregation/`](aggregation)
+
+Sequence-derived aggregation propensity.
+
+| Track | Output | Page |
+|-------|--------|------|
+| Aggregation-prone regions (AGGRESCAN a3v) | `annotations/aggregation_prone_regions.tsv` | [apr.md](aggregation/apr.md) |
+
 ## Phase separation — [`phase_separation/`](phase_separation)
 
 Per-residue liquid-liquid phase separation (LLPS) propensity predictors.

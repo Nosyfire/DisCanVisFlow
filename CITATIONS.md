@@ -59,13 +59,14 @@ If you publish results produced by DisCanVisFlow, please cite the relevant entri
 
 ---
 
-## 5. LLPS predictors
+## 5. LLPS and aggregation predictors
 
 | Tool | Citation | License / Terms |
 |------|----------|-----------------|
 | **FINCHES** (saturation mutagenesis, Δε) ⚠️ | Ginell GM *et al.* (2024) FINCHES: predicting heterotypic and homotypic interaction specificity in disordered regions. *bioRxiv* 2024.06.03.597104. https://doi.org/10.1101/2024.06.03.597104 | **CC BY-NC 4.0 — non-commercial only.** Disabled by default (`--skip_finches false` to enable). |
 | **catGRANULE** | Bolognesi B *et al.* (2016) A concentration-dependent liquid phase separation can cause toxicity upon increased protein expression. *Cell Reports* 16, 222–231. https://doi.org/10.1016/j.celrep.2016.05.076 | Free, academic |
 | **PLAAC** | Lancaster AK *et al.* (2014) PLAAC: a web and command-line application to identify proteins with prion-like amino acid composition. *Bioinformatics* 30, 2501–2502. https://doi.org/10.1093/bioinformatics/btu310 | MIT |
+| **AGGRESCAN** (a3v scale, aggregation-prone regions) | Conchillo-Solé O *et al.* (2007) AGGRESCAN: a server for the prediction and evaluation of "hot spots" of aggregation in polypeptides. *BMC Bioinformatics* 8, 65. https://doi.org/10.1186/1471-2105-8-65 | Free, academic — the a3v scale is used, not the HSA/NHSA server algorithm |
 
 ---
 
