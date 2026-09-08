@@ -75,7 +75,8 @@ include { FETCH_UNIPROT_FASTA;
           FETCH_CBIOPORTAL;
           FETCH_ZENODO;
           FETCH_UNIPROT_SPROT_DAT;
-          FETCH_INTERPRO_PFAM      } from './modules/fetch_references'
+          FETCH_INTERPRO_PFAM;
+          FETCH_INTERPRO_ENTRY_LIST } from './modules/fetch_references'
 
 // Each process that is called more than once in the same workflow must be
 // imported under a unique alias (DSL2 restriction).
@@ -98,6 +99,7 @@ include { SPLIT_CDNA_FASTA;
           GENOME_QUERY_MAP         } from './modules/genome_mapping'
 include { FETCH_CLINVAR;
           FETCH_CLINVAR_SUBMISSIONS;
+          FETCH_CLINVAR_VARIANT_SUMMARY;
           CLINVAR_DATES;
           MUTATION_MAP;
           MUTATION_MAP as MUTATION_MAP_CLINVAR;
@@ -126,6 +128,7 @@ include { PDB_MAP;
           PDB_BULK_MAP;
           EXON_MAP;
           LCR_MAP;
+          APR_MAP;
           DSSP_MAP                 } from './modules/structure'
 include { FETCH_GO;
           GO_MAP;
@@ -566,7 +569,10 @@ After copying/downloading the files, rerun the same command with -resume.
             def submissions_ch = params.clinvar_submission_summary
                 ? Channel.value( file(params.clinvar_submission_summary, checkIfExists: true) )
                 : FETCH_CLINVAR_SUBMISSIONS().submissions
-            CLINVAR_DATES( clinvar_vcf_ch, submissions_ch )
+            def variant_summary_ch = params.clinvar_variant_summary
+                ? Channel.value( file(params.clinvar_variant_summary, checkIfExists: true) )
+                : FETCH_CLINVAR_VARIANT_SUMMARY().variants
+            CLINVAR_DATES( clinvar_vcf_ch, submissions_ch, variant_summary_ch )
             CLINVAR_DATES.out.dates.view { f ->
                 "\n✔  ClinVar submission dates: ${f}\n"
             }
@@ -686,6 +692,14 @@ After copying/downloading the files, rerun the same command with -resume.
     def _ipr_dat_file = params.interpro_pfam_dat_gz
         ? Channel.value( file(params.interpro_pfam_dat_gz) )
         : ( _use_bulk_ipr ? FETCH_INTERPRO_PFAM().dat : Channel.value(no_file) )
+    // entry.list (InterPro accession -> Domain/Family/Repeat/... type) — recovers the
+    // classification protein2ipr.dat.gz rows don't carry directly, needed so the
+    // combined-disorder rule's "Pfam Domain -> never disordered" / domain-class logic
+    // can tell a true Domain apart from a Family/Repeat/motif-level hit.
+    def _cached_entry_list = file("${params.ref_dir}/interpro/entry.list")
+    def _entry_list_file = params.interpro_entry_list
+        ? Channel.value( file(params.interpro_entry_list) )
+        : ( (_use_bulk_ipr || _cached_entry_list.exists()) ? FETCH_INTERPRO_ENTRY_LIST().entry_list : Channel.value(no_file) )
 
     def uniprot_features_ch
     def pfam_bulk_ch
@@ -702,6 +716,7 @@ After copying/downloading the files, rerun the same command with -resume.
         def parsed = PARSE_UNIPROT_DAT(
             _uni_dat_file,
             _ipr_dat_file,
+            _entry_list_file,
             SEQUENCE_PROCESS.out.loc_chrom_seq
         )
         uniprot_features_ch = parsed.features
@@ -806,6 +821,20 @@ After copying/downloading the files, rerun the same command with -resume.
     def disorder_regions = Channel.value(no_file)
     def disorder_pos     = Channel.value(no_file)
 
+    // DSSP true RSA/secondary structure — create_disorder_worker.py now uses its
+    // per-residue `rsa` (real solvent accessibility, mkdssp + Tien max-ASA) in
+    // place of a pLDDT-derived pseudo-RSA (see nextflow_discanvis/BUG.md, 2nd
+    // entry), so this is a prerequisite of the disorder module now, not only a
+    // standalone report track requested via --modules dssp. Invoked once here;
+    // both the disorder block below and the later dssp report-gate reference
+    // this same channel (Nextflow forbids invoking a process twice).
+    def dssp_needed = (mods == null || mods.contains('dssp') || mods.contains('disorder')) && !params.skip_dssp
+    def dssp_ch = Channel.value(no_file)
+    if ( dssp_needed ) {
+        DSSP_MAP( SEQUENCE_PROCESS.out.loc_chrom_seq )
+        dssp_ch = DSSP_MAP.out.dssp.first()
+    }
+
     if ( (mods == null || mods.contains('disorder')) ) {
         def disorder_loc_ch = ( scatter_n > 1 ) ? split_chunks.flatten()
                                                 : SEQUENCE_PROCESS.out.loc_chrom_seq
@@ -841,7 +870,8 @@ After copying/downloading the files, rerun the same command with -resume.
             af_plddt_ch,
             af_precomputed_ch,
             setup_done_ch,
-            setup_aiupred_py_ch
+            setup_aiupred_py_ch,
+            dssp_ch
         )
 
         def _dis_pub = params.gene_dir ? "${params.outdir}/${params.gene_dir}/final/disorder"
@@ -905,10 +935,17 @@ After copying/downloading the files, rerun the same command with -resume.
         LCR_MAP.out.lcr.view { f -> "\n✔  Low-complexity regions: ${f}\n" }
     }
 
+    // ── Aggregation-prone regions (AGGRESCAN a3v) ───────────────────────────
+    if ( (mods == null || mods.contains('apr')) && !params.skip_apr ) {
+        APR_MAP( SEQUENCE_PROCESS.out.loc_chrom_seq )
+        APR_MAP.out.apr.view { f -> "\n✔  Aggregation-prone regions: ${f}\n" }
+    }
+
     // ── DSSP secondary structure + true RSA ─────────────────────────────────
+    // Invocation moved earlier (see dssp_needed/dssp_ch above) since DISORDER_MAP
+    // now depends on it too; this just reports the already-computed channel.
     if ( (mods == null || mods.contains('dssp')) && !params.skip_dssp ) {
-        DSSP_MAP( SEQUENCE_PROCESS.out.loc_chrom_seq )
-        DSSP_MAP.out.dssp.view { f -> "\n✔  DSSP SS + true RSA: ${f}\n" }
+        dssp_ch.view { f -> "\n✔  DSSP SS + true RSA: ${f}\n" }
     }
 
     // ── DisProt curated disorder regions ────────────────────────────────────
@@ -1332,8 +1369,9 @@ After copying/downloading the files, rerun the same command with -resume.
     if ( (mods == null || mods.contains('catgranule')) && !params.skip_catgranule )        report_gate = report_gate.mix( CATGRANULE_MAP.out.catgranule )
     if ( (mods == null || mods.contains('plaac')) && !params.skip_plaac )                  report_gate = report_gate.mix( PLAAC_MAP.out.plaac )
     if ( (mods == null || mods.contains('lcr')) && !params.skip_lcr )                     report_gate = report_gate.mix( LCR_MAP.out.lcr )
+    if ( (mods == null || mods.contains('apr')) && !params.skip_apr )                     report_gate = report_gate.mix( APR_MAP.out.apr )
     if ( llps_enabled )                                                                   report_gate = report_gate.mix( LLPS_REGIONS_MAP.out.regions )
-    if ( (mods == null || mods.contains('dssp')) && !params.skip_dssp )                   report_gate = report_gate.mix( DSSP_MAP.out.dssp )
+    if ( (mods == null || mods.contains('dssp')) && !params.skip_dssp )                   report_gate = report_gate.mix( dssp_ch )
     if ( (mods == null || mods.contains('disprot')) && !params.skip_disprot )             report_gate = report_gate.mix( DISPROT_MAP.out.disprot )
 
     MAPPING_REPORT(

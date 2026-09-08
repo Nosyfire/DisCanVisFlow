@@ -152,6 +152,41 @@ process LCR_MAP {
 
 
 // ──────────────────────────────────────────────────────────────────────────
+// APR_MAP — aggregation-prone regions from the AGGRESCAN a3v scale.
+// Worker: create_apr_worker.py. Pure Python, no external binary to go missing.
+// ──────────────────────────────────────────────────────────────────────────
+process APR_MAP {
+    tag  { "apr_map" }
+    label 'process_low'
+    publishDir(
+        path: { params.gene_dir ? "${params.outdir}/${params.gene_dir}/final/annotations"
+                                : "${params.outdir}/final/annotations" },
+        mode: 'copy'
+    )
+
+    input:
+    path loc_chrom
+
+    output:
+    path "aggregation_prone_regions.tsv", emit: apr
+
+    script:
+    def only_main_arg = params.only_main_isoforms ? '--only_main_isoforms' : ''
+    """
+    create_apr_worker.py \\
+        --seq_table ${loc_chrom} \\
+        --outdir    . \\
+        ${only_main_arg}
+    """
+
+    stub:
+    """
+    printf 'Protein_ID\\tstart\\tend\\tlength\\tmean_a3v\\tpeak_a3v\\n' > aggregation_prone_regions.tsv
+    """
+}
+
+
+// ──────────────────────────────────────────────────────────────────────────
 // DSSP_MAP — secondary structure (8+3 state) + true RSA from AlphaFold mmCIF.
 // Worker: create_dssp_worker.py. Missing mkdssp → empty track, never crashes.
 // ──────────────────────────────────────────────────────────────────────────
