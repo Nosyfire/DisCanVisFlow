@@ -22,6 +22,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -119,6 +120,31 @@ def completed_runs(root: Path) -> list[str]:
     return found
 
 
+def local_config_usable(root: Path) -> bool:
+    """Does config/data/local.config point at files that exist here?
+
+    Existence of the file is not enough. It is currently committed to the repo,
+    so every clone and every plugin install carries one machine's absolute
+    paths. Reporting "present" on a machine where none of those paths resolve
+    would send the caller straight into --data local and a wall of missing-file
+    errors, when --data discanvis_data would have just worked. So sample the
+    paths it declares and require that most of them are really there.
+    """
+    cfg = root / "config/data/local.config"
+    if not cfg.is_file():
+        return False
+    try:
+        text = cfg.read_text(errors="replace")
+    except OSError:
+        return False
+
+    paths = re.findall(r"""['"](/[^'"]+)['"]""", text)
+    if not paths:
+        return False
+    hits = sum(1 for p in paths if Path(p).exists())
+    return hits >= max(1, len(paths) // 2)
+
+
 def inspect(root: Path, why: str) -> dict:
     return {
         "root": str(root),
@@ -127,7 +153,7 @@ def inspect(root: Path, why: str) -> dict:
         "conda_env": conda_env_exists(),
         "nextflow_on_path": shutil.which("nextflow") is not None,
         "completed_runs": completed_runs(root),
-        "has_local_config": (root / "config/data/local.config").exists(),
+        "has_local_config": local_config_usable(root),
     }
 
 
