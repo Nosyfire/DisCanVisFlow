@@ -9,7 +9,9 @@ results/
 zenodo_upload/
 
 # Reference data cache — downloaded at runtime, can be 20-100 GB
-references/
+# Root reference-data cache only. A bare "references/" would also
+# swallow skills/*/references/, which must ship with the plugin.
+/references/
 
 # External programs (AIUPred clones, UCSC tools) — set up per machine via
 # bin/setup_external_programs.sh or the SETUP_DEPS Nextflow process

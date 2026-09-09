@@ -1,200 +1,182 @@
 ---
 name: idp-dataset
 description: >
-  Use this skill whenever someone asks for an IDP (intrinsically disordered protein) dataset,
-  disorder-focused annotations, a feature matrix for disordered proteins, or wants to annotate
-  a protein/gene list with disorder predictions and IDP biology tracks. Triggers on requests like
-  "give me IDP data for RAF1", "I need disorder annotations for these proteins", "create an
-  annotated IDP feature set", "generate a dataset for my IDPs", "map disorder for EGFR",
-  "which regions of CTNNB1 are disordered?", "what ELM motifs does TP53 have?", or
-  "I want per-residue IDP annotations for this gene list" — even if the user doesn't say
-  DisCanVisFlow or pipeline explicitly. Always use this skill for DisCanVisFlow-generated IDP
-  data requests, including single proteins, gene lists, and full-proteome jobs.
+  Generate protein annotation datasets with DisCanVisFlow — per-residue disorder, linear
+  motifs, PTMs, domains, structure, conservation, phase-separation and variant tracks for
+  human genes. Use this skill whenever someone wants data for one or more proteins:
+  "give me IDP data for RAF1", "I need disorder annotations for these 40 genes", "annotate
+  my gene list", "build a feature matrix for my IDPs", "which regions of CTNNB1 are
+  disordered", "get me ELM motifs and PTMs for TP53", "run the pipeline on BRAF", or a
+  bare gene list with no verb at all. It also covers the setup question — "how do I get
+  this running on this machine" — because the first thing this skill does is locate the
+  pipeline and tell you what is missing. Use it even when the user never says DisCanVis,
+  Nextflow, or pipeline; a request for protein annotation data is enough. For interpreting
+  data that already exists, prefer discanvis-analysis; for a failing run, prefer
+  discanvis-troubleshoot.
 ---
 
-# IDP Dataset Generation — DisCanVisFlow
+# Generating DisCanVisFlow datasets
 
-This skill translates a natural-language IDP data request into the right pipeline commands,
-checks for existing completed runs first (fastest path), and either extracts or runs as needed.
+The pipeline maps disease variants, functional annotations and structural features onto
+every curated protein isoform in the human SwissProt proteome. This skill turns a
+natural-language data request into the right command.
 
-## Documentation to consult
+The single most valuable thing you can do here is **check for an existing run before
+computing anything**. Slicing a finished full-proteome run takes seconds; recomputing the
+same genes takes minutes to hours, and a fresh full proteome takes about a day. Users
+rarely know a finished run is sitting there, so checking is on you, not them.
 
-Before analysing data or explaining what an annotation means, read the relevant reference:
+## Step 1 — Locate the pipeline
 
-| Need | File to read |
-|------|-------------|
-| **What each annotation column means** | `skills/idp-dataset/references/annotations.md` |
-| Pipeline modules, processes, output structure | `docs/pipeline/architecture.md` |
-| How UniProt ↔ GENCODE isoform mapping works | `docs/pipeline/isoform_mapping.md` |
-| Conservation score details (GOPHER / phastCons) | `docs/pipeline/conservation_method.md` |
-| Performance and scaling notes | `docs/guide/performance.md` |
-
-Read `references/annotations.md` whenever the user asks what an annotation means, wants to
-interpret scores, or asks about a specific track (disorder, ELM, PTM, RSA, etc.).
-
----
-
-## IDP-relevant outputs produced
-
-All outputs land in `results/<project>/final/` as tab-separated TSVs keyed by `Protein_ID`
-(GENCODE transcript name, e.g. `RAF1-201`). Per-residue scores are comma-separated arrays
-(one float per amino acid position, in sequence order).
-
-| Directory | Key files | What they capture |
-|-----------|-----------|------------------|
-| `disorder/` | IUPredscores, AnchorScores, AIUPredscores, AIUPredBinding, AlphaFoldTable, CombinedDisorderNew | Per-residue disorder probability and binding-region predictions |
-| `annotations/` | elm, dibs, mfib, phasepro, ptm_merged, pfam_domains, pem_core_motifs, mobidb_disorder, coiled_coils, uniprot_roi, uniprot_binding, go_terms, scansite, interactions | Functional sites, motifs, PTMs, domains, PPI |
-| `sequence/` | loc_chrom_with_names_isoforms_with_seq.tsv | Isoform table: sequences, genomic coords, UniProt mapping |
-| `position/` | rsa_scores, position_based_annotations | Relative solvent accessibility, secondary structure env |
-| `pdb/` | pdb_structures, pdb_missing | PDB coverage + unobserved (candidate disordered) regions |
-| `conservation/` | conservation_multiple_level, conservation_phastcons | Evolutionary conservation at 7 taxonomic levels + vertebrate genome |
-| `mutations/ClinVar/` | Missense/Frameshift/Nonsense/Indel_filter_mutations_mapped | Clinical variants mapped to protein residues |
-
-For full column-level descriptions, read `skills/idp-dataset/references/annotations.md`.
-
----
-
-## Workflow
-
-### Step 1: Understand the request
-
-Determine:
-- **What proteins?** Single gene name → comma-separated list → gene list file → full proteome
-- **Input format?** HGNC gene symbols (e.g. `RAF1`) preferred; if UniProt accessions given, map them via `results/discanvis/final/sequence/loc_chrom_with_names_isoforms_with_seq.tsv`
-- **Which data?** All IDP tracks (default) or a specific annotation subset?
-- **Output destination?** Ask if not obvious (default: `results/idp_<gene>/`)
-- **Analysis needed?** If the user wants insights (e.g. "which domain is most mutated"), plan to cross-reference mutation + domain files after extraction
-
-The pipeline covers the **human proteome only** (UniProt SwissProt × GENCODE). Flag non-human requests.
-
-### Step 2: Check for an existing full-proteome run
-
-Always check first — extraction takes seconds vs. hours for a fresh run:
+Run this before anything else. It answers where the checkout is, whether the conda
+environment is built, and — crucially — which runs have already finished:
 
 ```bash
-ls results/discanvis/final/disorder/ 2>/dev/null | head -3
+python "$(dirname "$0")/../../bin/find_discanvis.py"   # from inside the plugin
+# or simply, when the repo is the working directory:
+python bin/find_discanvis.py
 ```
 
-If `CombinedDisorderNew.tsv` (or any TSV) appears, the full run is complete.
+Add `--json` when you want to branch on the result programmatically.
 
-### Step 3: Choose the right approach
+If it reports no checkout, the user needs one. Offer the three commands it prints
+(clone, create the conda env, export `DISCANVIS_HOME`) and stop until that is done —
+everything below depends on it.
 
-#### Path A — Existing full-proteome run → extract (preferred)
+If it reports the pipeline was found **in the plugin cache**, say so before running
+anything long. That copy works, but a run writes tens of gigabytes of reference data into
+a versioned plugin directory and the next plugin upgrade throws it away. A normal clone
+with `DISCANVIS_HOME` pointing at it is what you want for real work.
+
+Everything below assumes commands run from the checkout root.
+
+## Step 2 — Understand the request
+
+- **Which proteins?** One gene, a comma-separated list, a file of HGNC symbols, or the
+  whole proteome. If given UniProt accessions instead of gene names, map them via
+  `results/<project>/final/sequence/loc_chrom_with_names_isoforms_with_seq.tsv`.
+- **Which tracks?** Everything (the default) or a subset. A subset is worth proposing when
+  the user's question is narrow — a disorder question does not need dbNSFP or conservation,
+  and dropping them is the difference between minutes and hours.
+- **Where should it land?** Default to `results/idp_<gene>/`.
+
+The pipeline covers the **human proteome only**. Say so plainly if asked for another
+species rather than producing an empty result.
+
+## Step 3 — Extract from an existing run, or run the pipeline
+
+### Path A — a finished run exists (strongly preferred)
+
+`find_discanvis.py` lists finished runs. A `discanvis` run is the full proteome, so any
+gene the user asks for is already in it:
 
 ```bash
-# Single gene
 conda run -n discanvis python bin/extract_gene_from_results.py \
-    --source results/discanvis \
-    --gene RAF1 \
-    --out results/idp_RAF1
+    --source results/discanvis --gene RAF1 --out results/idp_RAF1
 
-# Comma-separated genes
+# several genes
 conda run -n discanvis python bin/extract_gene_from_results.py \
-    --source results/discanvis \
-    --gene RAF1,TP53,BRAF,KRAS,EGFR \
-    --out results/idp_custom
+    --source results/discanvis --gene RAF1,TP53,BRAF --out results/idp_kinases
 
-# Gene list from file (one HGNC symbol per line; # comments OK)
+# from a file (one HGNC symbol per line, # comments allowed)
 conda run -n discanvis python bin/extract_gene_from_results.py \
-    --source results/discanvis \
-    --gene_list_file /path/to/my_idps.txt \
-    --out results/idp_my_dataset
+    --source results/discanvis --gene_list_file my_genes.txt --out results/idp_custom
 ```
 
-For a full-proteome request, `results/discanvis/` is already the dataset.
+This filters every TSV by `Protein_ID` prefix. No recomputation, no conda/Nextflow risk.
 
-#### Path B — No existing run → run the pipeline
+### Path B — no finished run, or the user wants tracks the old run lacks
 
 ```bash
-conda activate discanvis
+# one gene
+nextflow run main.nf --project test_one_protein --target_gene RAF1 -resume
 
-# Single gene (~4–10 min on 64-CPU server)
-nextflow run main.nf \
-    --project test_one_protein \
-    --data local \
-    --machine hard \
-    --target_gene RAF1 \
-    -resume
+# a gene list
+nextflow run main.nf --project discanvis --gene_list_file my_genes.txt -resume
 
-# Gene list
-nextflow run main.nf \
-    --project discanvis \
-    --data local \
-    --machine hard \
-    --gene_list_file /path/to/my_idps.txt \
-    -resume
-
-# Full human proteome (~24 h on 64-CPU server)
-nextflow run main.nf \
-    --project discanvis \
-    --data local \
-    --machine hard \
-    -resume
+# the whole proteome (~24 h on a big server)
+nextflow run main.nf --project discanvis -resume
 ```
 
-**Include only specific annotation groups** with `--modules` (preferred over stacking `--skip_X` flags):
+Add `-stub` to validate the workflow graph without computing anything — a cheap way to
+confirm a command is well-formed before committing hours to it.
+
+## Step 4 — Pick portable flags
+
+**Default to `--data discanvis_data`, which is also the config default, so simply omit the
+flag.** It downloads every open reference automatically and caches it. `--data local`
+reads `config/data/local.config`, which is machine-specific and deliberately not in git —
+on any machine that has not been set up by hand it will fail. Only reach for it when
+`find_discanvis.py` reported `local.config: present`.
+
+`--machine` should match the hardware, and getting it wrong is the most common cause of a
+run dying on memory. BLAT loads a ~4 GB genome per parallel job:
+
+| Hardware | Flag |
+|---|---|
+| 8 GB laptop, WSL | `--machine laptop` |
+| 32 GB workstation | `--machine low` |
+| 64 GB+ workstation | `--machine medium` |
+| Dedicated 256 GB server | `--machine hard` |
+| SLURM cluster | `--machine slurm` |
+
+When you do not know the machine, `--machine medium` is the safe middle. You can check
+with `nproc` and `free -g`.
+
+## Step 5 — Narrow the tracks when it helps
+
+`--modules` takes a comma-separated list and runs only those groups. The backbone (ELM,
+Pfam, DIBS, MFIB, PhasePro, PTM) always runs and cannot be selected or excluded.
 
 ```bash
-# Disorder + mutations only (skip PDB, conservation, GO, PPI, etc.)
-nextflow run main.nf --project test_one_protein --data local --machine hard \
-    --target_gene RAF1 \
-    --modules mutations,disorder \
-    --fetch_cbioportal true \
-    --skip_iupred true \
-    -resume
+--modules mutations,disorder          # variants + disorder only
+--modules disorder,disprot,mobidb     # predicted + curated disorder
+--modules disprot,mobidb              # curated evidence only, no predictors
 ```
 
-Available module names: `mutations`, `disorder`, `mobidb`, `pdb`, `go`, `polymorphism`,
-`pem`, `coiledcoils`, `ppi`, `conservation`, `scansite`, `clinvar_disease`, `omim`,
-`cancer_drivers`, `alphamissense`, `depmap`, `mavedb`, `proteingym`, `dbnsfp`, `finches`
+The authoritative list of module names, with what each one gates, is in
+`docs/guide/configuration.md`. Read it rather than reciting names from memory — the set
+grows, and a wrong name is accepted silently and simply produces nothing.
 
-ELM + Pfam + DIBS/MFIB/PhasePro/PTM are backbone annotations — always produced regardless of `--modules`.
+For finer control, `--skip_*` flags disable individual predictors inside a module
+(`--skip_iupred`, `--skip_alphafold`, and so on); the full table is in the same document.
 
-To skip individual predictors *within* a module (e.g. skip IUPred3 but keep AIUPred within `disorder`):
-```
-    --skip_iupred true
-    --skip_alphafold true
-    --skip_polymorphism true     # within polymorphism module
-    --skip_conservation true     # within conservation module
-```
+## Step 6 — Propose, confirm, run
 
-### Step 4: Machine / data flags
+Long runs are expensive and hard to undo, so state the plan before starting one:
 
-| Environment | `--machine` | `--data` |
-|-------------|------------|---------|
-| Server (64+ CPUs) | `hard` | `local` (refs already present) |
-| Laptop / low RAM | `laptop` | `discanvis_data` (auto-downloads) |
-| SLURM cluster | `slurm` | `local` |
-
-### Step 5: Propose → confirm → run
-
-1. Summarise in 2–3 lines: which proteins, which approach, expected time
-2. Show the exact command(s) in a code block
-3. Ask "Shall I run this?" — wait for explicit confirmation
-4. Run via Bash; stream output
-5. Report output location and a quick count:
+1. Two or three lines: which proteins, extract or run, expected duration.
+2. The exact command in a code block.
+3. Ask whether to run it, and wait for a real answer.
+4. Run it, then report where the output landed and roughly how much there is:
    ```bash
    wc -l results/<project>/final/sequence/loc_chrom_with_names_isoforms_with_seq.tsv
    ```
 
----
+Extraction is fast and reversible, so for Path A a brief "extracting RAF1 from the
+existing full run" and going ahead is fine. Reserve the confirmation step for actual
+pipeline runs.
 
-## Analysing the data after extraction
+## What gets produced
 
-When the user wants insights (e.g. "which domain is most mutated"), follow this pattern:
+Outputs land in `results/<project>/final/`, tab-separated, keyed by `Protein_ID` (the
+GENCODE transcript name, e.g. `RAF1-201`). Per-residue scores are comma-separated arrays,
+one value per residue in sequence order.
 
-1. **Read** `skills/idp-dataset/references/annotations.md` to understand the relevant columns
-2. **Load** the appropriate TSVs with Python (`csv.field_size_limit(2**31-1)` first — some score arrays exceed the default limit)
-3. **Cross-reference**: e.g. mutation positions vs. Pfam domain boundaries, or ANCHOR2 peaks vs. ELM motif positions
-4. **Summarise** findings with a table + biological interpretation
+| Directory | Holds |
+|---|---|
+| `disorder/` | IUPred3, ANCHOR2, AIUPred, MobiDB, DisProt, combined disorder |
+| `structure/` | AlphaFold pLDDT, RSA, DSSP, PDB coverage and unobserved regions |
+| `annotations/` | ELM, DIBS, MFIB, PhasePro, PTM, Pfam, GO, PPI, coiled coils, low-complexity, aggregation-prone regions, LLPS regions, polymorphism |
+| `mutations/` | ClinVar, TCGA, cBioPortal, DepMap, LLPS-associated variants |
+| `pathogenicity/` | dbNSFP, AlphaMissense, MaveDB, ProteinGym |
+| `phase_separation/` | catGRANULE, PLAAC |
+| `disease/`, `drivers/` | ClinVar/MONDO and OMIM disease, cancer driver tables |
+| `conservation/`, `sequence/`, `genome/`, `position/` | Conservation, isoform table, coordinate maps, position-based annotations |
 
-Key files for common analyses:
+`docs/annotations/README.md` indexes every track with a page per track explaining its
+columns. Point users there, and read it yourself before explaining a column — it is kept
+current, whereas anything restated here will drift.
 
-| Question | Files to load |
-|----------|--------------|
-| Which region is most mutated? | `mutations/ClinVar/Missense_filter_mutations_mapped.tsv` + `annotations/pfam_domains.tsv` + `annotations/uniprot_roi.tsv` |
-| Where are the disordered regions? | `disorder/CombinedDisorderNew.tsv` + `pdb/pdb_missing.tsv` |
-| What SLiMs / binding sites are in the IDRs? | `annotations/elm.tsv`, `dibs.tsv`, `mfib.tsv`, `pem_core_motifs.tsv` |
-| Which PTMs are in disordered regions? | `annotations/ptm_merged.tsv` vs `disorder/CombinedDisorderNew.tsv` |
-| Is this protein a phase separator? | `annotations/phasepro.tsv`, `annotations/coiled_coils.tsv` |
-| Binding sites vs. structural confidence | `disorder/AlphaFoldTable.tsv` vs `disorder/Anchorscores.tsv` |
+For thresholds and how to read the scores, see
+[references/interpreting-scores.md](references/interpreting-scores.md).

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "discanvis",
+  "description": "DisCanVisFlow protein-annotation tooling: generate and interpret per-residue disorder, motif, structure, and variant datasets for human proteins.",
+  "owner": {
+    "name": "Norbi Deutsch",
+    "email": "deutsch.norbi.kutatas@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "discanvis-tools",
+      "description": "Generate, analyse, and extend DisCanVisFlow protein-annotation datasets: per-residue disorder, SLiMs, PTMs, structure, mutations, and phase-separation tracks for any human gene or gene list.",
+      "author": {
+        "name": "Norbi Deutsch"
+      },
+      "category": "data",
+      "source": "./",
+      "homepage": "https://github.com/Nosyfire/DisCanVisFlow"
+    }
+  ]
+}
