@@ -1,10 +1,10 @@
 {
   "name": "discanvis-tools",
   "description": "Generate, analyse, and extend DisCanVisFlow protein-annotation datasets: per-residue disorder, SLiMs, PTMs, structure, mutations, and phase-separation tracks for any human gene or gene list.",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "author": {
     "name": "Norbi Deutsch",
-    "email": "deutsch.norbi.kutatas@gmail.com"
+    "email": "norbert.deutsch@elte.ttk.hu"
   },
   "homepage": "https://github.com/Nosyfire/DisCanVisFlow",
   "repository": "https://github.com/Nosyfire/DisCanVisFlow",

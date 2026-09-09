@@ -4,7 +4,7 @@
   "description": "DisCanVisFlow protein-annotation tooling: generate and interpret per-residue disorder, motif, structure, and variant datasets for human proteins.",
   "owner": {
     "name": "Norbi Deutsch",
-    "email": "deutsch.norbi.kutatas@gmail.com"
+    "email": "norbert.deutsch@elte.ttk.hu"
   },
   "plugins": [
     {
