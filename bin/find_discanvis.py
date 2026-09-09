@@ -123,12 +123,12 @@ def completed_runs(root: Path) -> list[str]:
 def local_config_usable(root: Path) -> bool:
     """Does config/data/local.config point at files that exist here?
 
-    Existence of the file is not enough. It is currently committed to the repo,
-    so every clone and every plugin install carries one machine's absolute
-    paths. Reporting "present" on a machine where none of those paths resolve
-    would send the caller straight into --data local and a wall of missing-file
-    errors, when --data discanvis_data would have just worked. So sample the
-    paths it declares and require that most of them are really there.
+    Existence alone is not enough. The file hard-codes absolute paths for one
+    machine, so a copy that was moved between machines, or written against a
+    layout that has since changed, exists but is useless. Reporting "present"
+    for one of those sends the caller into --data local and a wall of
+    missing-file errors, when --data discanvis_data would have just worked.
+    Sample the paths it declares and require that most of them really resolve.
     """
     cfg = root / "config/data/local.config"
     if not cfg.is_file():

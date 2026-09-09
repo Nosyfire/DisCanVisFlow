@@ -50,3 +50,7 @@ docs/superpowers/
 # Local scratch / working notes — not part of the repo
 BUG.md
 scratchpad/
+
+# Machine-specific reference paths. Created by copying local.config.template;
+# never committed — it hard-codes absolute paths from one machine.
+config/data/local.config
