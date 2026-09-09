@@ -2,6 +2,42 @@
 
 If you publish results produced by DisCanVisFlow, please cite the relevant entries below. Resources that require registration or have non-commercial restrictions are flagged ⚠️.
 
+> **The pipeline itself is MIT-licensed — see [LICENSE](LICENSE).** That covers only
+> DisCanVisFlow's own code, workflow, config, and docs. The third-party data and
+> tools listed on this page keep their own terms, and several of them are
+> non-commercial or registration-gated. An MIT pipeline does **not** make its
+> inputs MIT. Check the summary below before any commercial use.
+
+---
+
+## 0. Licence summary — what you may use, and how
+
+**⚠️ Non-commercial only** — these forbid commercial use outright. If you need a
+commercial pipeline, disable them (all are optional) or obtain a licence:
+
+| Resource | Track | How to exclude |
+|----------|-------|----------------|
+| **FINCHES** | LLPS saturation mutagenesis | Off by default (`skip_finches = true`) |
+| **AlphaMissense** (CC BY-NC-SA 4.0) | Pathogenicity | `--skip_alphamissense true` |
+| **IUPred3 / ANCHOR2** | Disorder | `--skip_iupred true` (AIUPred is MIT and remains) |
+| **PhosphoSitePlus** | PTM sites | Omit `legacy_data/ptm/ptmphs/` |
+| **ELM** | Linear motifs | Backbone track — commercial users need an ELM licence |
+| **BLAT** | Genome mapping | Backbone for genome-anchored tracks — UCSC commercial licence required |
+| **dbNSFP** | Pathogenicity | `--modules` without `dbnsfp` |
+| **COSMIC / CGC** | Cancer drivers | `--skip_cancer_drivers true` |
+| **OMIM** | Disease ontology | `--skip_omim true` |
+| **BioGRID, HIPPIE, DIBS, MFIB, DeepCoil, phastCons, UCSC tools** | Various | See sections below |
+
+**🔑 Registration or key required before first run** — see [§12](#12-accounts--keys-required-before-first-run).
+
+**✅ Freely usable, including commercially** (CC BY / CC0 / MIT / Apache / public domain) —
+UniProt, GENCODE, hg38, BLAST+, AlphaFold, MobiDB, DisProt, GO, Pfam/InterPro, PDB,
+SIFTS, ClinVar, dbSNP, MONDO, MaveDB, ProteinGym, DepMap, IntAct, AIUPred, PLAAC,
+SEG, Nextflow, and the Python stack. Attribution is still required for CC BY sources.
+
+> This summary is a navigation aid, not legal advice. The authoritative terms are
+> each resource's own licence, linked in the tables below.
+
 ---
 
 ## 1. Pipeline infrastructure
@@ -68,6 +104,14 @@ If you publish results produced by DisCanVisFlow, please cite the relevant entri
 | **PLAAC** | Lancaster AK *et al.* (2014) PLAAC: a web and command-line application to identify proteins with prion-like amino acid composition. *Bioinformatics* 30, 2501–2502. https://doi.org/10.1093/bioinformatics/btu310 | MIT |
 | **AGGRESCAN** (a3v scale, aggregation-prone regions) | Conchillo-Solé O *et al.* (2007) AGGRESCAN: a server for the prediction and evaluation of "hot spots" of aggregation in polypeptides. *BMC Bioinformatics* 8, 65. https://doi.org/10.1186/1471-2105-8-65 | Free, academic — the a3v scale is used, not the HSA/NHSA server algorithm |
 
+### Curated LLPS databases (Modules 8k / 8l)
+
+| Resource | Citation | License / Terms |
+|----------|----------|-----------------|
+| **PhaSepDB** | Hou C *et al.* (2023) PhaSepDB in 2022: annotating phase separation-related proteins with droplet states, co-phase separation partners and other experimental information. *Nucleic Acids Research* 51, D460–D465. https://doi.org/10.1093/nar/gkac783 | Free, academic; cite required |
+| **LLPSDB** | Wang X *et al.* (2022) LLPSDB v2.0: an updated database of proteins undergoing liquid–liquid phase separation *in vitro*. *Bioinformatics* 38, 2010–2014. https://doi.org/10.1093/bioinformatics/btac026 | Free, academic; cite required |
+| **DisPhaseDB** | Navarro AM *et al.* (2022) DisPhaseDB: an integrative database of diseases related variations in liquid–liquid phase separation proteins. *Nucleic Acids Research* 50, D360–D367. https://doi.org/10.1093/nar/gkab1060 | Free, academic; cite required. Server is frequently offline — supply a local dump via `--disphasedb_path` |
+
 ---
 
 ## 6. Structural databases
@@ -128,7 +172,7 @@ If you publish results produced by DisCanVisFlow, please cite the relevant entri
 
 ---
 
-## 11. Accounts / keys required before first run
+## 12. Accounts / keys required before first run
 
 | Resource | Track | Where to register |
 |----------|-------|-------------------|

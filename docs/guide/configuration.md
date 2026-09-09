@@ -125,11 +125,41 @@ TRANSCRIPT_MAP, ELM, Pfam, DIBS/MFIB/PTM) always runs regardless of `--modules`.
 
 # Only PDB coverage + GO terms + PPI:
 --modules pdb,go,ppi
+
+# Curated disorder evidence only — DisProt + MobiDB, no predictors:
+--modules disprot,mobidb
 ```
 
-Available names: `mutations`, `disorder`, `mobidb`, `pdb`, `go`, `polymorphism`,
-`pem`, `coiledcoils`, `ppi`, `conservation`, `scansite`, `clinvar_disease`, `omim`,
-`cancer_drivers`, `alphamissense`, `depmap`, `mavedb`, `proteingym`, `dbnsfp`, `finches`
+### Available module names
+
+| Group | Names |
+|-------|-------|
+| Genome & variants | `genome`, `mutations`, `polymorphism`, `clinvar_dates` |
+| Disorder | `disorder`, `mobidb`, `disprot` |
+| Structure | `pdb`, `dssp`, `lcr`, `coiledcoils`, `apr` |
+| SLiMs & motifs | `pem`, `scansite` |
+| Function & interactions | `go`, `ppi`, `conservation` |
+| Pathogenicity | `dbnsfp`, `alphamissense`, `mavedb`, `proteingym`, `finches` |
+| Disease & cancer | `clinvar_disease`, `omim`, `cancer_drivers`, `depmap` |
+| Phase separation | `catgranule`, `plaac`, `phasepdb`, `llpsdb`, `disphasedb` |
+
+Notes on the less obvious ones:
+
+- **`genome`** gates the whole genome-anchored branch (BLAT → `combined_map.map`).
+  `mutations`, `polymorphism`, and exon mapping need it, so including any of them
+  without `genome` still runs the genome branch — but naming `genome` alone is a
+  cheap way to produce only the coordinate map.
+- **`disprot`** — curated (literature-backed) disorder regions, distinct from the
+  `disorder` predictors and the `mobidb` consensus. See
+  [DisProt](../annotations/disorder/disprot.md).
+- **`clinvar_dates`** — per-variant ClinVar submission dates; keyed on the variant,
+  not on `Protein_ID`. See
+  [ClinVar submission dates](../annotations/mutations/clinvar_submission_dates.md).
+- **`phasepdb` / `llpsdb` / `disphasedb`** — the three curated LLPS databases. See
+  [LLPS databases](../annotations/phase_separation/llps_databases.md).
+
+ELM, Pfam, DIBS, MFIB, PhasePro, and PTM are backbone tracks: they always run,
+and cannot be selected or excluded via `--modules`.
 
 ---
 
@@ -171,6 +201,22 @@ These apply *within* a module (complement to `--modules`, which controls whole g
 | `--skip_conservation true` | GOPHER + phastCons | Needs external files; skip if not configured |
 | `--skip_polymorphism true` | dbSNP 155 SNPs | Skip for pure IDP/disease analysis |
 | `--skip_coiledcoils true` | DeepCoil predictions | Skip on CUDA 12+ hardware without DeepCoil env |
+| `--skip_disprot true` | DisProt curated disorder regions | Skip the disprot.org API call on offline machines |
+| `--skip_clinvar_dates true` | ClinVar submission-date aggregation | Avoids the ~384 MB `submission_summary.txt.gz` download |
+| `--skip_dssp true` | DSSP secondary structure | Needs `mkdssp` + an AlphaFold model per isoform |
+| `--skip_lcr true` | SEG low-complexity regions | Needs `segmasker` (BLAST+ suite) |
+| `--skip_apr true` | AGGRESCAN aggregation-prone regions | Sequence-only; cheap, rarely worth skipping |
+| `--skip_catgranule true` / `--skip_plaac true` | Phase-separation predictors | Skip if LLPS propensity is not needed |
+| `--skip_phasepdb true` / `--skip_llpsdb true` / `--skip_disphasedb true` | Individual curated LLPS databases | Skip a source whose server is unreachable |
+| `--skip_pem true` | PEM predicted ELM motifs | Slowest motif step on full-proteome runs |
+| `--skip_scansite true` | ScanSite phospho motifs | |
+| `--skip_mavedb true` / `--skip_proteingym true` | MAVE / DMS experimental scores | |
+| `--skip_alphamissense true` | AlphaMissense pathogenicity | Large download; skip when dbNSFP already covers it |
+| `--skip_depmap true` | DepMap somatic mutations | |
+| `--skip_omim true` / `--skip_clinvar_disease true` | Disease-ontology tracks | |
+| `--skip_cancer_drivers true` | CGC + Compendium driver tables | |
+| `--skip_finches false` | **Enables** FINCHES (off by default) | CC BY-NC 4.0; expensive saturation mutagenesis |
+| `--skip_uniprot_api true` / `--skip_pfam_api true` | Live UniProt / Pfam API lookups | Offline runs; falls back to cached/local data |
 
 ---
 

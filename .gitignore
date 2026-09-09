@@ -44,3 +44,7 @@ __pycache__/
 # Superpowers plugin brainstorming/planning specs — local design artifacts,
 # not part of the pipeline docs
 docs/superpowers/
+
+# Local scratch / working notes — not part of the repo
+BUG.md
+scratchpad/

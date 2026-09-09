@@ -23,6 +23,13 @@ residues (genome-anchored; require `params.hg38_2bit`).
 | cBioPortal somatic mutations | `mutations/CBioportal/*` | [cbioportal.md](mutations/cbioportal.md) |
 | TCGA somatic mutations | `mutations/TCGA/*` | [tcga.md](mutations/tcga.md) |
 | DepMap somatic mutations | `mutations/DepMap/depmap_mutations.tsv` | [depmap.md](mutations/depmap.md) |
+| ClinVar submission dates | `mutations/ClinVar/clinvar_submission_dates.tsv` | [clinvar_submission_dates.md](mutations/clinvar_submission_dates.md) |
+| LLPS-associated variants (DisPhaseDB / PhaSepDB) | `mutations/llps_variants.tsv` | [llps_variants.md](mutations/llps_variants.md) |
+
+> `clinvar_submission_dates.tsv` is the one mutation output **not** keyed by
+> `Protein_ID` — it is variant-keyed (`Mutation` = the genomic `CLNHGVS`). Join it
+> onto the mapped mutation TSVs via `Genomic_HGVS`, falling back to `Mutation`
+> when `Genomic_HGVS` is empty. See its page for the join recipe.
 
 ## Pathogenicity — [`pathogenicity/`](pathogenicity)
 
@@ -119,9 +126,13 @@ Per-residue liquid-liquid phase separation (LLPS) propensity predictors.
 |-------|--------|------|
 | catGRANULE (RNA-granule propensity) | `phase_separation/catgranule.tsv` | [catgranule.md](phase_separation/catgranule.md) |
 | PLAAC (prion-like amino-acid composition) | `phase_separation/plaac.tsv` | [plaac.md](phase_separation/plaac.md) |
+| Curated LLPS regions (PhaSepDB / LLPSDB / DisPhaseDB) | `annotations/llps_regions.tsv` | [llps_databases.md](phase_separation/llps_databases.md) |
+| Curated LLPS protein info (MLO, localisation, material state) | `annotations/llps_proteins.tsv` | [llps_databases.md](phase_separation/llps_databases.md) |
 
-See also [PhasePro](disorder_function/phasepro.md) (curated LLPS drivers) and
-[FINCHES](disorder_function/finches.md) (LLPS saturation mutagenesis).
+See also [PhasePro](disorder_function/phasepro.md) (curated LLPS drivers),
+[FINCHES](disorder_function/finches.md) (LLPS saturation mutagenesis), and
+[LLPS variants](mutations/llps_variants.md) (the variant-level half of the
+curated LLPS databases).
 
 ## Interactions — [`interactions/`](interactions)
 

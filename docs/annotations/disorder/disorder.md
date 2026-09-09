@@ -50,3 +50,21 @@ which is grouped with the other structure-derived tracks in `final/structure/`:
 - Regions shorter than 5 consecutive disordered residues are filtered out.
 - `CombinedDisorderNew.tsv` and `CombinedDisorderNew_Pos.tsv` are already `Protein_ID`-keyed, so they need no `TRANSCRIPT_MAP` transfer step.
 - Worker: `bin/create_disorder_worker.py`
+
+## Related curated tracks
+
+These predictors are complemented by two curated (not computed) disorder
+sources, each selectable on its own via `--modules`:
+
+| Track | Nature | Page |
+|-------|--------|------|
+| MobiDB | Consensus of predictors + curated/homology evidence | [mobidb.md](mobidb.md) |
+| DisProt | Manually curated, experimentally backed IDRs with IDPO/GO terms | [disprot.md](disprot.md) |
+
+```bash
+# Predictors + both curated sources
+--modules disorder,mobidb,disprot
+
+# Curated evidence only, no predictors
+--modules mobidb,disprot
+```

@@ -93,6 +93,9 @@ flowchart TD
 | 5q | `ELM_SWITCHES_MAP` | `create_elm_switches_worker.py` | elmswitches_mapped.tsv |
 | 5r | `LCR_MAP` | `create_lcr_worker.py` | low_complexity.tsv (SEG via `segmasker`) |
 | 5s | `DSSP_MAP` | `create_dssp_worker.py` | dssp.tsv → `final/structure/` (8/3-state SS + RSA) |
+| 5t | `APR_MAP` | `create_apr_worker.py` | aggregation_prone_regions.tsv (AGGRESCAN a3v) |
+| 8k | `LLPS_REGIONS_MAP` | `parse_llps_sources.py` + `create_llps_regions_worker.py` | llps_regions.tsv, llps_proteins.tsv (PhaSepDB + LLPSDB + DisPhaseDB) |
+| 8l | `LLPS_VARIANTS_MAP` | `parse_llps_sources.py` + `create_llps_variants_worker.py` | llps_variants.tsv → `final/mutations/` |
 
 ---
 
@@ -142,10 +145,14 @@ final/
 ├── genome/          combined_map.map, exon.tsv, genome_protein_index.tsv,
 │                    genome_protein_mutations.tsv (every possible SNV reference table)
 ├── mutations/       ClinVar/, TCGA/, CBioportal/, DepMap/ — per-mutation-source TSVs
+│                    ClinVar/clinvar_submission_dates.tsv (variant-keyed, not Protein_ID),
+│                    llps_variants.tsv
 ├── annotations/     ELM, DIBS, MFIB, PhasePro, PTM, Pfam, GO, polymorphism, PEM,
 │                    coiled_coils, interactions, scansite, elm_classes,
 │                    elmswitches_mapped, uniprot_roi, uniprot_binding,
-│                    low_complexity, homology_similarity_manifest.tsv
+│                    low_complexity, aggregation_prone_regions,
+│                    llps_regions, llps_proteins,
+│                    homology_similarity_manifest.tsv
 ├── disorder/        IUPredscores, AnchorScores, AIUPredscores, AIUPredBinding,
 │                    CombinedDisorderNew, mobidb_disorder, disprot
 ├── structure/       AlphaFoldTable, rsa_scores, dssp,

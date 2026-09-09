@@ -21,6 +21,14 @@ used by a completed run are recorded in
 | ClinVar | [NCBI ClinVar FTP](https://ftp.ncbi.nlm.nih.gov/pub/clinvar/) | `bin/refresh_refs.sh clinvar` | Always-current via `FETCH_CLINVAR` |
 | GO (GOA + OBO) | [geneontology.org](http://geneontology.org/) | `bin/refresh_refs.sh go` | Always-current via `FETCH_GO` |
 | MobiDB | [mobidb.org](https://mobidb.org/) | `bin/refresh_refs.sh mobidb` | Always-current via `FETCH_MOBIDB` |
+| DisProt (curated disorder regions) | [disprot.org](https://disprot.org/) | `bin/refresh_refs.sh disprot` | Always-current via `FETCH_DISPROT` (API, `term_ontology=IDPO+GO`) |
+| ClinVar submission summary | [NCBI ClinVar FTP](https://ftp.ncbi.nlm.nih.gov/pub/clinvar/tab_delimited/) | `bin/refresh_refs.sh clinvar` | Always-current via `FETCH_CLINVAR_SUBMISSIONS` (~384 MB) |
+| MONDO disease ontology | [monarchinitiative.org](https://mondo.monarchinitiative.org/) | `bin/refresh_refs.sh mondo` | Always-current |
+| SIFTS (PDB ↔ UniProt segments) | [EBI PDBe SIFTS](https://www.ebi.ac.uk/pdbe/docs/sifts/) | `bin/refresh_refs.sh sifts` | Always-current |
+| InterPro → Pfam mapping | [ebi.ac.uk/interpro](https://www.ebi.ac.uk/interpro/) | `bin/refresh_refs.sh interpro` | Always-current |
+| LLPS databases (PhaSepDB / LLPSDB) | [db2.phasep.pro](http://db2.phasep.pro/) · [LLPSDB](http://bio-comp.org.cn/llpsdbv2/) | `bin/refresh_refs.sh llps` | Auto via `FETCH_LLPS_SOURCES`; each source is guarded, so one dead server does not fail the run |
+| DisPhaseDB | [disphasedb.leloir.org.ar](http://disphasedb.leloir.org.ar/) | `--disphasedb_path <dump>` (manual) | Server usually offline — no stable bulk URL; supply a local dump |
+| MaveDB / ProteinGym / DepMap / OMIM | [mavedb.org](https://www.mavedb.org/) · [proteingym.org](https://proteingym.org/) · [depmap.org](https://depmap.org/) · [omim.org](https://omim.org/) | `bin/refresh_refs.sh mavedb proteingym depmap omim` | Auto-downloaded on first use |
 | ELM instances | [elm.eu.org](http://elm.eu.org/) | `legacy_data/elm/elm_instances-2023.tsv` | Frozen 2023 snapshot |
 | dbSNP bigBed | [UCSC dbSnp155Common](https://hgdownload.soe.ucsc.edu/gbdb/hg38/snp/) | `bin/refresh_refs.sh dbsnp` (manual) | Large; rarely updated |
 | AlphaMissense | [Zenodo 8208688](https://zenodo.org/records/8208688) | `bin/refresh_refs.sh alphamissense` | v2023 frozen |
@@ -45,7 +53,8 @@ Force a re-download of specific sources, then `-resume` (only deleted files are
 fetched again):
 
 ```bash
-bin/refresh_refs.sh clinvar              # ClinVar only
+bin/refresh_refs.sh clinvar              # ClinVar VCF + submission summary
+bin/refresh_refs.sh disprot              # DisProt curated disorder regions
 bin/refresh_refs.sh clinvar mobidb go    # several
 bin/refresh_refs.sh all                  # everything except hg38 / dbsnp / alphafold
 bin/refresh_refs.sh --force all          # truly everything

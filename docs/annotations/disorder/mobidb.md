@@ -37,3 +37,6 @@ MobiDB disorder features per isoform.
   (MobiDB + AlphaFold pLDDT + IUPred3, with Pfam-domain exclusion).
 - The output may be empty for isoforms absent from MobiDB.
 - Worker: `bin/create_mobidb_worker.py` (Module 5o).
+- Enable/disable with `--modules mobidb`; MobiDB is a *consensus* of predictors
+  and curated sources. For purely literature-curated regions with experimental
+  evidence and IDPO/GO function terms, see [DisProt](disprot.md).

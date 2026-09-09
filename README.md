@@ -14,15 +14,19 @@ For each human protein (UniProt SwissProt × GENCODE), the pipeline:
 
 | Category | Annotations |
 |----------|-------------|
-| Mutations | ClinVar (pathogenic/likely-pathogenic), TCGA MAF, cBioPortal MAF, custom VCF |
-| Disorder | IUPred3, ANCHOR2, AIUPred disorder, AIUPred-Binding, AlphaFold pLDDT, Combined disorder |
-| SLiMs & PTMs | ELM motifs, DIBS, MFIB, PhasePro, PTMdb, PhosphoSite, Pfam domains, UniProt ROI/binding |
-| Structure | PDB coverage, unobserved regions, RSA scores |
+| Mutations | ClinVar (pathogenic/likely-pathogenic) + per-variant submission dates, TCGA MAF, cBioPortal MAF, custom VCF |
+| Disorder — predicted | IUPred3, ANCHOR2, AIUPred disorder, AIUPred-Binding, AlphaFold pLDDT, Combined disorder |
+| Disorder — curated | **DisProt** (literature-curated IDRs with IDPO/GO terms), MobiDB consensus |
+| SLiMs & motifs | ELM motifs (+ classes, switches), PEM core motifs, ScanSite phospho motifs, DIBS, MFIB, PhasePro |
+| PTMs & domains | PTMdb, PhosphoSite, Pfam domains, UniProt ROI/binding |
+| Structure | PDB coverage, unobserved regions, RSA scores, DSSP secondary structure, SEG low-complexity regions |
+| Aggregation | AGGRESCAN a3v aggregation-prone regions |
+| Phase separation | catGRANULE, PLAAC, plus curated PhaSepDB / LLPSDB / DisPhaseDB regions and variants |
 | Polymorphism | dbSNP 155 common SNPs + allele frequencies |
-| Pathogenicity | dbNSFP, AlphaMissense, MaveDB, ProteinGym |
+| Pathogenicity | dbNSFP (37 predictors + CADD + gnomAD 4.1 AF), AlphaMissense, MaveDB, ProteinGym, FINCHES |
 | Disease | ClinVar disease ontology (MONDO), OMIM disease + mutations |
 | Interactions | IntAct, BioGRID, HIPPIE |
-| Gene function | GO terms (GOA), ScanSite phospho motifs, PEM core motifs |
+| Gene function | GO terms (GOA), exon boundaries |
 | Conservation | GOPHER multi-level, phastCons per-residue |
 | Cancer | CGC census, Compendium, DepMap somatic mutations |
 
@@ -41,6 +45,46 @@ The full process-level DAG, module tables, and design decisions are in
 ---
 
 ## Quick start
+
+### Option A — run straight from GitHub (no clone)
+
+Nextflow can pull and run the pipeline itself. Nothing to clone; the repo is
+cached under `~/.nextflow/assets/Nosyfire/DisCanVisFlow`:
+
+```bash
+# Nextflow itself (once), if you don't have it:
+curl -s https://get.nextflow.io | bash && sudo mv nextflow /usr/local/bin/
+
+# Pull + run one gene — references download automatically on first run
+nextflow run Nosyfire/DisCanVisFlow -latest \
+    --project test_one_protein --machine medium --target_gene RAF1 -resume
+
+# Pin an exact revision for reproducibility (recommended for real runs).
+# No release tags are published yet, so pin by commit SHA:
+nextflow run Nosyfire/DisCanVisFlow -r ec7d26d \
+    --project discanvis --machine hard -resume
+```
+
+| Flag | Meaning |
+|------|---------|
+| `-latest` | Pull the newest commit on the default branch (`main`) before running |
+| `-r <tag\|branch\|commit>` | Run a specific revision — pin by commit SHA (or tag, once tagged releases exist) |
+| `-resume` | Reuse cached tasks from a previous run |
+| `-stub` | Validate the workflow graph without executing any worker |
+
+Useful housekeeping commands:
+
+```bash
+nextflow info Nosyfire/DisCanVisFlow    # show cached revisions
+nextflow pull Nosyfire/DisCanVisFlow    # update without running
+nextflow drop Nosyfire/DisCanVisFlow    # delete the cached copy
+```
+
+> The pipeline still needs the `discanvis` conda environment for its workers.
+> Either create it from a clone (Option B) once, or add `--env docker` to run
+> every process in the container instead.
+
+### Option B — clone (for development, `--data local`, or editing configs)
 
 **1. Install** (conda; see [Installation](docs/guide/installation.md) for local references and disorder predictors):
 
@@ -67,8 +111,62 @@ nextflow run main.nf --project discanvis --machine hard -resume
 Outputs land in `results/<project>/final/`. To validate the workflow graph
 without computing anything, add `-stub`.
 
-That is the happy path. Everything else — other machines, module selection,
-mutation inputs (MAF/VCF), gene lists, SLURM, Docker, and every flag — is in the
+### Common variations
+
+**Your own gene list** — a plain-text file, one HGNC symbol per line, `#` for
+comments. Overrides `--target_gene`:
+
+```bash
+cat > my_genes.txt <<'EOF'
+# Kinases of interest
+RAF1
+BRAF
+KRAS
+EOF
+
+nextflow run main.nf --project discanvis --machine medium \
+    --gene_list_file my_genes.txt -resume
+```
+
+**Only some annotations** — `--modules` takes a comma-separated list and runs
+*only* those groups (plus the always-on backbone: ELM, Pfam, DIBS, MFIB,
+PhasePro, PTM). Much faster than a full run:
+
+```bash
+# Variants + disorder only — no PDB, GO, conservation, PPI, phase separation
+nextflow run main.nf --project test_one_protein --machine medium --target_gene RAF1 \
+    --modules mutations,disorder -resume
+
+# An IDP-focused set: predicted disorder + both curated disorder databases
+nextflow run main.nf --project discanvis --machine medium \
+    --gene_list_file my_genes.txt \
+    --modules disorder,disprot,mobidb,lcr,apr -resume
+
+# Curated evidence only — DisProt + MobiDB, no predictors at all
+nextflow run main.nf --project test_one_protein --machine medium --target_gene RAF1 \
+    --modules disprot,mobidb -resume
+```
+
+**Drop one predictor inside a module** — `--skip_*` flags are finer-grained than
+`--modules`:
+
+```bash
+# Keep AIUPred, skip IUPred3/ANCHOR2 (which need a separate conda env)
+# and skip the slow AlphaFold pLDDT fetch
+nextflow run main.nf --project test_one_protein --machine medium --target_gene RAF1 \
+    --modules disorder --skip_iupred true --skip_alphafold true -resume
+```
+
+**Pull one gene out of a finished full run** — no recomputation, seconds not hours:
+
+```bash
+python bin/extract_gene_from_results.py \
+    --source results/discanvis --gene RAF1,BRAF,KRAS --out results/kinase_subset
+```
+
+That is the happy path. Everything else — other machines, the full
+[`--modules` name list](docs/guide/configuration.md#--modules--run-only-what-you-need),
+mutation inputs (MAF/VCF), SLURM, Docker, and every flag — is in the
 [Configuration guide](docs/guide/configuration.md).
 
 ---
@@ -122,8 +220,22 @@ The docs are split by concern: **[guide/](docs/guide)** (running it),
 |------------|------|
 | Know what an annotation column/track means | [Annotation index](docs/annotations/README.md) |
 | Cite the tools & databases | [CITATIONS.md](CITATIONS.md) |
+| Check what you may use commercially | [CITATIONS.md § Licence summary](CITATIONS.md#0-licence-summary--what-you-may-use-and-how) |
 
 ---
+
+## Licence
+
+DisCanVisFlow's own code — the workflow, the Python workers, the configs, and
+these docs — is released under the [MIT licence](LICENSE).
+
+The reference data and prediction tools the pipeline downloads or invokes are
+**not** covered by that licence and carry their own terms; several are
+non-commercial or require registration (IUPred3, dbNSFP, COSMIC, OMIM,
+AlphaMissense, FINCHES, PhosphoSitePlus, ELM, BLAT…). Before using the pipeline
+commercially, read the
+[licence summary](CITATIONS.md#0-licence-summary--what-you-may-use-and-how),
+which lists what to disable and how.
 
 ## Citation
 
